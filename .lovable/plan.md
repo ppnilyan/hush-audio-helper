@@ -1,79 +1,45 @@
-# Crédits & abonnement pour SilenceCut
+# Nouvelle étape : Musique de fond
 
-Oui, c'est tout à fait possible. Voici comment je le mettrais en place.
+Ajout d'une 5e étape « Musique de fond », placée juste après « Voix off » et
+avant « Prévisualisation ».
 
-## Le modèle retenu
+## Ce que contient l'étape
 
-- 1 vidéo générée = 10 crédits.
-- Nouveau compte : 10 crédits offerts (soit 1 vidéo d'essai).
-- Abonnement Pro : 17 €/mois, recharge automatique de crédits à chaque cycle.
-- Packs de crédits à l'unité pour les utilisateurs qui ne veulent pas s'abonner.
+- **Aucune musique** (option par défaut désactivable) — choix vide.
+- **Piste incluse** : le morceau fourni (« Mysterious and Sad »), proposé dans
+  une case cliquable. Il fait 5 min 54 à l'origine : la lecture est limitée à
+  2 minutes maximum, et coupée avant si la voix off est plus courte.
+- **Importer ma musique** : zone d'import de fichier audio (mp3, wav, m4a, ogg)
+  depuis l'ordinateur, comme pour la voix off.
+- **Volume** : réglage par défaut à −30 dB (musique très en retrait derrière la
+  voix), ajustable de −40 dB à 0 dB.
+- Lecteur audio pour écouter la piste choisie avant de continuer.
 
-Reste à fixer avant la mise en place : le nombre de crédits inclus dans le Pro
-mensuel (ex. 500 crédits = 50 vidéos) et le contenu des packs (ex. 100 / 300 / 1000
-crédits). Je peux partir sur des valeurs par défaut et tu ajustes ensuite.
+## Comportement
 
-## Parcours utilisateur
-
-1. L'utilisateur voit son solde de crédits dans le header, à côté de « Mon compte ».
-2. À l'étape 4 (Prévisualisation), le bouton « Générer la vidéo » affiche le coût
-   (« 10 crédits »).
-3. Si le solde est insuffisant, le bouton bascule sur « Obtenir des crédits » et
-   ouvre la page Tarifs.
-4. Page Tarifs : Gratuit / Pro 17 € par mois / packs de crédits, avec paiement
-   sécurisé hébergé.
-5. Après paiement, retour sur l'app avec le solde mis à jour et un message de
-   confirmation.
-6. Une page « Mon compte » liste le solde, l'abonnement en cours, l'historique des
-   débits et un lien de gestion de l'abonnement (annulation, moyen de paiement).
-
-Les crédits ne sont débités qu'après une génération réussie ; si le montage
-échoue, ils sont remboursés automatiquement.
-
-## Prérequis
-
-- Les paiements intégrés Lovable nécessitent un plan Lovable payant (Pro ou
-  supérieur) sur ton espace de travail. Sans cela, l'activation ne fera rien.
-- Un environnement de test est créé d'abord : tu pourras tester tout le parcours
-  sans argent réel. Le passage en réel demande une vérification du compte.
+- La musique démarre en même temps que la voix off et **s'arrête toujours
+  exactement à la fin de la voix off** (la voix reste l'horloge maîtresse du
+  montage), avec un fondu de sortie court pour éviter la coupure sèche.
+- Si la voix dure plus de 2 minutes, la musique s'arrête quand même à 2 min.
+- Étape optionnelle : on peut passer à la prévisualisation sans musique.
+- La musique est audible en prévisualisation comme dans la vidéo générée.
 
 ## Détails techniques
 
-Base de données (Lovable Cloud, RLS activée, GRANT sur chaque table) :
-
-- `user_credits` — solde par utilisateur, crédits offerts à l'inscription via
-  trigger sur nouvel utilisateur.
-- `credit_transactions` — journal immuable (achat, recharge mensuelle, débit
-  génération, remboursement) pour audit et affichage historique.
-- `subscriptions` — statut d'abonnement, plan, période courante, identifiant
-  client côté fournisseur.
-
-Serveur (TanStack `createServerFn`, jamais côté client) :
-
-- `getBalance` / `getSubscription` — lecture protégée par `requireSupabaseAuth`.
-- `consumeCredits` — fonction SQL atomique `spend_credits(user_id, amount)` en
-  `SECURITY DEFINER` qui vérifie et décrémente en une transaction (impossible de
-  passer en négatif ou de tricher côté client).
-- `refundCredits` — en cas d'échec de génération.
-- `createCheckout` — crée la session de paiement pour l'abonnement ou un pack.
-- Webhook sous `src/routes/api/public/` avec vérification de signature : crédite
-  le compte à l'achat, recharge au renouvellement, met à jour le statut à
-  l'annulation ou l'échec de paiement.
-
-Interface :
-
-- Badge de solde dans le header (`src/components/HeaderActions.tsx`).
-- Garde de crédits sur l'étape 4 de `src/routes/montage.tsx`.
-- Nouvelle route `/pricing` et section abonnement dans le compte.
-- Tous les libellés passent par le système de traduction FR/EN existant, et le
-  style reprend les thèmes actuels (dégradé vert → violet).
-
-## Ordre de réalisation
-
-1. Activer les paiements intégrés (Stripe) sur le projet.
-2. Créer les produits : abonnement Pro 17 €/mois + packs de crédits.
-3. Migration base de données (tables, RLS, GRANT, trigger de bienvenue, fonction
-   de débit atomique).
-4. Fonctions serveur + webhook.
-5. Interface : badge de solde, page Tarifs, garde à la génération, page compte.
-6. Test complet du parcours en environnement de test.
+- La piste fournie est hébergée en asset CDN (`lovable-assets`) et référencée
+  par un pointeur JSON dans `src/assets/` — le binaire n'entre pas dans le repo.
+- Nouveau store `src/lib/music-store.ts` sur le modèle de `voiceover-store.ts`
+  (piste courante : source incluse ou fichier importé, gain en dB).
+- `STEPS` de `src/routes/montage.tsx` passe à 5 entrées ; la navigation, les
+  index d'étapes et les gardes (`canNext`) sont décalés en conséquence.
+- Mixage : dans `generate()`, le graphe Web Audio existant reçoit une seconde
+  source (`createMediaElementSource` sur la musique) branchée sur un
+  `GainNode` (`gain = 10^(dB/20)`, soit ≈ 0,0316 à −30 dB) puis sur le même
+  `MediaStreamDestination`. Même graphe côté prévisualisation.
+- Arrêt de la musique : `min(durée voix, 120 s)` via la boucle de timeline
+  existante, plus `pause()` sur le même point d'arrêt que la voix.
+- Le gain en dB et le choix de piste incluse sont ajoutés à `MontageSettings`
+  (`src/lib/settings.ts`, avec `normalizeSettings`) pour être sauvegardés sur le
+  compte comme les autres réglages ; un fichier importé reste local à la session.
+- Tous les libellés passent par le système de traduction FR/EN existant
+  (`usePrefs`), style repris des étapes actuelles.
