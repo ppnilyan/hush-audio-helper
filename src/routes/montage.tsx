@@ -43,7 +43,15 @@ import {
   type Preset,
 } from "@/lib/account";
 import { defaultSettings, type MontageSettings } from "@/lib/settings";
+import {
+  SIMPLE_EFFECTS,
+  SIMPLE_INTROS,
+  SIMPLE_MUSIC_GAIN_DB,
+  SIMPLE_SILENCE,
+  useAdvanced,
+} from "@/lib/advanced-mode";
 import { useLocale, useTr } from "@/lib/prefs";
+
 import { supabase } from "@/integrations/supabase/client";
 import {
   getVoiceover,
@@ -196,6 +204,17 @@ function Montage() {
   const [history, setHistory] = useState<UIEntry[]>([]);
   const [tab, setTab] = useState<"editor" | "history">(search.tab);
   const [step, setStep] = useState(0);
+  const { advanced, setAdvanced } = useAdvanced();
+
+  /** Étapes visibles : « Durées & effets » n'apparaît qu'en mode avancé. */
+  const visibleSteps = useMemo(
+    () => (advanced ? [0, 1, 2, 3, 4, 5] : [0, 2, 3, 4, 5]),
+    [advanced],
+  );
+  const stepPos = Math.max(0, visibleSteps.indexOf(step));
+  const isLastStep = stepPos === visibleSteps.length - 1;
+
+
 
   // Étape 3 — voix off
   const [audioBusy, setAudioBusy] = useState(false);
@@ -255,6 +274,24 @@ function Montage() {
       musicChoice: track?.builtin ? "builtin" : "none",
     }));
   }, []);
+
+  /** Mode simple : réglages figés sur les valeurs recommandées. */
+  useEffect(() => {
+    if (advanced) return;
+    setStep((s) => (s === 1 ? 2 : s));
+    setSettings((s) => ({
+      ...s,
+      fx: SIMPLE_EFFECTS,
+      intros: SIMPLE_INTROS,
+      musicGainDb: SIMPLE_MUSIC_GAIN_DB,
+    }));
+    setRange(SIMPLE_SILENCE.range);
+    setThreshold(SIMPLE_SILENCE.thresholdDb);
+    setTargetMin(SIMPLE_SILENCE.targetMin);
+    setTargetSec(SIMPLE_SILENCE.targetSec);
+  }, [advanced]);
+
+
 
 
   const canvasRef = useRef<HTMLCanvasElement>(null);
@@ -931,7 +968,8 @@ function Montage() {
   const busy = loading || rendering;
   // L'étape musique est facultative ; les clips et la voix off restent requis.
   const canNext =
-    step === 0 ? clips.length > 0 : step === 3 ? !!voice && !measuring : step < STEPS.length - 1;
+    step === 0 ? clips.length > 0 : step === 3 ? !!voice && !measuring : !isLastStep;
+
 
   return (
     <main className="mx-auto min-h-screen w-full max-w-6xl px-5 py-14">
@@ -1029,35 +1067,43 @@ function Montage() {
         <div className="space-y-6">
           {/* Fil d'étapes */}
           <ol className="flex flex-wrap items-center gap-2 text-sm">
-            {STEPS.map((s, i) => (
-              <li key={s} className="flex items-center gap-2">
+            {visibleSteps.map((id, i) => (
+              <li key={id} className="flex items-center gap-2">
                 <button
-                  onClick={() => i <= step && setStep(i)}
+                  onClick={() => i <= stepPos && setStep(id)}
                   className={`flex items-center gap-2 rounded-full px-4 py-2 transition ${
-                    i === step
+                    id === step
                       ? "gradient-brand text-primary-foreground"
-                      : i < step
+                      : i < stepPos
                         ? "bg-secondary/60 text-foreground"
                         : "bg-secondary/30 text-muted-foreground"
                   }`}
                 >
                   <span className="font-mono text-xs">{i + 1}</span>
-                  {tr(s)}
+                  {tr(STEPS[id]!)}
                 </button>
-                {i < STEPS.length - 1 && (
+                {i < visibleSteps.length - 1 && (
                   <span className="text-muted-foreground/50">→</span>
                 )}
               </li>
             ))}
           </ol>
 
+
           {/* Étape 1 — Clips */}
           {step === 0 && (
             <section className="panel-glow p-6 sm:p-8">
-              <h2 className="text-2xl font-semibold">{tr("Ajoutez vos clips")}</h2>
+              <div className="flex flex-wrap items-start justify-between gap-4">
+                <h2 className="text-2xl font-semibold">{tr("Ajoutez vos clips")}</h2>
+                <label className="flex items-center gap-2 rounded-full bg-secondary/50 px-4 py-2 text-sm">
+                  <span>{tr("Options avancées")}</span>
+                  <Switch checked={advanced} onCheckedChange={setAdvanced} />
+                </label>
+              </div>
               <p className="mt-2 text-sm text-muted-foreground">
                 {tr("Collez vos liens TikTok à la suite : chaque lien libère automatiquement le champ suivant et se télécharge en HD au fur et à mesure.")}
               </p>
+
               <div className="mt-6 space-y-3">
                 {rows.map((r, i) => (
                   <div key={r.id} className="flex flex-wrap items-center gap-3">
@@ -1754,17 +1800,22 @@ function Montage() {
           <div className="flex items-center justify-between gap-4">
             <Button
               variant="secondary"
-              onClick={() => setStep((s) => Math.max(0, s - 1))}
-              disabled={step === 0}
+              onClick={() => setStep(visibleSteps[Math.max(0, stepPos - 1)]!)}
+              disabled={stepPos === 0}
             >
               {tr("← Précédent")}
             </Button>
-            {step < STEPS.length - 1 && (
-              <Button size="lg" onClick={() => setStep((s) => s + 1)} disabled={!canNext}>
+            {!isLastStep && (
+              <Button
+                size="lg"
+                onClick={() => setStep(visibleSteps[stepPos + 1]!)}
+                disabled={!canNext}
+              >
                 {tr("Suivant →")}
               </Button>
             )}
           </div>
+
         </div>
       )}
     </main>
