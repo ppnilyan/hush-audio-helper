@@ -1693,18 +1693,22 @@ function Montage() {
 
               {music && (
                 <div className="space-y-5 rounded-2xl bg-secondary/40 p-5">
-                  <Range
-                    label={tr("Volume de la musique")}
-                    value={musicGainDb}
-                    min={-40}
-                    max={0}
-                    step={1}
-                    unit=" dB"
-                    onChange={setMusicGainDb}
-                  />
-                  <p className="text-xs text-muted-foreground">
-                    {tr("Réglage d'origine : −30 dB, très en retrait derrière la voix.")}
-                  </p>
+                  {advanced && (
+                    <>
+                      <Range
+                        label={tr("Volume de la musique")}
+                        value={musicGainDb}
+                        min={-40}
+                        max={0}
+                        step={1}
+                        unit=" dB"
+                        onChange={setMusicGainDb}
+                      />
+                      <p className="text-xs text-muted-foreground">
+                        {tr("Réglage d'origine : −30 dB, très en retrait derrière la voix.")}
+                      </p>
+                    </>
+                  )}
                   <audio controls src={music.url} className="w-full" />
                 </div>
               )}
