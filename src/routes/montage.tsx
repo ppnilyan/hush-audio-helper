@@ -988,6 +988,10 @@ function Montage() {
       setTab("history");
     } catch (e) {
       setError((e as Error).message || tr("La génération a échoué."));
+      if (debit) {
+        await refund({ data: debit }).catch(() => {});
+        void invalidateBilling();
+      }
     } finally {
       setRendering(false);
       setProgress(0);
