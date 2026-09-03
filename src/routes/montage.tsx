@@ -43,7 +43,15 @@ import {
   type Preset,
 } from "@/lib/account";
 import { defaultSettings, type MontageSettings } from "@/lib/settings";
+import {
+  SIMPLE_EFFECTS,
+  SIMPLE_INTROS,
+  SIMPLE_MUSIC_GAIN_DB,
+  SIMPLE_SILENCE,
+  useAdvanced,
+} from "@/lib/advanced-mode";
 import { useLocale, useTr } from "@/lib/prefs";
+
 import { supabase } from "@/integrations/supabase/client";
 import {
   getVoiceover,
