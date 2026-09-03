@@ -94,7 +94,13 @@ export const Route = createFileRoute("/montage")({
 const W = 540;
 const H = 960;
 
-const STEPS = ["Clips", "Durées & effets", "Voix off", "Prévisualisation"] as const;
+const STEPS = [
+  "Clips",
+  "Durées & effets",
+  "Voix off",
+  "Musique de fond",
+  "Prévisualisation",
+] as const;
 
 type LinkRow = {
   id: string;
