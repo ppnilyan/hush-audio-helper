@@ -1436,7 +1436,7 @@ function Montage() {
                 <p className="-mt-4 text-xs text-muted-foreground">
                   {tr("Le système alterne les effets cochés au fil des coupures.")}
                 </p>
-                {hook.mixedEnabled && (
+                {advanced && hook.mixedEnabled && (
                   <>
                     <div className="flex flex-wrap gap-2">
                       {MIXED_EFFECTS.map((name) => (
