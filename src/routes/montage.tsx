@@ -209,6 +209,11 @@ function Montage() {
   const [tab, setTab] = useState<"editor" | "history">(search.tab);
   const [step, setStep] = useState(0);
   const { advanced, setAdvanced } = useAdvanced();
+  const billing = useBilling();
+  const invalidateBilling = useInvalidateBilling();
+  const consume = useServerFn(consumeCredits);
+  const refund = useServerFn(refundCredits);
+  const noCredits = billing.signedIn && !billing.loading && billing.totalCredits < CREDITS_PER_VIDEO;
 
   /** Étapes visibles : « Durées & effets » n'apparaît qu'en mode avancé. */
   const visibleSteps = useMemo(
