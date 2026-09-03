@@ -884,8 +884,28 @@ function Montage() {
   const generate = async () => {
     const canvas = canvasRef.current;
     if (!canvas || !voice || timeline.length === 0) return;
+    if (!userId) {
+      setError(tr("Connectez-vous pour générer une vidéo (10 crédits offerts à l'inscription)."));
+      return;
+    }
     setRendering(true);
     setError(null);
+    // Débit des crédits avant l'export ; remboursés si la génération échoue.
+    let debit: { fromMonthly: number; fromPurchased: number } | null = null;
+    try {
+      const r = await consume();
+      if (!r.ok) {
+        setError(tr("Plus de crédits : rechargez ou abonnez-vous pour générer cette vidéo."));
+        setRendering(false);
+        return;
+      }
+      debit = { fromMonthly: r.fromMonthly, fromPurchased: r.fromPurchased };
+      void invalidateBilling();
+    } catch (e) {
+      setError((e as Error).message || tr("La génération a échoué."));
+      setRendering(false);
+      return;
+    }
     try {
       const stream = canvas.captureStream(30);
       const audio = new Audio(voice.url);
