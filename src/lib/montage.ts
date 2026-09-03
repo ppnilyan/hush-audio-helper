@@ -127,8 +127,179 @@ export function buildTimeline(
 }
 
 
-export function cssFilter(fx: Effects) {
-  return `brightness(${fx.brightness}%) contrast(${fx.contrast}%) saturate(${fx.saturation}%)`;
+/* ------------------------------------------------------------------ *
+ * Étape « Hook & Effets » : zoom dynamique et effets mélangés
+ * ------------------------------------------------------------------ */
+
+export type EasingName = "linear" | "easeOut" | "easeInOut" | "punchy";
+
+export type MixedEffectName =
+  | "zoomIn"
+  | "zoomOut"
+  | "punch"
+  | "shake"
+  | "flash"
+  | "tilt";
+
+export const MIXED_EFFECTS: MixedEffectName[] = [
+  "zoomIn",
+  "zoomOut",
+  "punch",
+  "shake",
+  "flash",
+  "tilt",
+];
+
+export type HookSettings = {
+  /** Zoom dynamique appliqué en intro du premier clip. */
+  hookEnabled: boolean;
+  /** Amplitude du zoom, en % de taille ajoutée (5 → 60). */
+  hookIntensity: number;
+  /** Sens du mouvement : zoom avant (in) ou zoom arrière (out). */
+  hookDirection: "in" | "out";
+  /** Durée de l'effet de hook, de 0,1 s à 1 s. */
+  hookDuration: number;
+  hookEasing: EasingName;
+  /** Effets mélangés sur les coupures suivantes. */
+  mixedEnabled: boolean;
+  mixedEffects: MixedEffectName[];
+  /** Un effet toutes les X coupures. */
+  mixedEveryCuts: number;
+  /** Durée de chaque effet mélangé, de 0,2 s à 2 s. */
+  mixedDuration: number;
+  mixedIntensity: number;
+  mixedEasing: EasingName;
+};
+
+export const defaultHook: HookSettings = {
+  hookEnabled: true,
+  hookIntensity: 22,
+  hookDirection: "in",
+  hookDuration: 0.45,
+  hookEasing: "punchy",
+  mixedEnabled: false,
+  mixedEffects: ["zoomIn", "zoomOut", "punch"],
+  mixedEveryCuts: 2,
+  mixedDuration: 0.5,
+  mixedIntensity: 14,
+  mixedEasing: "easeOut",
+};
+
+export function ease(name: EasingName, t: number): number {
+  const x = Math.min(1, Math.max(0, t));
+  switch (name) {
+    case "linear":
+      return x;
+    case "easeInOut":
+      return x < 0.5 ? 2 * x * x : 1 - Math.pow(-2 * x + 2, 2) / 2;
+    case "punchy": {
+      // Départ très rapide puis léger dépassement : la sensation « snap ».
+      const c = 1.70158 + 1;
+      const p = x - 1;
+      return 1 + c * p * p * p + 1.70158 * p * p;
+    }
+    case "easeOut":
+    default:
+      return 1 - Math.pow(1 - x, 3);
+  }
+}
+
+/** Modificateurs dynamiques appliqués image par image pendant le rendu. */
+export type FrameFx = {
+  zoom: number; // multiplicateur (1 = neutre)
+  offsetX: number; // px
+  offsetY: number; // px
+  rotate: number; // radians
+  brightness: number; // multiplicateur
+};
+
+export const neutralFrameFx: FrameFx = {
+  zoom: 1,
+  offsetX: 0,
+  offsetY: 0,
+  rotate: 0,
+  brightness: 1,
+};
+
+export type ActiveEffect = {
+  name: MixedEffectName;
+  duration: number;
+  intensity: number;
+  easing: EasingName;
+};
+
+/**
+ * Effet retenu pour une coupure : le hook ouvre le montage, puis les effets
+ * mélangés reviennent toutes les X coupures en alternant la liste choisie.
+ */
+export function effectForSegment(
+  index: number,
+  hook: HookSettings,
+): ActiveEffect | null {
+  if (index === 0) {
+    if (!hook.hookEnabled) return null;
+    return {
+      name: hook.hookDirection === "out" ? "zoomOut" : "zoomIn",
+      duration: hook.hookDuration,
+      intensity: hook.hookIntensity,
+      easing: hook.hookEasing,
+    };
+  }
+  if (!hook.mixedEnabled || hook.mixedEffects.length === 0) return null;
+  const every = Math.max(1, Math.round(hook.mixedEveryCuts));
+  if (index % every !== 0) return null;
+  const pick = hook.mixedEffects[Math.floor(index / every - 1) % hook.mixedEffects.length]!;
+  return {
+    name: pick,
+    duration: hook.mixedDuration,
+    intensity: hook.mixedIntensity,
+    easing: hook.mixedEasing,
+  };
+}
+
+/** Valeur de l'effet à l'instant `t` (s) depuis le début du segment. */
+export function frameFxAt(effect: ActiveEffect | null, t: number): FrameFx {
+  if (!effect || effect.duration <= 0 || t >= effect.duration) return neutralFrameFx;
+  const p = ease(effect.easing, t / effect.duration);
+  const amount = Math.max(0, effect.intensity) / 100;
+  const rest = 1 - p; // 1 au début de la coupure, 0 à la fin de l'effet
+  switch (effect.name) {
+    case "zoomIn":
+      // Part large et se resserre : le sujet « avance » vers la caméra.
+      return { ...neutralFrameFx, zoom: 1 + amount * p };
+    case "zoomOut":
+      return { ...neutralFrameFx, zoom: 1 + amount * rest };
+    case "punch": {
+      // Impulsion : pic immédiat puis retour au cadrage normal.
+      const pulse = Math.sin(Math.PI * Math.min(1, t / effect.duration));
+      return { ...neutralFrameFx, zoom: 1 + amount * pulse };
+    }
+    case "shake": {
+      const decay = rest;
+      const a = amount * 120 * decay;
+      return {
+        ...neutralFrameFx,
+        zoom: 1 + amount * 0.35 * decay,
+        offsetX: Math.sin(t * 38) * a,
+        offsetY: Math.cos(t * 31) * a * 0.6,
+      };
+    }
+    case "flash":
+      return { ...neutralFrameFx, brightness: 1 + amount * 2 * rest };
+    case "tilt":
+      return {
+        ...neutralFrameFx,
+        zoom: 1 + amount * 0.5,
+        rotate: amount * 0.25 * rest,
+      };
+    default:
+      return neutralFrameFx;
+  }
+}
+
+export function cssFilter(fx: Effects, brightnessMul = 1) {
+  const b = Math.round(fx.brightness * brightnessMul);
+  return `brightness(${b}%) contrast(${fx.contrast}%) saturate(${fx.saturation}%)`;
 }
 
 /** Draw one video frame into a 9:16 canvas with the chosen effects. */
@@ -136,21 +307,23 @@ export function drawFrame(
   ctx: CanvasRenderingContext2D,
   video: HTMLVideoElement,
   fx: Effects,
+  dyn: FrameFx = neutralFrameFx,
 ) {
   const W = ctx.canvas.width;
   const H = ctx.canvas.height;
   const vw = video.videoWidth || 1080;
   const vh = video.videoHeight || 1920;
-  const scale = Math.max(W / vw, H / vh) * (fx.zoom / 100);
+  const scale = Math.max(W / vw, H / vh) * (fx.zoom / 100) * dyn.zoom;
   const dw = vw * scale;
   const dh = vh * scale;
-  const dx = (W - dw) / 2;
-  const dy = (H - dh) / 2;
+  const dx = (W - dw) / 2 + dyn.offsetX;
+  const dy = (H - dh) / 2 + dyn.offsetY;
 
   ctx.save();
   ctx.clearRect(0, 0, W, H);
-  ctx.filter = cssFilter(fx);
+  ctx.filter = cssFilter(fx, dyn.brightness);
   ctx.translate(W / 2, H / 2);
+  if (dyn.rotate) ctx.rotate(dyn.rotate);
   if (fx.mirror) ctx.scale(-1, 1);
   ctx.translate(-W / 2, -H / 2);
   ctx.drawImage(video, dx, dy, dw, dh);
@@ -161,8 +334,8 @@ export function drawFrame(
   const top = (fx.blurTop / 100) * H;
   const bottom = (fx.blurBottom / 100) * H;
   if (fx.blurIntensity > 0) {
-    if (top > 0) drawBlurredBand(ctx, video, fx, dx, dy, dw, dh, 0, top);
-    if (bottom > 0) drawBlurredBand(ctx, video, fx, dx, dy, dw, dh, H - bottom, bottom);
+    if (top > 0) drawBlurredBand(ctx, video, fx, dyn, dx, dy, dw, dh, 0, top);
+    if (bottom > 0) drawBlurredBand(ctx, video, fx, dyn, dx, dy, dw, dh, H - bottom, bottom);
   }
 }
 
@@ -170,6 +343,7 @@ function drawBlurredBand(
   ctx: CanvasRenderingContext2D,
   video: HTMLVideoElement,
   fx: Effects,
+  dyn: FrameFx,
   dx: number,
   dy: number,
   dw: number,
@@ -182,10 +356,12 @@ function drawBlurredBand(
   ctx.beginPath();
   ctx.rect(0, y, W, h);
   ctx.clip();
-  ctx.filter = `${cssFilter(fx)} blur(${fx.blurIntensity}px)`;
+  ctx.filter = `${cssFilter(fx, dyn.brightness)} blur(${fx.blurIntensity}px)`;
   ctx.translate(W / 2, ctx.canvas.height / 2);
+  if (dyn.rotate) ctx.rotate(dyn.rotate);
   if (fx.mirror) ctx.scale(-1, 1);
   ctx.translate(-W / 2, -ctx.canvas.height / 2);
   ctx.drawImage(video, dx, dy, dw, dh);
   ctx.restore();
 }
+

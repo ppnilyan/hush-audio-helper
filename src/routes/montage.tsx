@@ -9,11 +9,17 @@ import { resolveTikTok } from "@/lib/tiktok.functions";
 import {
   buildTimeline,
   drawFrame,
+  effectForSegment,
+  frameFxAt,
+  MIXED_EFFECTS,
   formatViews,
   isHd,
   orderByViews,
   type ClipInfo,
   type Effects,
+  type EasingName,
+  type HookSettings,
+  type MixedEffectName,
 } from "@/lib/montage";
 import { detectSilences, encodeWav, formatTime, trimToTarget } from "@/lib/audio-silence";
 import {
@@ -76,13 +82,13 @@ export const Route = createFileRoute("/montage")({
       {
         name: "description",
         content:
-          "Parcours guidé : ajoutez vos clips, réglez durées et effets, importez la voix off, ajoutez une musique de fond, prévisualisez puis générez un montage vertical.",
+          "Parcours guidé : ajoutez vos clips, réglez durées et effets, ajoutez un hook zoom dynamique, importez la voix off, ajoutez une musique de fond, prévisualisez puis générez un montage vertical.",
       },
       { property: "og:title", content: "Montage 9:16 — clips TikTok, voix off et musique" },
       {
         property: "og:description",
         content:
-          "Clips → durées et effets → voix off → musique de fond → prévisualisation → génération, étape par étape.",
+          "Clips → durées et effets → hook & effets → voix off → musique de fond → prévisualisation → génération, étape par étape.",
       },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary_large_image" },
@@ -97,6 +103,7 @@ const H = 960;
 const STEPS = [
   "Clips",
   "Durées & effets",
+  "Hook & Effets",
   "Voix off",
   "Musique de fond",
   "Prévisualisation",
@@ -114,6 +121,52 @@ const newRow = (): LinkRow => ({
   url: "",
   status: "idle",
 });
+
+const EFFECT_LABELS: Record<MixedEffectName, string> = {
+  zoomIn: "Zoom avant",
+  zoomOut: "Zoom arrière",
+  punch: "Punch",
+  shake: "Secousse",
+  flash: "Flash",
+  tilt: "Inclinaison",
+};
+
+const EASINGS: { value: EasingName; label: string }[] = [
+  { value: "punchy", label: "Snap (nerveux)" },
+  { value: "easeOut", label: "Doux" },
+  { value: "easeInOut", label: "Progressif" },
+  { value: "linear", label: "Linéaire" },
+];
+
+function EasingPicker({
+  label,
+  value,
+  onChange,
+  tr,
+}: {
+  label: string;
+  value: EasingName;
+  onChange: (v: EasingName) => void;
+  tr: (s: string) => string;
+}) {
+  return (
+    <div className="space-y-3">
+      <Label>{label}</Label>
+      <div className="flex flex-wrap gap-2">
+        {EASINGS.map((e) => (
+          <Button
+            key={e.value}
+            size="sm"
+            variant={value === e.value ? "default" : "secondary"}
+            onClick={() => onChange(e.value)}
+          >
+            {tr(e.label)}
+          </Button>
+        ))}
+      </div>
+    </div>
+  );
+}
 
 function Montage() {
   const tr = useTr();
@@ -173,6 +226,22 @@ function Montage() {
     });
   }, []);
 
+  const hook = settings.hook;
+  const setHook = useCallback(
+    (patch: Partial<HookSettings>) =>
+      setSettings((s) => ({ ...s, hook: { ...s.hook, ...patch } })),
+    [],
+  );
+  const toggleMixedEffect = useCallback((name: MixedEffectName) => {
+    setSettings((s) => {
+      const on = s.hook.mixedEffects.includes(name);
+      const next = on
+        ? s.hook.mixedEffects.filter((e) => e !== name)
+        : [...s.hook.mixedEffects, name];
+      return { ...s, hook: { ...s.hook, mixedEffects: next.length ? next : s.hook.mixedEffects } };
+    });
+  }, []);
+
   const musicGainDb = settings.musicGainDb;
   const setMusicGainDb = useCallback(
     (db: number) => setSettings((s) => ({ ...s, musicGainDb: db })),
@@ -192,6 +261,7 @@ function Montage() {
   const videosRef = useRef<Map<string, HTMLVideoElement>>(new Map());
   const audioRef = useRef<HTMLAudioElement>(null);
   const fxRef = useRef(fx);
+  const hookRef = useRef(hook);
   const abortRef = useRef(false);
   const fileRef = useRef<HTMLInputElement>(null);
   const queueRef = useRef(false);
@@ -203,6 +273,9 @@ function Montage() {
   useEffect(() => {
     fxRef.current = fx;
   }, [fx]);
+  useEffect(() => {
+    hookRef.current = hook;
+  }, [hook]);
   useEffect(() => {
     const unsub = subscribeVoiceover(setVoice);
     const unsubMusic = subscribeMusic(setMusicState);
@@ -643,14 +716,18 @@ function Montage() {
         }
         // The decoded first frame is painted before playback begins: the cut
         // never keeps the outgoing clip's last frame on screen.
-        drawFrame(ctx, v, fxRef.current);
+        // Effet de coupure (hook ou effet mélangé) calculé pendant le rendu :
+        // il est donc présent aussi bien en prévisualisation que dans le MP4.
+        const effect = effectForSegment(i, hookRef.current);
+        drawFrame(ctx, v, fxRef.current, frameFxAt(effect, 0));
         await v.play().catch(() => {});
 
         await new Promise<void>((res) => {
           const started = performance.now();
           const tick = () => {
             if (abortRef.current || voiceOver()) return res();
-            drawFrame(ctx, v, fxRef.current);
+            const local = (performance.now() - started) / 1000;
+            drawFrame(ctx, v, fxRef.current, frameFxAt(effect, local));
             const t = (performance.now() - started) / 1000;
             setProgress(Math.min(1, (elapsed + t) / Math.max(0.1, totalDuration)));
             if (t >= seg.duration) return res();
@@ -854,7 +931,7 @@ function Montage() {
   const busy = loading || rendering;
   // L'étape musique est facultative ; les clips et la voix off restent requis.
   const canNext =
-    step === 0 ? clips.length > 0 : step === 2 ? !!voice && !measuring : step < STEPS.length - 1;
+    step === 0 ? clips.length > 0 : step === 3 ? !!voice && !measuring : step < STEPS.length - 1;
 
   return (
     <main className="mx-auto min-h-screen w-full max-w-6xl px-5 py-14">
@@ -1238,8 +1315,137 @@ function Montage() {
             </section>
           )}
 
-          {/* Étape 3 — Voix off */}
+          {/* Étape 3 — Hook & Effets */}
           {step === 2 && (
+            <section className="panel-glow space-y-8 p-6 sm:p-8">
+              <div>
+                <h2 className="text-2xl font-semibold">{tr("Hook & Effets")}</h2>
+                <p className="mt-2 text-sm text-muted-foreground">
+                  {tr(
+                    "Zoom dynamique au moment des coupures, appliqué pendant le rendu vidéo : ce que vous voyez ici se retrouve dans le MP4.",
+                  )}
+                </p>
+              </div>
+
+              <div className="space-y-7">
+                <div className="flex items-center justify-between">
+                  <Label htmlFor="hook-on">{tr("Zoom dynamique en intro (hook)")}</Label>
+                  <Switch
+                    id="hook-on"
+                    checked={hook.hookEnabled}
+                    onCheckedChange={(v) => setHook({ hookEnabled: v })}
+                  />
+                </div>
+                {hook.hookEnabled && (
+                  <>
+                    <div className="flex flex-wrap gap-2">
+                      {(["in", "out"] as const).map((d) => (
+                        <Button
+                          key={d}
+                          size="sm"
+                          variant={hook.hookDirection === d ? "default" : "secondary"}
+                          onClick={() => setHook({ hookDirection: d })}
+                        >
+                          {d === "in" ? tr("Zoom avant") : tr("Zoom arrière")}
+                        </Button>
+                      ))}
+                    </div>
+                    <Range
+                      label={tr("Vitesse de l'effet de zoom")}
+                      value={hook.hookDuration}
+                      min={0.1}
+                      max={1}
+                      step={0.05}
+                      unit=" s"
+                      onChange={(v) => setHook({ hookDuration: v })}
+                    />
+                    <Range
+                      label={tr("Intensité du zoom")}
+                      value={hook.hookIntensity}
+                      min={5}
+                      max={60}
+                      step={1}
+                      unit="%"
+                      onChange={(v) => setHook({ hookIntensity: v })}
+                    />
+                    <EasingPicker
+                      label={tr("Fluidité (easing)")}
+                      value={hook.hookEasing}
+                      onChange={(v) => setHook({ hookEasing: v })}
+                      tr={tr}
+                    />
+                  </>
+                )}
+              </div>
+
+              <div className="space-y-7 border-t border-border pt-7">
+                <div className="flex items-center justify-between">
+                  <Label htmlFor="mixed-on">{tr("Effets mélangés")}</Label>
+                  <Switch
+                    id="mixed-on"
+                    checked={hook.mixedEnabled}
+                    onCheckedChange={(v) => setHook({ mixedEnabled: v })}
+                  />
+                </div>
+                <p className="-mt-4 text-xs text-muted-foreground">
+                  {tr("Le système alterne les effets cochés au fil des coupures.")}
+                </p>
+                {hook.mixedEnabled && (
+                  <>
+                    <div className="flex flex-wrap gap-2">
+                      {MIXED_EFFECTS.map((name) => (
+                        <Button
+                          key={name}
+                          size="sm"
+                          variant={hook.mixedEffects.includes(name) ? "default" : "secondary"}
+                          onClick={() => toggleMixedEffect(name)}
+                        >
+                          {tr(EFFECT_LABELS[name])}
+                        </Button>
+                      ))}
+                    </div>
+                    <Range
+                      label={tr("Fréquence — un effet toutes les X coupures")}
+                      value={hook.mixedEveryCuts}
+                      min={1}
+                      max={8}
+                      step={1}
+                      unit=""
+                      onChange={(v) => setHook({ mixedEveryCuts: Math.round(v) })}
+                    />
+                    <Range
+                      label={tr("Durée de l'effet")}
+                      value={hook.mixedDuration}
+                      min={0.2}
+                      max={2}
+                      step={0.05}
+                      unit=" s"
+                      onChange={(v) => setHook({ mixedDuration: v })}
+                    />
+                    <Range
+                      label={tr("Intensité des effets")}
+                      value={hook.mixedIntensity}
+                      min={5}
+                      max={60}
+                      step={1}
+                      unit="%"
+                      onChange={(v) => setHook({ mixedIntensity: v })}
+                    />
+                    <EasingPicker
+                      label={tr("Fluidité (easing)")}
+                      value={hook.mixedEasing}
+                      onChange={(v) => setHook({ mixedEasing: v })}
+                      tr={tr}
+                    />
+                  </>
+                )}
+              </div>
+            </section>
+          )}
+
+          {/* Étape 4 — Voix off */}
+
+          {step === 3 && (
             <section className="panel-glow space-y-6 p-6 sm:p-8">
               <div>
                 <h2 className="text-2xl font-semibold">{tr("Voix off / Audio")}</h2>
@@ -1368,7 +1574,7 @@ function Montage() {
           )}
 
           {/* Étape 4 — Musique de fond */}
-          {step === 3 && (
+          {step === 4 && (
             <section className="panel-glow space-y-6 p-6 sm:p-8">
               <div>
                 <h2 className="text-2xl font-semibold">{tr("Musique de fond")}</h2>
@@ -1460,7 +1666,7 @@ function Montage() {
           )}
 
           {/* Étape 5 — Prévisualisation */}
-          {step === 4 && (
+          {step === 5 && (
             <section className="panel-glow grid gap-8 p-6 sm:p-8 lg:grid-cols-[360px_minmax(0,1fr)]">
               <div>
                 <canvas

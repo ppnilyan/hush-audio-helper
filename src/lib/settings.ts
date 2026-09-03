@@ -1,4 +1,11 @@
-import { defaultEffects, type Effects } from "@/lib/montage";
+import {
+  MIXED_EFFECTS,
+  defaultEffects,
+  defaultHook,
+  type Effects,
+  type HookSettings,
+  type MixedEffectName,
+} from "@/lib/montage";
 import { DEFAULT_MUSIC_GAIN_DB } from "@/lib/music-store";
 
 /** Choix de musique de fond mémorisé sur le compte. */
@@ -9,6 +16,8 @@ export type MontageSettings = {
   /** Durée (s) de chacun des 3 premiers clips de l'intro. */
   intros: [number, number, number];
   fx: Effects;
+  /** Étape « Hook & Effets » : zoom dynamique et effets mélangés. */
+  hook: HookSettings;
   /** Volume de la musique de fond, en dB (0 = plein volume). */
   musicGainDb: number;
   /** Piste retenue par défaut (un fichier importé reste local à la session). */
@@ -18,6 +27,7 @@ export type MontageSettings = {
 export const defaultSettings: MontageSettings = {
   intros: [0.5, 0.5, 0.5],
   fx: defaultEffects,
+  hook: defaultHook,
   musicGainDb: DEFAULT_MUSIC_GAIN_DB,
   musicChoice: "none",
 };
@@ -46,7 +56,33 @@ export function normalizeSettings(raw: unknown): MontageSettings {
       blurBottom: num(fxSrc.blurBottom, defaultEffects.blurBottom),
       blurIntensity: num(fxSrc.blurIntensity, defaultEffects.blurIntensity),
     },
+    hook: normalizeHook(src.hook),
     musicGainDb: Math.min(0, Math.max(-40, num(src.musicGainDb, DEFAULT_MUSIC_GAIN_DB))),
     musicChoice: src.musicChoice === "builtin" ? "builtin" : "none",
+  };
+}
+
+const bool = (v: unknown, fallback: boolean) => (typeof v === "boolean" ? v : fallback);
+const clamp = (v: number, lo: number, hi: number) => Math.min(hi, Math.max(lo, v));
+
+function normalizeHook(raw: unknown): HookSettings {
+  const h = (raw ?? {}) as Partial<HookSettings>;
+  const effects = Array.isArray(h.mixedEffects)
+    ? (h.mixedEffects.filter((e) => MIXED_EFFECTS.includes(e as MixedEffectName)) as MixedEffectName[])
+    : defaultHook.mixedEffects;
+  const easing = (v: unknown, fb: HookSettings["hookEasing"]) =>
+    v === "linear" || v === "easeOut" || v === "easeInOut" || v === "punchy" ? v : fb;
+  return {
+    hookEnabled: bool(h.hookEnabled, defaultHook.hookEnabled),
+    hookIntensity: clamp(num(h.hookIntensity, defaultHook.hookIntensity), 5, 60),
+    hookDirection: h.hookDirection === "out" ? "out" : "in",
+    hookDuration: clamp(num(h.hookDuration, defaultHook.hookDuration), 0.1, 1),
+    hookEasing: easing(h.hookEasing, defaultHook.hookEasing),
+    mixedEnabled: bool(h.mixedEnabled, defaultHook.mixedEnabled),
+    mixedEffects: effects.length ? effects : defaultHook.mixedEffects,
+    mixedEveryCuts: clamp(Math.round(num(h.mixedEveryCuts, defaultHook.mixedEveryCuts)), 1, 8),
+    mixedDuration: clamp(num(h.mixedDuration, defaultHook.mixedDuration), 0.2, 2),
+    mixedIntensity: clamp(num(h.mixedIntensity, defaultHook.mixedIntensity), 5, 60),
+    mixedEasing: easing(h.mixedEasing, defaultHook.mixedEasing),
   };
 }
