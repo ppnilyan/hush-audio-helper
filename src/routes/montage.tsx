@@ -1382,7 +1382,7 @@ function Montage() {
                     onCheckedChange={(v) => setHook({ hookEnabled: v })}
                   />
                 </div>
-                {hook.hookEnabled && (
+                {advanced && hook.hookEnabled && (
                   <>
                     <div className="flex flex-wrap gap-2">
                       {(["in", "out"] as const).map((d) => (
