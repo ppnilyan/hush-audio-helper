@@ -644,8 +644,9 @@ function Montage() {
   );
 
   /**
-   * Démarre la musique de fond en même temps que la voix off et garantit
-   * qu'elle s'arrête à la fin de la voix — et au plus tard après 2 minutes.
+   * Démarre la musique de fond en même temps que la voix off. Le fondu de sortie
+   * est programmé pour se terminer pile à la fin de la voix (2 min maximum), donc
+   * la musique ne prolonge jamais la vidéo.
    */
   const startMusic = (
     el: HTMLAudioElement | null,
@@ -657,18 +658,15 @@ function Montage() {
     setGain(peak);
     el.currentTime = 0;
     void el.play().catch(() => {});
-    const hardStop = window.setTimeout(
-      () => stop(),
-      Math.max(0, MUSIC_MAX_SECONDS - MUSIC_FADE_SECONDS) * 1000,
-    );
+
     let stopped = false;
+    let fade = 0;
     const stop = () => {
       if (stopped) return;
       stopped = true;
-      window.clearTimeout(hardStop);
-      // Fondu de sortie court : pas de coupure sèche à la fin de la vidéo.
+      window.clearTimeout(scheduled);
       const start = now();
-      const fade = window.setInterval(() => {
+      fade = window.setInterval(() => {
         const k = Math.max(0, 1 - (now() - start) / MUSIC_FADE_SECONDS);
         setGain(peak * k);
         if (k <= 0) {
@@ -677,8 +675,28 @@ function Montage() {
         }
       }, 40);
     };
-    return stop;
+
+    // Fin prévue : la voix off, plafonnée à 2 minutes.
+    const endsAt = Math.min(MUSIC_MAX_SECONDS, totalDuration || MUSIC_MAX_SECONDS);
+    const scheduled = window.setTimeout(
+      stop,
+      Math.max(0, endsAt - MUSIC_FADE_SECONDS) * 1000,
+    );
+
+    return () => {
+      window.clearTimeout(scheduled);
+      if (!stopped) {
+        stopped = true;
+        setGain(0);
+        el.pause();
+      } else {
+        window.clearInterval(fade);
+        setGain(0);
+        el.pause();
+      }
+    };
   };
+
 
   const preview = async () => {
     if (playing) {
