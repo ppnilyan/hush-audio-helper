@@ -154,6 +154,11 @@ function Montage() {
   const [range, setRange] = useState<[number, number]>([0.1, 0.5]);
   const audioFileRef = useRef<HTMLInputElement>(null);
 
+  // Étape 4 — musique de fond
+  const [music, setMusicState] = useState<MusicTrack | null>(getMusic());
+  const musicFileRef = useRef<HTMLInputElement>(null);
+  const musicRef = useRef<HTMLAudioElement>(null);
+
   const fx = settings.fx;
   const intros = settings.intros;
   const setFx = useCallback(
