@@ -1693,21 +1693,38 @@ function Montage() {
                   </p>
                 </button>
 
-                <button
-                  onClick={() => musicFileRef.current?.click()}
-                  className={`rounded-2xl border p-5 text-left transition ${
-                    music && !music.builtin
-                      ? "border-primary bg-primary/10"
-                      : "border-border bg-secondary/40 hover:bg-secondary/60"
-                  }`}
-                >
-                  <p className="font-semibold">{tr("Importer ma musique")}</p>
-                  <p className="mt-1 text-sm text-muted-foreground">
-                    {music && !music.builtin
-                      ? music.name
-                      : tr("Choisir un fichier audio depuis mon ordinateur (MP3, WAV…).")}
-                  </p>
-                </button>
+                {billing.can.importMusic ? (
+                  <button
+                    onClick={() => musicFileRef.current?.click()}
+                    className={`rounded-2xl border p-5 text-left transition ${
+                      music && !music.builtin
+                        ? "border-primary bg-primary/10"
+                        : "border-border bg-secondary/40 hover:bg-secondary/60"
+                    }`}
+                  >
+                    <p className="font-semibold">{tr("Importer ma musique")}</p>
+                    <p className="mt-1 text-sm text-muted-foreground">
+                      {music && !music.builtin
+                        ? music.name
+                        : tr("Choisir un fichier audio depuis mon ordinateur (MP3, WAV…).")}
+                    </p>
+                  </button>
+                ) : (
+                  <Link
+                    to="/pricing"
+                    className="rounded-2xl border border-border bg-secondary/20 p-5 text-left opacity-70 transition hover:opacity-100"
+                  >
+                    <p className="flex items-center gap-2 font-semibold">
+                      {tr("Importer ma musique")}
+                      <span className="flex items-center gap-1 rounded-full bg-primary/15 px-2 py-0.5 text-[10px] font-semibold uppercase text-primary">
+                        <Lock className="size-3" /> Pro
+                      </span>
+                    </p>
+                    <p className="mt-1 text-sm text-muted-foreground">
+                      {tr("Disponible avec les formules Pro et Elite.")}
+                    </p>
+                  </Link>
+                )}
               </div>
 
               <input
