@@ -190,8 +190,10 @@ function Montage() {
   }, [fx]);
   useEffect(() => {
     const unsub = subscribeVoiceover(setVoice);
+    const unsubMusic = subscribeMusic(setMusicState);
     return () => {
       unsub();
+      unsubMusic();
     };
   }, []);
 
