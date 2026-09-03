@@ -72,17 +72,17 @@ export const Route = createFileRoute("/montage")({
   }),
   head: () => ({
     meta: [
-      { title: "Montage 9:16 — clips TikTok + voix off" },
+      { title: "Montage 9:16 — clips TikTok, voix off et musique" },
       {
         name: "description",
         content:
-          "Parcours guidé : ajoutez vos clips, réglez durées et effets, importez la voix off, prévisualisez puis générez un montage vertical.",
+          "Parcours guidé : ajoutez vos clips, réglez durées et effets, importez la voix off, ajoutez une musique de fond, prévisualisez puis générez un montage vertical.",
       },
-      { property: "og:title", content: "Montage 9:16 — clips TikTok + voix off" },
+      { property: "og:title", content: "Montage 9:16 — clips TikTok, voix off et musique" },
       {
         property: "og:description",
         content:
-          "Clips → durées et effets → voix off → prévisualisation → génération, étape par étape.",
+          "Clips → durées et effets → voix off → musique de fond → prévisualisation → génération, étape par étape.",
       },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary_large_image" },
