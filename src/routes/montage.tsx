@@ -895,13 +895,13 @@ function Montage() {
                     </span>
                   </div>
                   <div className="flex items-center gap-4 text-sm">
-                    <a
-                      href={h.url}
-                      download={`montage-${h.id}.${h.ext}`}
+                    <button
+                      onClick={() => void downloadMontage(h)}
                       className="text-primary underline"
                     >
                       {tr("Télécharger le")} {h.ext.toUpperCase()}
-                    </a>
+                    </button>
+
                     <button
                       onClick={() => {
                         if (h.storagePath) {
