@@ -45,6 +45,16 @@ import {
   subscribeVoiceover,
   type Voiceover,
 } from "@/lib/voiceover-store";
+import {
+  BUILTIN_MUSIC,
+  MUSIC_FADE_SECONDS,
+  MUSIC_MAX_SECONDS,
+  dbToGain,
+  getMusic,
+  setMusic,
+  subscribeMusic,
+  type MusicTrack,
+} from "@/lib/music-store";
 
 type UIEntry = {
   id: string;
@@ -62,17 +72,17 @@ export const Route = createFileRoute("/montage")({
   }),
   head: () => ({
     meta: [
-      { title: "Montage 9:16 — clips TikTok + voix off" },
+      { title: "Montage 9:16 — clips TikTok, voix off et musique" },
       {
         name: "description",
         content:
-          "Parcours guidé : ajoutez vos clips, réglez durées et effets, importez la voix off, prévisualisez puis générez un montage vertical.",
+          "Parcours guidé : ajoutez vos clips, réglez durées et effets, importez la voix off, ajoutez une musique de fond, prévisualisez puis générez un montage vertical.",
       },
-      { property: "og:title", content: "Montage 9:16 — clips TikTok + voix off" },
+      { property: "og:title", content: "Montage 9:16 — clips TikTok, voix off et musique" },
       {
         property: "og:description",
         content:
-          "Clips → durées et effets → voix off → prévisualisation → génération, étape par étape.",
+          "Clips → durées et effets → voix off → musique de fond → prévisualisation → génération, étape par étape.",
       },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary_large_image" },
@@ -84,7 +94,13 @@ export const Route = createFileRoute("/montage")({
 const W = 540;
 const H = 960;
 
-const STEPS = ["Clips", "Durées & effets", "Voix off", "Prévisualisation"] as const;
+const STEPS = [
+  "Clips",
+  "Durées & effets",
+  "Voix off",
+  "Musique de fond",
+  "Prévisualisation",
+] as const;
 
 type LinkRow = {
   id: string;
@@ -138,6 +154,11 @@ function Montage() {
   const [range, setRange] = useState<[number, number]>([0.1, 0.5]);
   const audioFileRef = useRef<HTMLInputElement>(null);
 
+  // Étape 4 — musique de fond
+  const [music, setMusicState] = useState<MusicTrack | null>(getMusic());
+  const musicFileRef = useRef<HTMLInputElement>(null);
+  const musicRef = useRef<HTMLAudioElement>(null);
+
   const fx = settings.fx;
   const intros = settings.intros;
   const setFx = useCallback(
@@ -151,6 +172,21 @@ function Montage() {
       return { ...s, intros };
     });
   }, []);
+
+  const musicGainDb = settings.musicGainDb;
+  const setMusicGainDb = useCallback(
+    (db: number) => setSettings((s) => ({ ...s, musicGainDb: db })),
+    [],
+  );
+  /** Sélection de la musique : piste incluse, fichier importé ou aucune. */
+  const chooseMusic = useCallback((track: MusicTrack | null) => {
+    setMusic(track);
+    setSettings((s) => ({
+      ...s,
+      musicChoice: track?.builtin ? "builtin" : "none",
+    }));
+  }, []);
+
 
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const videosRef = useRef<Map<string, HTMLVideoElement>>(new Map());
@@ -169,8 +205,10 @@ function Montage() {
   }, [fx]);
   useEffect(() => {
     const unsub = subscribeVoiceover(setVoice);
+    const unsubMusic = subscribeMusic(setMusicState);
     return () => {
       unsub();
+      unsubMusic();
     };
   }, []);
 
@@ -205,6 +243,13 @@ function Montage() {
     }, 700);
     return () => clearTimeout(t);
   }, [userId, settingsReady, settings]);
+
+  // Le choix « piste incluse » enregistré sur le compte est réappliqué.
+  useEffect(() => {
+    if (!settingsReady) return;
+    if (settings.musicChoice === "builtin" && !getMusic()) setMusic(BUILTIN_MUSIC);
+  }, [settingsReady, settings.musicChoice]);
+
 
   const refreshHistory = useCallback(async () => {
     if (userId) {
@@ -598,24 +643,89 @@ function Montage() {
     [orderedClips, getVideo, timeline, totalDuration],
   );
 
+  /**
+   * Démarre la musique de fond en même temps que la voix off. Le fondu de sortie
+   * est programmé pour se terminer pile à la fin de la voix (2 min maximum), donc
+   * la musique ne prolonge jamais la vidéo.
+   */
+  const startMusic = (
+    el: HTMLAudioElement | null,
+    setGain: (v: number) => void,
+    now: () => number,
+  ) => {
+    if (!el || !music) return () => {};
+    const peak = dbToGain(musicGainDb);
+    setGain(peak);
+    el.currentTime = 0;
+    void el.play().catch(() => {});
+
+    let stopped = false;
+    let fade = 0;
+    const stop = () => {
+      if (stopped) return;
+      stopped = true;
+      window.clearTimeout(scheduled);
+      const start = now();
+      fade = window.setInterval(() => {
+        const k = Math.max(0, 1 - (now() - start) / MUSIC_FADE_SECONDS);
+        setGain(peak * k);
+        if (k <= 0) {
+          window.clearInterval(fade);
+          el.pause();
+        }
+      }, 40);
+    };
+
+    // Fin prévue : la voix off, plafonnée à 2 minutes.
+    const endsAt = Math.min(MUSIC_MAX_SECONDS, totalDuration || MUSIC_MAX_SECONDS);
+    const scheduled = window.setTimeout(
+      stop,
+      Math.max(0, endsAt - MUSIC_FADE_SECONDS) * 1000,
+    );
+
+    return () => {
+      window.clearTimeout(scheduled);
+      if (!stopped) {
+        stopped = true;
+        setGain(0);
+        el.pause();
+      } else {
+        window.clearInterval(fade);
+        setGain(0);
+        el.pause();
+      }
+    };
+  };
+
+
   const preview = async () => {
     if (playing) {
       abortRef.current = true;
       setPlaying(false);
       audioRef.current?.pause();
+      musicRef.current?.pause();
       return;
     }
     setPlaying(true);
+    let stopMusic = () => {};
     await runTimeline(
       () => {
         setPlaying(false);
         audioRef.current?.pause();
+        stopMusic();
       },
       async () => {
         if (audioRef.current) {
           audioRef.current.currentTime = 0;
           await audioRef.current.play();
         }
+        stopMusic = startMusic(
+          musicRef.current,
+          (v) => {
+            if (musicRef.current) musicRef.current.volume = Math.min(1, Math.max(0, v));
+          },
+          () => performance.now() / 1000,
+        );
       },
       audioRef.current,
     );
@@ -634,6 +744,20 @@ function Montage() {
       const src = actx.createMediaElementSource(audio);
       const dest = actx.createMediaStreamDestination();
       src.connect(dest);
+
+      // Musique de fond mixée sous la voix via un GainNode (dB → gain linéaire).
+      let musicEl: HTMLAudioElement | null = null;
+      let musicGain: GainNode | null = null;
+      if (music) {
+        musicEl = new Audio(music.url);
+        musicEl.crossOrigin = "anonymous";
+        musicEl.loop = false;
+        musicGain = actx.createGain();
+        musicGain.gain.value = dbToGain(musicGainDb);
+        actx.createMediaElementSource(musicEl).connect(musicGain);
+        musicGain.connect(dest);
+      }
+
       dest.stream.getAudioTracks().forEach((t) => stream.addTrack(t));
 
       const { mime, ext } = pickRecordingType();
@@ -645,18 +769,29 @@ function Montage() {
       });
 
       rec.start(200);
+      let stopMusic = () => {};
       await runTimeline(
         undefined,
         async () => {
           audio.currentTime = 0;
           await audio.play();
+          stopMusic = startMusic(
+            musicEl,
+            (v) => {
+              if (musicGain) musicGain.gain.value = v;
+            },
+            () => actx.currentTime,
+          );
         },
         audio,
       );
       audio.pause();
+      // La musique est déjà en fin de fondu : elle se coupe avec la voix.
+      stopMusic();
       // Cut the recording on the exact frame the voice ends.
       rec.stop();
       await actx.close();
+
 
       const blob = await done;
       const now = Date.now();
@@ -690,6 +825,7 @@ function Montage() {
   };
 
   const busy = loading || rendering;
+  // L'étape musique est facultative ; les clips et la voix off restent requis.
   const canNext =
     step === 0 ? clips.length > 0 : step === 2 ? !!voice && !measuring : step < STEPS.length - 1;
 
@@ -1204,8 +1340,100 @@ function Montage() {
             </section>
           )}
 
-          {/* Étape 4 — Prévisualisation */}
+          {/* Étape 4 — Musique de fond */}
           {step === 3 && (
+            <section className="panel-glow space-y-6 p-6 sm:p-8">
+              <div>
+                <h2 className="text-2xl font-semibold">{tr("Musique de fond")}</h2>
+                <p className="mt-2 text-sm text-muted-foreground">
+                  {tr(
+                    "Facultatif. La musique démarre avec la voix off et se coupe toujours à sa fin (2 minutes maximum).",
+                  )}
+                </p>
+              </div>
+
+              <div className="grid gap-4 sm:grid-cols-3">
+                <button
+                  onClick={() => chooseMusic(null)}
+                  className={`rounded-2xl border p-5 text-left transition ${
+                    !music
+                      ? "border-primary bg-primary/10"
+                      : "border-border bg-secondary/40 hover:bg-secondary/60"
+                  }`}
+                >
+                  <p className="font-semibold">{tr("Aucune musique")}</p>
+                  <p className="mt-1 text-sm text-muted-foreground">
+                    {tr("Seule la voix off est présente dans la vidéo.")}
+                  </p>
+                </button>
+
+                <button
+                  onClick={() => chooseMusic(BUILTIN_MUSIC)}
+                  className={`rounded-2xl border p-5 text-left transition ${
+                    music?.builtin
+                      ? "border-primary bg-primary/10"
+                      : "border-border bg-secondary/40 hover:bg-secondary/60"
+                  }`}
+                >
+                  <p className="font-semibold">{BUILTIN_MUSIC.name}</p>
+                  <p className="mt-1 text-sm text-muted-foreground">
+                    {tr("Piste incluse, ambiance mystérieuse · 2 min maximum")}
+                  </p>
+                </button>
+
+                <button
+                  onClick={() => musicFileRef.current?.click()}
+                  className={`rounded-2xl border p-5 text-left transition ${
+                    music && !music.builtin
+                      ? "border-primary bg-primary/10"
+                      : "border-border bg-secondary/40 hover:bg-secondary/60"
+                  }`}
+                >
+                  <p className="font-semibold">{tr("Importer ma musique")}</p>
+                  <p className="mt-1 text-sm text-muted-foreground">
+                    {music && !music.builtin
+                      ? music.name
+                      : tr("Choisir un fichier audio depuis mon ordinateur (MP3, WAV…).")}
+                  </p>
+                </button>
+              </div>
+
+              <input
+                ref={musicFileRef}
+                type="file"
+                accept="audio/*"
+                className="hidden"
+                onChange={(e) => {
+                  const f = e.target.files?.[0];
+                  if (f) {
+                    chooseMusic({ url: URL.createObjectURL(f), name: f.name, builtin: false });
+                  }
+                  e.target.value = "";
+                }}
+              />
+
+              {music && (
+                <div className="space-y-5 rounded-2xl bg-secondary/40 p-5">
+                  <Range
+                    label={tr("Volume de la musique")}
+                    value={musicGainDb}
+                    min={-40}
+                    max={0}
+                    step={1}
+                    unit=" dB"
+                    onChange={setMusicGainDb}
+                  />
+                  <p className="text-xs text-muted-foreground">
+                    {tr("Réglage d'origine : −30 dB, très en retrait derrière la voix.")}
+                  </p>
+                  <audio controls src={music.url} className="w-full" />
+                </div>
+              )}
+            </section>
+          )}
+
+          {/* Étape 5 — Prévisualisation */}
+          {step === 4 && (
             <section className="panel-glow grid gap-8 p-6 sm:p-8 lg:grid-cols-[360px_minmax(0,1fr)]">
               <div>
                 <canvas
@@ -1221,6 +1449,9 @@ function Montage() {
                   />
                 </div>
                 {voice && <audio ref={audioRef} src={voice.url} className="hidden" />}
+                {music && (
+                  <audio ref={musicRef} src={music.url} crossOrigin="anonymous" className="hidden" />
+                )}
               </div>
 
               <div className="space-y-4">
@@ -1235,6 +1466,12 @@ function Montage() {
                       {voice
                         ? `${voice.name} · ${measuring ? tr("mesure…") : formatTime(totalDuration)}`
                         : tr("aucune")}
+                    </strong>
+                  </p>
+                  <p>
+                    {tr("Musique de fond")}&nbsp;:{" "}
+                    <strong className="text-foreground">
+                      {music ? `${music.name} · ${musicGainDb} dB` : tr("aucune")}
                     </strong>
                   </p>
                   <p>
