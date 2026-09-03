@@ -1528,7 +1528,7 @@ function Montage() {
                 ))}
               </div>
 
-              {trimBlanks && (
+              {advanced && trimBlanks && (
                 <div className="space-y-7 rounded-2xl bg-secondary/40 p-5">
                   <div>
                     <div className="flex items-center justify-between">
