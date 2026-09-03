@@ -51,6 +51,10 @@ import {
   useAdvanced,
 } from "@/lib/advanced-mode";
 import { useLocale, useTr } from "@/lib/prefs";
+import { CREDITS_PER_VIDEO, useBilling, useInvalidateBilling } from "@/lib/billing";
+import { consumeCredits, refundCredits } from "@/lib/billing.functions";
+import { useServerFn } from "@tanstack/react-start";
+import { Lock } from "lucide-react";
 
 import { supabase } from "@/integrations/supabase/client";
 import {
