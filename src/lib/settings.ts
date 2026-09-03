@@ -1,15 +1,25 @@
 import { defaultEffects, type Effects } from "@/lib/montage";
+import { DEFAULT_MUSIC_GAIN_DB } from "@/lib/music-store";
+
+/** Choix de musique de fond mémorisé sur le compte. */
+export type MusicChoice = "none" | "builtin";
 
 /** Tous les réglages du montage, sauvegardés sur le compte. */
 export type MontageSettings = {
   /** Durée (s) de chacun des 3 premiers clips de l'intro. */
   intros: [number, number, number];
   fx: Effects;
+  /** Volume de la musique de fond, en dB (0 = plein volume). */
+  musicGainDb: number;
+  /** Piste retenue par défaut (un fichier importé reste local à la session). */
+  musicChoice: MusicChoice;
 };
 
 export const defaultSettings: MontageSettings = {
   intros: [0.5, 0.5, 0.5],
   fx: defaultEffects,
+  musicGainDb: DEFAULT_MUSIC_GAIN_DB,
+  musicChoice: "none",
 };
 
 const num = (v: unknown, fallback: number) =>
@@ -36,5 +46,7 @@ export function normalizeSettings(raw: unknown): MontageSettings {
       blurBottom: num(fxSrc.blurBottom, defaultEffects.blurBottom),
       blurIntensity: num(fxSrc.blurIntensity, defaultEffects.blurIntensity),
     },
+    musicGainDb: Math.min(0, Math.max(-40, num(src.musicGainDb, DEFAULT_MUSIC_GAIN_DB))),
+    musicChoice: src.musicChoice === "builtin" ? "builtin" : "none",
   };
 }
