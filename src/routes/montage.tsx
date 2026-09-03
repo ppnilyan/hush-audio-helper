@@ -1269,7 +1269,136 @@ function Montage() {
             </section>
           )}
 
-          {/* Étape 3 — Voix off */}
+          {/* Étape 3 — Hook & Effets */}
+          {step === 2 && (
+            <section className="panel-glow space-y-8 p-6 sm:p-8">
+              <div>
+                <h2 className="text-2xl font-semibold">{tr("Hook & Effets")}</h2>
+                <p className="mt-2 text-sm text-muted-foreground">
+                  {tr(
+                    "Zoom dynamique au moment des coupures, appliqué pendant le rendu vidéo : ce que vous voyez ici se retrouve dans le MP4.",
+                  )}
+                </p>
+              </div>
+
+              <div className="space-y-7">
+                <div className="flex items-center justify-between">
+                  <Label htmlFor="hook-on">{tr("Zoom dynamique en intro (hook)")}</Label>
+                  <Switch
+                    id="hook-on"
+                    checked={hook.hookEnabled}
+                    onCheckedChange={(v) => setHook({ hookEnabled: v })}
+                  />
+                </div>
+                {hook.hookEnabled && (
+                  <>
+                    <div className="flex flex-wrap gap-2">
+                      {(["in", "out"] as const).map((d) => (
+                        <Button
+                          key={d}
+                          size="sm"
+                          variant={hook.hookDirection === d ? "default" : "secondary"}
+                          onClick={() => setHook({ hookDirection: d })}
+                        >
+                          {d === "in" ? tr("Zoom avant") : tr("Zoom arrière")}
+                        </Button>
+                      ))}
+                    </div>
+                    <Range
+                      label={tr("Vitesse de l'effet de zoom")}
+                      value={hook.hookDuration}
+                      min={0.1}
+                      max={1}
+                      step={0.05}
+                      unit=" s"
+                      onChange={(v) => setHook({ hookDuration: v })}
+                    />
+                    <Range
+                      label={tr("Intensité du zoom")}
+                      value={hook.hookIntensity}
+                      min={5}
+                      max={60}
+                      step={1}
+                      unit="%"
+                      onChange={(v) => setHook({ hookIntensity: v })}
+                    />
+                    <EasingPicker
+                      label={tr("Fluidité (easing)")}
+                      value={hook.hookEasing}
+                      onChange={(v) => setHook({ hookEasing: v })}
+                      tr={tr}
+                    />
+                  </>
+                )}
+              </div>
+
+              <div className="space-y-7 border-t border-border pt-7">
+                <div className="flex items-center justify-between">
+                  <Label htmlFor="mixed-on">{tr("Effets mélangés")}</Label>
+                  <Switch
+                    id="mixed-on"
+                    checked={hook.mixedEnabled}
+                    onCheckedChange={(v) => setHook({ mixedEnabled: v })}
+                  />
+                </div>
+                <p className="-mt-4 text-xs text-muted-foreground">
+                  {tr("Le système alterne les effets cochés au fil des coupures.")}
+                </p>
+                {hook.mixedEnabled && (
+                  <>
+                    <div className="flex flex-wrap gap-2">
+                      {MIXED_EFFECTS.map((name) => (
+                        <Button
+                          key={name}
+                          size="sm"
+                          variant={hook.mixedEffects.includes(name) ? "default" : "secondary"}
+                          onClick={() => toggleMixedEffect(name)}
+                        >
+                          {tr(EFFECT_LABELS[name])}
+                        </Button>
+                      ))}
+                    </div>
+                    <Range
+                      label={tr("Fréquence — un effet toutes les X coupures")}
+                      value={hook.mixedEveryCuts}
+                      min={1}
+                      max={8}
+                      step={1}
+                      unit=""
+                      onChange={(v) => setHook({ mixedEveryCuts: Math.round(v) })}
+                    />
+                    <Range
+                      label={tr("Durée de l'effet")}
+                      value={hook.mixedDuration}
+                      min={0.2}
+                      max={2}
+                      step={0.05}
+                      unit=" s"
+                      onChange={(v) => setHook({ mixedDuration: v })}
+                    />
+                    <Range
+                      label={tr("Intensité des effets")}
+                      value={hook.mixedIntensity}
+                      min={5}
+                      max={60}
+                      step={1}
+                      unit="%"
+                      onChange={(v) => setHook({ mixedIntensity: v })}
+                    />
+                    <EasingPicker
+                      label={tr("Fluidité (easing)")}
+                      value={hook.mixedEasing}
+                      onChange={(v) => setHook({ mixedEasing: v })}
+                      tr={tr}
+                    />
+                  </>
+                )}
+              </div>
+            </section>
+          )}
+
+          {/* Étape 4 — Voix off */}
+
           {step === 3 && (
             <section className="panel-glow space-y-6 p-6 sm:p-8">
               <div>
