@@ -244,6 +244,13 @@ function Montage() {
     return () => clearTimeout(t);
   }, [userId, settingsReady, settings]);
 
+  // Le choix « piste incluse » enregistré sur le compte est réappliqué.
+  useEffect(() => {
+    if (!settingsReady) return;
+    if (settings.musicChoice === "builtin" && !getMusic()) setMusic(BUILTIN_MUSIC);
+  }, [settingsReady, settings.musicChoice]);
+
+
   const refreshHistory = useCallback(async () => {
     if (userId) {
       const items = await listCloudMontages(userId).catch(() => []);
