@@ -1382,7 +1382,7 @@ function Montage() {
                     onCheckedChange={(v) => setHook({ hookEnabled: v })}
                   />
                 </div>
-                {hook.hookEnabled && (
+                {advanced && hook.hookEnabled && (
                   <>
                     <div className="flex flex-wrap gap-2">
                       {(["in", "out"] as const).map((d) => (
@@ -1436,7 +1436,7 @@ function Montage() {
                 <p className="-mt-4 text-xs text-muted-foreground">
                   {tr("Le système alterne les effets cochés au fil des coupures.")}
                 </p>
-                {hook.mixedEnabled && (
+                {advanced && hook.mixedEnabled && (
                   <>
                     <div className="flex flex-wrap gap-2">
                       {MIXED_EFFECTS.map((name) => (
@@ -1528,7 +1528,7 @@ function Montage() {
                 ))}
               </div>
 
-              {trimBlanks && (
+              {advanced && trimBlanks && (
                 <div className="space-y-7 rounded-2xl bg-secondary/40 p-5">
                   <div>
                     <div className="flex items-center justify-between">
@@ -1693,18 +1693,22 @@ function Montage() {
 
               {music && (
                 <div className="space-y-5 rounded-2xl bg-secondary/40 p-5">
-                  <Range
-                    label={tr("Volume de la musique")}
-                    value={musicGainDb}
-                    min={-40}
-                    max={0}
-                    step={1}
-                    unit=" dB"
-                    onChange={setMusicGainDb}
-                  />
-                  <p className="text-xs text-muted-foreground">
-                    {tr("Réglage d'origine : −30 dB, très en retrait derrière la voix.")}
-                  </p>
+                  {advanced && (
+                    <>
+                      <Range
+                        label={tr("Volume de la musique")}
+                        value={musicGainDb}
+                        min={-40}
+                        max={0}
+                        step={1}
+                        unit=" dB"
+                        onChange={setMusicGainDb}
+                      />
+                      <p className="text-xs text-muted-foreground">
+                        {tr("Réglage d'origine : −30 dB, très en retrait derrière la voix.")}
+                      </p>
+                    </>
+                  )}
                   <audio controls src={music.url} className="w-full" />
                 </div>
               )}
@@ -1750,7 +1754,11 @@ function Montage() {
                   <p>
                     {tr("Musique de fond")}&nbsp;:{" "}
                     <strong className="text-foreground">
-                      {music ? `${music.name} · ${musicGainDb} dB` : tr("aucune")}
+                      {music
+                        ? advanced
+                          ? `${music.name} · ${musicGainDb} dB`
+                          : music.name
+                        : tr("aucune")}
                     </strong>
                   </p>
                   <p>

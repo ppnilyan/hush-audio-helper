@@ -3,6 +3,8 @@ import { Settings, User } from "lucide-react";
 import { useState } from "react";
 
 import { Button } from "@/components/ui/button";
+import { Label } from "@/components/ui/label";
+import { Switch } from "@/components/ui/switch";
 import {
   Dialog,
   DialogContent,
@@ -21,6 +23,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { supabase } from "@/integrations/supabase/client";
 import { useSession } from "@/lib/account";
+import { useAdvanced } from "@/lib/advanced-mode";
 import {
   THEMES,
   THEME_LABEL_KEYS,
@@ -32,6 +35,7 @@ import {
 export function HeaderActions() {
   const session = useSession();
   const { t, theme, setTheme, lang, setLang } = usePrefs();
+  const { advanced, setAdvanced } = useAdvanced();
   const [open, setOpen] = useState(false);
 
   return (
@@ -123,6 +127,20 @@ export function HeaderActions() {
                   </Button>
                 ))}
               </div>
+            </section>
+
+            <section className="flex items-center justify-between gap-4 rounded-xl border border-border p-3">
+              <div>
+                <Label htmlFor="advanced-mode" className="text-sm font-medium">
+                  {lang === "fr" ? "Options avancées" : "Advanced options"}
+                </Label>
+                <p className="mt-1 text-xs text-muted-foreground">
+                  {lang === "fr"
+                    ? "Affiche tous les réglages du montage (durées, effets, détection des blancs, volume)."
+                    : "Show every editing setting (durations, effects, silence detection, volume)."}
+                </p>
+              </div>
+              <Switch id="advanced-mode" checked={advanced} onCheckedChange={setAdvanced} />
             </section>
           </div>
         </DialogContent>
