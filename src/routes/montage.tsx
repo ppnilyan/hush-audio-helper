@@ -122,6 +122,52 @@ const newRow = (): LinkRow => ({
   status: "idle",
 });
 
+const EFFECT_LABELS: Record<MixedEffectName, string> = {
+  zoomIn: "Zoom avant",
+  zoomOut: "Zoom arrière",
+  punch: "Punch",
+  shake: "Secousse",
+  flash: "Flash",
+  tilt: "Inclinaison",
+};
+
+const EASINGS: { value: EasingName; label: string }[] = [
+  { value: "punchy", label: "Snap (nerveux)" },
+  { value: "easeOut", label: "Doux" },
+  { value: "easeInOut", label: "Progressif" },
+  { value: "linear", label: "Linéaire" },
+];
+
+function EasingPicker({
+  label,
+  value,
+  onChange,
+  tr,
+}: {
+  label: string;
+  value: EasingName;
+  onChange: (v: EasingName) => void;
+  tr: (s: string) => string;
+}) {
+  return (
+    <div className="space-y-3">
+      <Label>{label}</Label>
+      <div className="flex flex-wrap gap-2">
+        {EASINGS.map((e) => (
+          <Button
+            key={e.value}
+            size="sm"
+            variant={value === e.value ? "default" : "secondary"}
+            onClick={() => onChange(e.value)}
+          >
+            {tr(e.label)}
+          </Button>
+        ))}
+      </div>
+    </div>
+  );
+}
+
 function Montage() {
   const tr = useTr();
   const locale = useLocale();
