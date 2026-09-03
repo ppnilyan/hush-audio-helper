@@ -1754,7 +1754,11 @@ function Montage() {
                   <p>
                     {tr("Musique de fond")}&nbsp;:{" "}
                     <strong className="text-foreground">
-                      {music ? `${music.name} · ${musicGainDb} dB` : tr("aucune")}
+                      {music
+                        ? advanced
+                          ? `${music.name} · ${musicGainDb} dB`
+                          : music.name
+                        : tr("aucune")}
                     </strong>
                   </p>
                   <p>
