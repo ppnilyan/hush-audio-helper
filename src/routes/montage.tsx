@@ -1339,8 +1339,100 @@ function Montage() {
             </section>
           )}
 
-          {/* Étape 4 — Prévisualisation */}
+          {/* Étape 4 — Musique de fond */}
           {step === 3 && (
+            <section className="panel-glow space-y-6 p-6 sm:p-8">
+              <div>
+                <h2 className="text-2xl font-semibold">{tr("Musique de fond")}</h2>
+                <p className="mt-2 text-sm text-muted-foreground">
+                  {tr(
+                    "Facultatif. La musique démarre avec la voix off et se coupe toujours à sa fin (2 minutes maximum).",
+                  )}
+                </p>
+              </div>
+
+              <div className="grid gap-4 sm:grid-cols-3">
+                <button
+                  onClick={() => chooseMusic(null)}
+                  className={`rounded-2xl border p-5 text-left transition ${
+                    !music
+                      ? "border-primary bg-primary/10"
+                      : "border-border bg-secondary/40 hover:bg-secondary/60"
+                  }`}
+                >
+                  <p className="font-semibold">{tr("Aucune musique")}</p>
+                  <p className="mt-1 text-sm text-muted-foreground">
+                    {tr("Seule la voix off est présente dans la vidéo.")}
+                  </p>
+                </button>
+
+                <button
+                  onClick={() => chooseMusic(BUILTIN_MUSIC)}
+                  className={`rounded-2xl border p-5 text-left transition ${
+                    music?.builtin
+                      ? "border-primary bg-primary/10"
+                      : "border-border bg-secondary/40 hover:bg-secondary/60"
+                  }`}
+                >
+                  <p className="font-semibold">{BUILTIN_MUSIC.name}</p>
+                  <p className="mt-1 text-sm text-muted-foreground">
+                    {tr("Piste incluse, ambiance mystérieuse · 2 min maximum")}
+                  </p>
+                </button>
+
+                <button
+                  onClick={() => musicFileRef.current?.click()}
+                  className={`rounded-2xl border p-5 text-left transition ${
+                    music && !music.builtin
+                      ? "border-primary bg-primary/10"
+                      : "border-border bg-secondary/40 hover:bg-secondary/60"
+                  }`}
+                >
+                  <p className="font-semibold">{tr("Importer ma musique")}</p>
+                  <p className="mt-1 text-sm text-muted-foreground">
+                    {music && !music.builtin
+                      ? music.name
+                      : tr("Choisir un fichier audio depuis mon ordinateur (MP3, WAV…).")}
+                  </p>
+                </button>
+              </div>
+
+              <input
+                ref={musicFileRef}
+                type="file"
+                accept="audio/*"
+                className="hidden"
+                onChange={(e) => {
+                  const f = e.target.files?.[0];
+                  if (f) {
+                    chooseMusic({ url: URL.createObjectURL(f), name: f.name, builtin: false });
+                  }
+                  e.target.value = "";
+                }}
+              />
+
+              {music && (
+                <div className="space-y-5 rounded-2xl bg-secondary/40 p-5">
+                  <Range
+                    label={tr("Volume de la musique")}
+                    value={musicGainDb}
+                    min={-40}
+                    max={0}
+                    step={1}
+                    unit=" dB"
+                    onChange={setMusicGainDb}
+                  />
+                  <p className="text-xs text-muted-foreground">
+                    {tr("Réglage d'origine : −30 dB, très en retrait derrière la voix.")}
+                  </p>
+                  <audio controls src={music.url} className="w-full" />
+                </div>
+              )}
+            </section>
+          )}
+
+          {/* Étape 5 — Prévisualisation */}
+          {step === 4 && (
             <section className="panel-glow grid gap-8 p-6 sm:p-8 lg:grid-cols-[360px_minmax(0,1fr)]">
               <div>
                 <canvas
