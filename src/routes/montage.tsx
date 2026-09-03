@@ -9,11 +9,17 @@ import { resolveTikTok } from "@/lib/tiktok.functions";
 import {
   buildTimeline,
   drawFrame,
+  effectForSegment,
+  frameFxAt,
+  MIXED_EFFECTS,
   formatViews,
   isHd,
   orderByViews,
   type ClipInfo,
   type Effects,
+  type EasingName,
+  type HookSettings,
+  type MixedEffectName,
 } from "@/lib/montage";
 import { detectSilences, encodeWav, formatTime, trimToTarget } from "@/lib/audio-silence";
 import {
@@ -97,6 +103,7 @@ const H = 960;
 const STEPS = [
   "Clips",
   "Durées & effets",
+  "Hook & Effets",
   "Voix off",
   "Musique de fond",
   "Prévisualisation",
@@ -173,6 +180,22 @@ function Montage() {
     });
   }, []);
 
+  const hook = settings.hook;
+  const setHook = useCallback(
+    (patch: Partial<HookSettings>) =>
+      setSettings((s) => ({ ...s, hook: { ...s.hook, ...patch } })),
+    [],
+  );
+  const toggleMixedEffect = useCallback((name: MixedEffectName) => {
+    setSettings((s) => {
+      const on = s.hook.mixedEffects.includes(name);
+      const next = on
+        ? s.hook.mixedEffects.filter((e) => e !== name)
+        : [...s.hook.mixedEffects, name];
+      return { ...s, hook: { ...s.hook, mixedEffects: next.length ? next : s.hook.mixedEffects } };
+    });
+  }, []);
+
   const musicGainDb = settings.musicGainDb;
   const setMusicGainDb = useCallback(
     (db: number) => setSettings((s) => ({ ...s, musicGainDb: db })),
@@ -192,6 +215,7 @@ function Montage() {
   const videosRef = useRef<Map<string, HTMLVideoElement>>(new Map());
   const audioRef = useRef<HTMLAudioElement>(null);
   const fxRef = useRef(fx);
+  const hookRef = useRef(hook);
   const abortRef = useRef(false);
   const fileRef = useRef<HTMLInputElement>(null);
   const queueRef = useRef(false);
@@ -203,6 +227,9 @@ function Montage() {
   useEffect(() => {
     fxRef.current = fx;
   }, [fx]);
+  useEffect(() => {
+    hookRef.current = hook;
+  }, [hook]);
   useEffect(() => {
     const unsub = subscribeVoiceover(setVoice);
     const unsubMusic = subscribeMusic(setMusicState);
@@ -643,14 +670,18 @@ function Montage() {
         }
         // The decoded first frame is painted before playback begins: the cut
         // never keeps the outgoing clip's last frame on screen.
-        drawFrame(ctx, v, fxRef.current);
+        // Effet de coupure (hook ou effet mélangé) calculé pendant le rendu :
+        // il est donc présent aussi bien en prévisualisation que dans le MP4.
+        const effect = effectForSegment(i, hookRef.current);
+        drawFrame(ctx, v, fxRef.current, frameFxAt(effect, 0));
         await v.play().catch(() => {});
 
         await new Promise<void>((res) => {
           const started = performance.now();
           const tick = () => {
             if (abortRef.current || voiceOver()) return res();
-            drawFrame(ctx, v, fxRef.current);
+            const local = (performance.now() - started) / 1000;
+            drawFrame(ctx, v, fxRef.current, frameFxAt(effect, local));
             const t = (performance.now() - started) / 1000;
             setProgress(Math.min(1, (elapsed + t) / Math.max(0.1, totalDuration)));
             if (t >= seg.duration) return res();
@@ -854,7 +885,7 @@ function Montage() {
   const busy = loading || rendering;
   // L'étape musique est facultative ; les clips et la voix off restent requis.
   const canNext =
-    step === 0 ? clips.length > 0 : step === 2 ? !!voice && !measuring : step < STEPS.length - 1;
+    step === 0 ? clips.length > 0 : step === 3 ? !!voice && !measuring : step < STEPS.length - 1;
 
   return (
     <main className="mx-auto min-h-screen w-full max-w-6xl px-5 py-14">
@@ -1239,7 +1270,7 @@ function Montage() {
           )}
 
           {/* Étape 3 — Voix off */}
-          {step === 2 && (
+          {step === 3 && (
             <section className="panel-glow space-y-6 p-6 sm:p-8">
               <div>
                 <h2 className="text-2xl font-semibold">{tr("Voix off / Audio")}</h2>
@@ -1368,7 +1399,7 @@ function Montage() {
           )}
 
           {/* Étape 4 — Musique de fond */}
-          {step === 3 && (
+          {step === 4 && (
             <section className="panel-glow space-y-6 p-6 sm:p-8">
               <div>
                 <h2 className="text-2xl font-semibold">{tr("Musique de fond")}</h2>
@@ -1460,7 +1491,7 @@ function Montage() {
           )}
 
           {/* Étape 5 — Prévisualisation */}
-          {step === 4 && (
+          {step === 5 && (
             <section className="panel-glow grid gap-8 p-6 sm:p-8 lg:grid-cols-[360px_minmax(0,1fr)]">
               <div>
                 <canvas
