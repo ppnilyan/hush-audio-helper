@@ -1,5 +1,5 @@
-import { Link } from "@tanstack/react-router";
-import { Settings, User } from "lucide-react";
+import { Link, useNavigate } from "@tanstack/react-router";
+import { Coins, Lock, Settings, User } from "lucide-react";
 import { useState } from "react";
 
 import { Button } from "@/components/ui/button";
@@ -24,6 +24,7 @@ import {
 import { supabase } from "@/integrations/supabase/client";
 import { useSession } from "@/lib/account";
 import { useAdvanced } from "@/lib/advanced-mode";
+import { useBilling } from "@/lib/billing";
 import {
   THEMES,
   THEME_LABEL_KEYS,
@@ -36,10 +37,35 @@ export function HeaderActions() {
   const session = useSession();
   const { t, theme, setTheme, lang, setLang } = usePrefs();
   const { advanced, setAdvanced } = useAdvanced();
+  const billing = useBilling();
+  const navigate = useNavigate();
   const [open, setOpen] = useState(false);
+
+  const goPricing = () => {
+    setOpen(false);
+    void navigate({ to: "/pricing" });
+  };
+
+  const planName = billing.state?.plan?.name ?? null;
 
   return (
     <div className="ml-auto flex items-center gap-2">
+      {session && billing.state && (
+        <Link
+          to="/pricing"
+          className="flex items-center gap-1.5 rounded-full bg-secondary px-3 py-1.5 text-xs font-medium transition-colors hover:bg-accent"
+          title={lang === "fr" ? "Crédits disponibles" : "Available credits"}
+        >
+          <Coins className="size-3.5 text-primary" />
+          <span>{billing.totalCredits}</span>
+          {planName && (
+            <span className="rounded-full bg-primary/20 px-2 py-0.5 text-[10px] uppercase tracking-wide text-primary">
+              {planName}
+            </span>
+          )}
+        </Link>
+      )}
+
       <DropdownMenu>
         <DropdownMenuTrigger asChild>
           <Button variant="secondary" size="sm" className="rounded-full">
@@ -55,6 +81,13 @@ export function HeaderActions() {
                 <div className="truncate text-sm text-foreground">{session.user.email}</div>
               </DropdownMenuLabel>
               <DropdownMenuSeparator />
+              <DropdownMenuItem asChild>
+                <Link to="/account">{lang === "fr" ? "Mon abonnement" : "My subscription"}</Link>
+              </DropdownMenuItem>
+              <DropdownMenuItem asChild>
+                <Link to="/pricing">{lang === "fr" ? "Tarifs & crédits" : "Pricing & credits"}</Link>
+              </DropdownMenuItem>
+              <DropdownMenuSeparator />
               <DropdownMenuItem onSelect={() => void supabase.auth.signOut()}>
                 {t("signOut")}
               </DropdownMenuItem>
@@ -67,6 +100,9 @@ export function HeaderActions() {
               <DropdownMenuSeparator />
               <DropdownMenuItem asChild>
                 <Link to="/auth">{t("signIn")}</Link>
+              </DropdownMenuItem>
+              <DropdownMenuItem asChild>
+                <Link to="/pricing">{lang === "fr" ? "Tarifs & crédits" : "Pricing & credits"}</Link>
               </DropdownMenuItem>
             </>
           )}
@@ -90,25 +126,33 @@ export function HeaderActions() {
             <section className="space-y-3">
               <h3 className="text-sm font-medium">{t("appTheme")}</h3>
               <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
-                {THEMES.map((id) => (
-                  <button
-                    key={id}
-                    type="button"
-                    onClick={() => setTheme(id)}
-                    aria-pressed={theme === id}
-                    className={`flex items-center gap-3 rounded-xl border p-3 text-left text-sm transition-colors ${
-                      theme === id
-                        ? "border-primary bg-secondary text-foreground"
-                        : "border-border hover:bg-accent/10"
-                    }`}
-                  >
-                    <span
-                      className="size-8 shrink-0 rounded-full"
-                      style={{ backgroundImage: THEME_SWATCH[id] }}
-                    />
-                    <span>{t(THEME_LABEL_KEYS[id])}</span>
-                  </button>
-                ))}
+                {THEMES.map((id) => {
+                  const locked = id !== "aurora" && !billing.can.allThemes;
+                  return (
+                    <button
+                      key={id}
+                      type="button"
+                      onClick={() => (locked ? goPricing() : setTheme(id))}
+                      aria-pressed={theme === id}
+                      className={`flex items-center gap-3 rounded-xl border p-3 text-left text-sm transition-colors ${
+                        theme === id
+                          ? "border-primary bg-secondary text-foreground"
+                          : "border-border hover:bg-accent/10"
+                      } ${locked ? "opacity-60" : ""}`}
+                    >
+                      <span
+                        className="size-8 shrink-0 rounded-full"
+                        style={{ backgroundImage: THEME_SWATCH[id] }}
+                      />
+                      <span className="flex-1">{t(THEME_LABEL_KEYS[id])}</span>
+                      {locked && (
+                        <span className="flex items-center gap-1 rounded-full bg-primary/15 px-2 py-0.5 text-[10px] font-semibold uppercase text-primary">
+                          <Lock className="size-3" /> Pro
+                        </span>
+                      )}
+                    </button>
+                  );
+                })}
               </div>
             </section>
 
@@ -133,14 +177,29 @@ export function HeaderActions() {
               <div>
                 <Label htmlFor="advanced-mode" className="text-sm font-medium">
                   {lang === "fr" ? "Options avancées" : "Advanced options"}
+                  {!billing.can.advanced && (
+                    <span className="ml-2 inline-flex items-center gap-1 rounded-full bg-primary/15 px-2 py-0.5 text-[10px] font-semibold uppercase text-primary">
+                      <Lock className="size-3" /> Pro
+                    </span>
+                  )}
                 </Label>
                 <p className="mt-1 text-xs text-muted-foreground">
-                  {lang === "fr"
-                    ? "Affiche tous les réglages du montage (durées, effets, détection des blancs, volume)."
-                    : "Show every editing setting (durations, effects, silence detection, volume)."}
+                  {billing.can.advanced
+                    ? lang === "fr"
+                      ? "Affiche tous les réglages du montage (durées, effets, détection des blancs, volume)."
+                      : "Show every editing setting (durations, effects, silence detection, volume)."
+                    : lang === "fr"
+                      ? "Disponible avec les formules Pro et Elite."
+                      : "Available with the Pro and Elite plans."}
                 </p>
               </div>
-              <Switch id="advanced-mode" checked={advanced} onCheckedChange={setAdvanced} />
+              {billing.can.advanced ? (
+                <Switch id="advanced-mode" checked={advanced} onCheckedChange={setAdvanced} />
+              ) : (
+                <Button id="advanced-mode" size="sm" variant="secondary" onClick={goPricing}>
+                  {lang === "fr" ? "Débloquer" : "Unlock"}
+                </Button>
+              )}
             </section>
           </div>
         </DialogContent>
