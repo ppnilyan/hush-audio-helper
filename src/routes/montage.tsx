@@ -1468,6 +1468,12 @@ function Montage() {
                     </strong>
                   </p>
                   <p>
+                    {tr("Musique de fond")}&nbsp;:{" "}
+                    <strong className="text-foreground">
+                      {music ? `${music.name} · ${musicGainDb} dB` : tr("aucune")}
+                    </strong>
+                  </p>
+                  <p>
                     {tr("Montage final")}&nbsp;:{" "}
                     <strong className="text-foreground">
                       {timeline.length} {tr("séquences")} · {formatTime(timelineDuration)}
