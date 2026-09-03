@@ -968,7 +968,8 @@ function Montage() {
   const busy = loading || rendering;
   // L'étape musique est facultative ; les clips et la voix off restent requis.
   const canNext =
-    step === 0 ? clips.length > 0 : step === 3 ? !!voice && !measuring : step < STEPS.length - 1;
+    step === 0 ? clips.length > 0 : step === 3 ? !!voice && !measuring : !isLastStep;
+
 
   return (
     <main className="mx-auto min-h-screen w-full max-w-6xl px-5 py-14">
