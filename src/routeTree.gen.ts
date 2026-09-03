@@ -12,6 +12,7 @@ import { Route as rootRouteImport } from './routes/__root'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as AuthRouteImport } from './routes/auth'
 import { Route as MontageRouteImport } from './routes/montage'
+import { Route as PricingRouteImport } from './routes/pricing'
 import { Route as ApiPublicMediaProxyRouteImport } from './routes/api/public/media-proxy'
 
 const IndexRoute = IndexRouteImport.update({
@@ -29,6 +30,11 @@ const MontageRoute = MontageRouteImport.update({
   path: '/montage',
   getParentRoute: () => rootRouteImport,
 } as any)
+const PricingRoute = PricingRouteImport.update({
+  id: '/pricing',
+  path: '/pricing',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ApiPublicMediaProxyRoute = ApiPublicMediaProxyRouteImport.update({
   id: '/api/public/media-proxy',
   path: '/api/public/media-proxy',
@@ -39,12 +45,14 @@ export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/auth': typeof AuthRoute
   '/montage': typeof MontageRoute
+  '/pricing': typeof PricingRoute
   '/api/public/media-proxy': typeof ApiPublicMediaProxyRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/auth': typeof AuthRoute
   '/montage': typeof MontageRoute
+  '/pricing': typeof PricingRoute
   '/api/public/media-proxy': typeof ApiPublicMediaProxyRoute
 }
 export interface FileRoutesById {
@@ -52,20 +60,28 @@ export interface FileRoutesById {
   '/': typeof IndexRoute
   '/auth': typeof AuthRoute
   '/montage': typeof MontageRoute
+  '/pricing': typeof PricingRoute
   '/api/public/media-proxy': typeof ApiPublicMediaProxyRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/' | '/auth' | '/montage' | '/api/public/media-proxy'
+  fullPaths: '/' | '/auth' | '/montage' | '/pricing' | '/api/public/media-proxy'
   fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/auth' | '/montage' | '/api/public/media-proxy'
-  id: '__root__' | '/' | '/auth' | '/montage' | '/api/public/media-proxy'
+  to: '/' | '/auth' | '/montage' | '/pricing' | '/api/public/media-proxy'
+  id:
+    | '__root__'
+    | '/'
+    | '/auth'
+    | '/montage'
+    | '/pricing'
+    | '/api/public/media-proxy'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   AuthRoute: typeof AuthRoute
   MontageRoute: typeof MontageRoute
+  PricingRoute: typeof PricingRoute
   ApiPublicMediaProxyRoute: typeof ApiPublicMediaProxyRoute
 }
 
@@ -92,6 +108,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof MontageRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/pricing': {
+      id: '/pricing'
+      path: '/pricing'
+      fullPath: '/pricing'
+      preLoaderRoute: typeof PricingRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/public/media-proxy': {
       id: '/api/public/media-proxy'
       path: '/api/public/media-proxy'
@@ -106,6 +129,7 @@ const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   AuthRoute: AuthRoute,
   MontageRoute: MontageRoute,
+  PricingRoute: PricingRoute,
   ApiPublicMediaProxyRoute: ApiPublicMediaProxyRoute,
 }
 export const routeTree = rootRouteImport
