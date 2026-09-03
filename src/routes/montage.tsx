@@ -1821,15 +1821,30 @@ function Montage() {
                         ? tr("Arrêter")
                         : tr("Prévisualiser")}
                   </Button>
-                  <Button
-                    size="lg"
-                    onClick={() => void generate()}
-                    disabled={!voice || measuring || clips.length === 0 || busy || playing}
-                  >
-                    {rendering ? tr("Génération…") : tr("Générer la vidéo")}
-                  </Button>
+                  {noCredits ? (
+                    <Button size="lg" asChild>
+                      <Link to="/pricing">
+                        <Lock className="size-4" /> {tr("Plus de crédits — recharger")}
+                      </Link>
+                    </Button>
+                  ) : (
+                    <Button
+                      size="lg"
+                      onClick={() => void generate()}
+                      disabled={!voice || measuring || clips.length === 0 || busy || playing}
+                    >
+                      {rendering ? tr("Génération…") : tr("Générer la vidéo")}
+                    </Button>
+                  )}
                   <p className="text-xs text-muted-foreground">
                     {tr("La vidéo générée est ajoutée automatiquement à l'historique.")}
+                    {billing.signedIn && !billing.loading && (
+                      <>
+                        {" "}
+                        · {CREDITS_PER_VIDEO} {tr("crédits par vidéo")} ·{" "}
+                        {tr("solde")}&nbsp;: {billing.totalCredits}
+                      </>
+                    )}
                   </p>
                 </div>
               </div>
