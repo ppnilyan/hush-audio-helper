@@ -1067,27 +1067,28 @@ function Montage() {
         <div className="space-y-6">
           {/* Fil d'étapes */}
           <ol className="flex flex-wrap items-center gap-2 text-sm">
-            {STEPS.map((s, i) => (
-              <li key={s} className="flex items-center gap-2">
+            {visibleSteps.map((id, i) => (
+              <li key={id} className="flex items-center gap-2">
                 <button
-                  onClick={() => i <= step && setStep(i)}
+                  onClick={() => i <= stepPos && setStep(id)}
                   className={`flex items-center gap-2 rounded-full px-4 py-2 transition ${
-                    i === step
+                    id === step
                       ? "gradient-brand text-primary-foreground"
-                      : i < step
+                      : i < stepPos
                         ? "bg-secondary/60 text-foreground"
                         : "bg-secondary/30 text-muted-foreground"
                   }`}
                 >
                   <span className="font-mono text-xs">{i + 1}</span>
-                  {tr(s)}
+                  {tr(STEPS[id]!)}
                 </button>
-                {i < STEPS.length - 1 && (
+                {i < visibleSteps.length - 1 && (
                   <span className="text-muted-foreground/50">→</span>
                 )}
               </li>
             ))}
           </ol>
+
 
           {/* Étape 1 — Clips */}
           {step === 0 && (
