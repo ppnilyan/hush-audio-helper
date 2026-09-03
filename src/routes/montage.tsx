@@ -1793,17 +1793,22 @@ function Montage() {
           <div className="flex items-center justify-between gap-4">
             <Button
               variant="secondary"
-              onClick={() => setStep((s) => Math.max(0, s - 1))}
-              disabled={step === 0}
+              onClick={() => setStep(visibleSteps[Math.max(0, stepPos - 1)]!)}
+              disabled={stepPos === 0}
             >
               {tr("← Précédent")}
             </Button>
-            {step < STEPS.length - 1 && (
-              <Button size="lg" onClick={() => setStep((s) => s + 1)} disabled={!canNext}>
+            {!isLastStep && (
+              <Button
+                size="lg"
+                onClick={() => setStep(visibleSteps[stepPos + 1]!)}
+                disabled={!canNext}
+              >
                 {tr("Suivant →")}
               </Button>
             )}
           </div>
+
         </div>
       )}
     </main>
