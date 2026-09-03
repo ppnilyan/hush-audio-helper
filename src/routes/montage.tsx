@@ -643,24 +643,71 @@ function Montage() {
     [orderedClips, getVideo, timeline, totalDuration],
   );
 
+  /**
+   * Démarre la musique de fond en même temps que la voix off et garantit
+   * qu'elle s'arrête à la fin de la voix — et au plus tard après 2 minutes.
+   */
+  const startMusic = (
+    el: HTMLAudioElement | null,
+    setGain: (v: number) => void,
+    now: () => number,
+  ) => {
+    if (!el || !music) return () => {};
+    const peak = dbToGain(musicGainDb);
+    setGain(peak);
+    el.currentTime = 0;
+    void el.play().catch(() => {});
+    const hardStop = window.setTimeout(
+      () => stop(),
+      Math.max(0, MUSIC_MAX_SECONDS - MUSIC_FADE_SECONDS) * 1000,
+    );
+    let stopped = false;
+    const stop = () => {
+      if (stopped) return;
+      stopped = true;
+      window.clearTimeout(hardStop);
+      // Fondu de sortie court : pas de coupure sèche à la fin de la vidéo.
+      const start = now();
+      const fade = window.setInterval(() => {
+        const k = Math.max(0, 1 - (now() - start) / MUSIC_FADE_SECONDS);
+        setGain(peak * k);
+        if (k <= 0) {
+          window.clearInterval(fade);
+          el.pause();
+        }
+      }, 40);
+    };
+    return stop;
+  };
+
   const preview = async () => {
     if (playing) {
       abortRef.current = true;
       setPlaying(false);
       audioRef.current?.pause();
+      musicRef.current?.pause();
       return;
     }
     setPlaying(true);
+    let stopMusic = () => {};
     await runTimeline(
       () => {
         setPlaying(false);
         audioRef.current?.pause();
+        stopMusic();
       },
       async () => {
         if (audioRef.current) {
           audioRef.current.currentTime = 0;
           await audioRef.current.play();
         }
+        stopMusic = startMusic(
+          musicRef.current,
+          (v) => {
+            if (musicRef.current) musicRef.current.volume = Math.min(1, Math.max(0, v));
+          },
+          () => performance.now() / 1000,
+        );
       },
       audioRef.current,
     );
@@ -679,6 +726,20 @@ function Montage() {
       const src = actx.createMediaElementSource(audio);
       const dest = actx.createMediaStreamDestination();
       src.connect(dest);
+
+      // Musique de fond mixée sous la voix via un GainNode (dB → gain linéaire).
+      let musicEl: HTMLAudioElement | null = null;
+      let musicGain: GainNode | null = null;
+      if (music) {
+        musicEl = new Audio(music.url);
+        musicEl.crossOrigin = "anonymous";
+        musicEl.loop = false;
+        musicGain = actx.createGain();
+        musicGain.gain.value = dbToGain(musicGainDb);
+        actx.createMediaElementSource(musicEl).connect(musicGain);
+        musicGain.connect(dest);
+      }
+
       dest.stream.getAudioTracks().forEach((t) => stream.addTrack(t));
 
       const { mime, ext } = pickRecordingType();
@@ -690,18 +751,31 @@ function Montage() {
       });
 
       rec.start(200);
+      let stopMusic = () => {};
       await runTimeline(
         undefined,
         async () => {
           audio.currentTime = 0;
           await audio.play();
+          stopMusic = startMusic(
+            musicEl,
+            (v) => {
+              if (musicGain) musicGain.gain.value = v;
+            },
+            () => actx.currentTime,
+          );
         },
         audio,
       );
       audio.pause();
+      stopMusic();
+      // Laisser le fondu de sortie de la musique s'écrire dans l'enregistrement.
+      if (musicEl) await new Promise((r) => setTimeout(r, MUSIC_FADE_SECONDS * 1000 + 100));
+      musicEl?.pause();
       // Cut the recording on the exact frame the voice ends.
       rec.stop();
       await actx.close();
+
 
       const blob = await done;
       const now = Date.now();
