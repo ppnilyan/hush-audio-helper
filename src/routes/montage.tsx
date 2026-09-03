@@ -173,6 +173,21 @@ function Montage() {
     });
   }, []);
 
+  const musicGainDb = settings.musicGainDb;
+  const setMusicGainDb = useCallback(
+    (db: number) => setSettings((s) => ({ ...s, musicGainDb: db })),
+    [],
+  );
+  /** Sélection de la musique : piste incluse, fichier importé ou aucune. */
+  const chooseMusic = useCallback((track: MusicTrack | null) => {
+    setMusic(track);
+    setSettings((s) => ({
+      ...s,
+      musicChoice: track?.builtin ? "builtin" : "none",
+    }));
+  }, []);
+
+
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const videosRef = useRef<Map<string, HTMLVideoElement>>(new Map());
   const audioRef = useRef<HTMLAudioElement>(null);
