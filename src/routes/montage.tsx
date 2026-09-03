@@ -275,6 +275,24 @@ function Montage() {
     }));
   }, []);
 
+  /** Mode simple : réglages figés sur les valeurs recommandées. */
+  useEffect(() => {
+    if (advanced) return;
+    setStep((s) => (s === 1 ? 2 : s));
+    setSettings((s) => ({
+      ...s,
+      fx: SIMPLE_EFFECTS,
+      intros: SIMPLE_INTROS,
+      musicGainDb: SIMPLE_MUSIC_GAIN_DB,
+    }));
+    setRange(SIMPLE_SILENCE.range);
+    setThreshold(SIMPLE_SILENCE.thresholdDb);
+    setTargetMin(SIMPLE_SILENCE.targetMin);
+    setTargetSec(SIMPLE_SILENCE.targetSec);
+  }, [advanced]);
+
+
+
 
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const videosRef = useRef<Map<string, HTMLVideoElement>>(new Map());
