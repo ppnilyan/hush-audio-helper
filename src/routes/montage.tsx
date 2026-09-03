@@ -367,7 +367,34 @@ function Montage() {
     );
   };
 
+  /**
+   * Force un vrai téléchargement : les URLs signées du stockage sont
+   * cross-origin, l'attribut `download` y est ignoré (le navigateur ouvre
+   * la vidéo). On récupère donc le fichier puis on déclenche un blob local.
+   */
+  const downloadMontage = async (h: { id: string; url: string; ext: string }) => {
+    let href = h.url;
+    let revoke = false;
+    try {
+      const res = await fetch(h.url);
+      if (res.ok) {
+        href = URL.createObjectURL(await res.blob());
+        revoke = true;
+      }
+    } catch {
+      /* on retombe sur l'URL directe */
+    }
+    const a = document.createElement("a");
+    a.href = href;
+    a.download = `montage-${h.id}.${h.ext}`;
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+    if (revoke) window.setTimeout(() => URL.revokeObjectURL(href), 10_000);
+  };
+
   // Sequential downloader: picks up queued links one after another.
+
   useEffect(() => {
     if (queueRef.current) return;
     const next = rows.find((r) => r.status === "queued");
@@ -895,13 +922,13 @@ function Montage() {
                     </span>
                   </div>
                   <div className="flex items-center gap-4 text-sm">
-                    <a
-                      href={h.url}
-                      download={`montage-${h.id}.${h.ext}`}
+                    <button
+                      onClick={() => void downloadMontage(h)}
                       className="text-primary underline"
                     >
                       {tr("Télécharger le")} {h.ext.toUpperCase()}
-                    </a>
+                    </button>
+
                     <button
                       onClick={() => {
                         if (h.storagePath) {
