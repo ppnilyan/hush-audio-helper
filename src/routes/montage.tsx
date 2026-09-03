@@ -45,6 +45,16 @@ import {
   subscribeVoiceover,
   type Voiceover,
 } from "@/lib/voiceover-store";
+import {
+  BUILTIN_MUSIC,
+  MUSIC_FADE_SECONDS,
+  MUSIC_MAX_SECONDS,
+  dbToGain,
+  getMusic,
+  setMusic,
+  subscribeMusic,
+  type MusicTrack,
+} from "@/lib/music-store";
 
 type UIEntry = {
   id: string;
