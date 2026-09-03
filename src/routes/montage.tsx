@@ -1448,6 +1448,9 @@ function Montage() {
                   />
                 </div>
                 {voice && <audio ref={audioRef} src={voice.url} className="hidden" />}
+                {music && (
+                  <audio ref={musicRef} src={music.url} crossOrigin="anonymous" className="hidden" />
+                )}
               </div>
 
               <div className="space-y-4">
