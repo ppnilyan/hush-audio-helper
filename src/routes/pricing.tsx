@@ -44,7 +44,7 @@ function planFeatures(p: PlanDef, tr: (s: string) => string) {
     { ok: true, label: tr("Montage automatique complet (mode simple)") },
     { ok: true, label: tr("Musique incluse « Mysterious and Sad »") },
     { ok: p.allowImportMusic, label: tr("Importer ma propre musique") },
-    { ok: p.allowAllThemes, label: p.allowAllThemes ? tr("Tous les thèmes de l'application") : tr("Thème Aurora uniquement") },
+    { ok: true, label: p.allowAllThemes ? tr("Tous les thèmes de l'application") : tr("Thème Aurora uniquement") },
     { ok: p.allowAdvanced, label: tr("Options avancées (durées, effets, détection des blancs, volume)") },
     { ok: true, label: `−20 % ${tr("sur les packs de crédits")}` },
   ];
