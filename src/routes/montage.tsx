@@ -1128,10 +1128,22 @@ function Montage() {
             <section className="panel-glow p-6 sm:p-8">
               <div className="flex flex-wrap items-start justify-between gap-4">
                 <h2 className="text-2xl font-semibold">{tr("Ajoutez vos clips")}</h2>
-                <label className="flex items-center gap-2 rounded-full bg-secondary/50 px-4 py-2 text-sm">
-                  <span>{tr("Options avancées")}</span>
-                  <Switch checked={advanced} onCheckedChange={setAdvanced} />
-                </label>
+                {billing.can.advanced ? (
+                  <label className="flex items-center gap-2 rounded-full bg-secondary/50 px-4 py-2 text-sm">
+                    <span>{tr("Options avancées")}</span>
+                    <Switch checked={advanced} onCheckedChange={setAdvanced} />
+                  </label>
+                ) : (
+                  <Link
+                    to="/pricing"
+                    className="flex items-center gap-2 rounded-full bg-secondary/50 px-4 py-2 text-sm opacity-80 hover:opacity-100"
+                  >
+                    <span>{tr("Options avancées")}</span>
+                    <span className="flex items-center gap-1 rounded-full bg-primary/15 px-2 py-0.5 text-[10px] font-semibold uppercase text-primary">
+                      <Lock className="size-3" /> Pro
+                    </span>
+                  </Link>
+                )}
               </div>
               <p className="mt-2 text-sm text-muted-foreground">
                 {tr("Collez vos liens TikTok à la suite : chaque lien libère automatiquement le champ suivant et se télécharge en HD au fur et à mesure.")}
