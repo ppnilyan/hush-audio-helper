@@ -10,13 +10,20 @@
 
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as AccountRouteImport } from './routes/account'
 import { Route as AuthRouteImport } from './routes/auth'
 import { Route as MontageRouteImport } from './routes/montage'
+import { Route as PricingRouteImport } from './routes/pricing'
 import { Route as ApiPublicMediaProxyRouteImport } from './routes/api/public/media-proxy'
 
 const IndexRoute = IndexRouteImport.update({
   id: '/',
   path: '/',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AccountRoute = AccountRouteImport.update({
+  id: '/account',
+  path: '/account',
   getParentRoute: () => rootRouteImport,
 } as any)
 const AuthRoute = AuthRouteImport.update({
@@ -29,6 +36,11 @@ const MontageRoute = MontageRouteImport.update({
   path: '/montage',
   getParentRoute: () => rootRouteImport,
 } as any)
+const PricingRoute = PricingRouteImport.update({
+  id: '/pricing',
+  path: '/pricing',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ApiPublicMediaProxyRoute = ApiPublicMediaProxyRouteImport.update({
   id: '/api/public/media-proxy',
   path: '/api/public/media-proxy',
@@ -37,35 +49,62 @@ const ApiPublicMediaProxyRoute = ApiPublicMediaProxyRouteImport.update({
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
+  '/account': typeof AccountRoute
   '/auth': typeof AuthRoute
   '/montage': typeof MontageRoute
+  '/pricing': typeof PricingRoute
   '/api/public/media-proxy': typeof ApiPublicMediaProxyRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
+  '/account': typeof AccountRoute
   '/auth': typeof AuthRoute
   '/montage': typeof MontageRoute
+  '/pricing': typeof PricingRoute
   '/api/public/media-proxy': typeof ApiPublicMediaProxyRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
+  '/account': typeof AccountRoute
   '/auth': typeof AuthRoute
   '/montage': typeof MontageRoute
+  '/pricing': typeof PricingRoute
   '/api/public/media-proxy': typeof ApiPublicMediaProxyRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/' | '/auth' | '/montage' | '/api/public/media-proxy'
+  fullPaths:
+    | '/'
+    | '/account'
+    | '/auth'
+    | '/montage'
+    | '/pricing'
+    | '/api/public/media-proxy'
   fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/auth' | '/montage' | '/api/public/media-proxy'
-  id: '__root__' | '/' | '/auth' | '/montage' | '/api/public/media-proxy'
+  to:
+    | '/'
+    | '/account'
+    | '/auth'
+    | '/montage'
+    | '/pricing'
+    | '/api/public/media-proxy'
+  id:
+    | '__root__'
+    | '/'
+    | '/account'
+    | '/auth'
+    | '/montage'
+    | '/pricing'
+    | '/api/public/media-proxy'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
+  AccountRoute: typeof AccountRoute
   AuthRoute: typeof AuthRoute
   MontageRoute: typeof MontageRoute
+  PricingRoute: typeof PricingRoute
   ApiPublicMediaProxyRoute: typeof ApiPublicMediaProxyRoute
 }
 
@@ -76,6 +115,13 @@ declare module '@tanstack/react-router' {
       path: '/'
       fullPath: '/'
       preLoaderRoute: typeof IndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/account': {
+      id: '/account'
+      path: '/account'
+      fullPath: '/account'
+      preLoaderRoute: typeof AccountRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/auth': {
@@ -92,6 +138,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof MontageRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/pricing': {
+      id: '/pricing'
+      path: '/pricing'
+      fullPath: '/pricing'
+      preLoaderRoute: typeof PricingRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/public/media-proxy': {
       id: '/api/public/media-proxy'
       path: '/api/public/media-proxy'
@@ -104,8 +157,10 @@ declare module '@tanstack/react-router' {
 
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
+  AccountRoute: AccountRoute,
   AuthRoute: AuthRoute,
   MontageRoute: MontageRoute,
+  PricingRoute: PricingRoute,
   ApiPublicMediaProxyRoute: ApiPublicMediaProxyRoute,
 }
 export const routeTree = rootRouteImport

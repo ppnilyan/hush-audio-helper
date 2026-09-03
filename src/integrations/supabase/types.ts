@@ -14,6 +14,87 @@ export type Database = {
   }
   public: {
     Tables: {
+      credit_packs: {
+        Row: {
+          created_at: string
+          credits: number
+          id: string
+          price_cents: number
+          sort_order: number
+        }
+        Insert: {
+          created_at?: string
+          credits: number
+          id: string
+          price_cents: number
+          sort_order?: number
+        }
+        Update: {
+          created_at?: string
+          credits?: number
+          id?: string
+          price_cents?: number
+          sort_order?: number
+        }
+        Relationships: []
+      }
+      credit_transactions: {
+        Row: {
+          amount_cents: number
+          created_at: string
+          credits: number
+          id: string
+          kind: string
+          mode: string
+          note: string | null
+          user_id: string
+        }
+        Insert: {
+          amount_cents?: number
+          created_at?: string
+          credits?: number
+          id?: string
+          kind: string
+          mode?: string
+          note?: string | null
+          user_id: string
+        }
+        Update: {
+          amount_cents?: number
+          created_at?: string
+          credits?: number
+          id?: string
+          kind?: string
+          mode?: string
+          note?: string | null
+          user_id?: string
+        }
+        Relationships: []
+      }
+      credit_wallets: {
+        Row: {
+          created_at: string
+          fake_balance_cents: number | null
+          purchased_credits: number
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          fake_balance_cents?: number | null
+          purchased_credits?: number
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          fake_balance_cents?: number | null
+          purchased_credits?: number
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       montage_history: {
         Row: {
           created_at: string
@@ -77,6 +158,63 @@ export type Database = {
         }
         Relationships: []
       }
+      plans: {
+        Row: {
+          allow_advanced: boolean
+          allow_all_themes: boolean
+          allow_import_music: boolean
+          created_at: string
+          id: string
+          monthly_credits: number
+          name: string
+          price_cents: number
+          sort_order: number
+        }
+        Insert: {
+          allow_advanced?: boolean
+          allow_all_themes?: boolean
+          allow_import_music?: boolean
+          created_at?: string
+          id: string
+          monthly_credits: number
+          name: string
+          price_cents: number
+          sort_order?: number
+        }
+        Update: {
+          allow_advanced?: boolean
+          allow_all_themes?: boolean
+          allow_import_music?: boolean
+          created_at?: string
+          id?: string
+          monthly_credits?: number
+          name?: string
+          price_cents?: number
+          sort_order?: number
+        }
+        Relationships: []
+      }
+      user_roles: {
+        Row: {
+          created_at: string
+          id: string
+          role: Database["public"]["Enums"]["app_role"]
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          role: Database["public"]["Enums"]["app_role"]
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          role?: Database["public"]["Enums"]["app_role"]
+          user_id?: string
+        }
+        Relationships: []
+      }
       user_settings: {
         Row: {
           created_at: string
@@ -98,15 +236,75 @@ export type Database = {
         }
         Relationships: []
       }
+      user_subscriptions: {
+        Row: {
+          created_at: string
+          current_period_start: string
+          mode: string
+          monthly_credits_remaining: number
+          plan_id: string
+          renews_at: string
+          status: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          current_period_start?: string
+          mode?: string
+          monthly_credits_remaining?: number
+          plan_id: string
+          renews_at?: string
+          status?: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          current_period_start?: string
+          mode?: string
+          monthly_credits_remaining?: number
+          plan_id?: string
+          renews_at?: string
+          status?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "user_subscriptions_plan_id_fkey"
+            columns: ["plan_id"]
+            isOneToOne: false
+            referencedRelation: "plans"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
     }
     Views: {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      billing_ensure: { Args: { _uid: string }; Returns: undefined }
+      billing_state: { Args: never; Returns: Json }
+      consume_credits: { Args: { _amount: number }; Returns: Json }
+      fake_buy_pack: { Args: { _pack_id: string }; Returns: undefined }
+      fake_cancel: { Args: never; Returns: undefined }
+      fake_subscribe: { Args: { _plan_id: string }; Returns: undefined }
+      has_role: {
+        Args: {
+          _role: Database["public"]["Enums"]["app_role"]
+          _user_id: string
+        }
+        Returns: boolean
+      }
+      refund_credits: {
+        Args: { _from_monthly: number; _from_purchased: number }
+        Returns: undefined
+      }
     }
     Enums: {
-      [_ in never]: never
+      app_role: "admin" | "moderator" | "user"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -233,6 +431,8 @@ export type CompositeTypes<
 
 export const Constants = {
   public: {
-    Enums: {},
+    Enums: {
+      app_role: ["admin", "moderator", "user"],
+    },
   },
 } as const

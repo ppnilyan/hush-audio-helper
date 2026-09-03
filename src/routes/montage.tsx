@@ -51,6 +51,10 @@ import {
   useAdvanced,
 } from "@/lib/advanced-mode";
 import { useLocale, useTr } from "@/lib/prefs";
+import { CREDITS_PER_VIDEO, useBilling, useInvalidateBilling } from "@/lib/billing";
+import { consumeCredits, refundCredits } from "@/lib/billing.functions";
+import { useServerFn } from "@tanstack/react-start";
+import { Lock } from "lucide-react";
 
 import { supabase } from "@/integrations/supabase/client";
 import {
@@ -205,6 +209,11 @@ function Montage() {
   const [tab, setTab] = useState<"editor" | "history">(search.tab);
   const [step, setStep] = useState(0);
   const { advanced, setAdvanced } = useAdvanced();
+  const billing = useBilling();
+  const invalidateBilling = useInvalidateBilling();
+  const consume = useServerFn(consumeCredits);
+  const refund = useServerFn(refundCredits);
+  const noCredits = billing.signedIn && !billing.loading && billing.totalCredits < CREDITS_PER_VIDEO;
 
   /** Étapes visibles : « Durées & effets » n'apparaît qu'en mode avancé. */
   const visibleSteps = useMemo(
@@ -875,8 +884,28 @@ function Montage() {
   const generate = async () => {
     const canvas = canvasRef.current;
     if (!canvas || !voice || timeline.length === 0) return;
+    if (!userId) {
+      setError(tr("Connectez-vous pour générer une vidéo (10 crédits offerts à l'inscription)."));
+      return;
+    }
     setRendering(true);
     setError(null);
+    // Débit des crédits avant l'export ; remboursés si la génération échoue.
+    let debit: { fromMonthly: number; fromPurchased: number } | null = null;
+    try {
+      const r = await consume();
+      if (!r.ok) {
+        setError(tr("Plus de crédits : rechargez ou abonnez-vous pour générer cette vidéo."));
+        setRendering(false);
+        return;
+      }
+      debit = { fromMonthly: r.fromMonthly, fromPurchased: r.fromPurchased };
+      void invalidateBilling();
+    } catch (e) {
+      setError((e as Error).message || tr("La génération a échoué."));
+      setRendering(false);
+      return;
+    }
     try {
       const stream = canvas.captureStream(30);
       const audio = new Audio(voice.url);
@@ -959,6 +988,10 @@ function Montage() {
       setTab("history");
     } catch (e) {
       setError((e as Error).message || tr("La génération a échoué."));
+      if (debit) {
+        await refund({ data: debit }).catch(() => {});
+        void invalidateBilling();
+      }
     } finally {
       setRendering(false);
       setProgress(0);
@@ -1095,10 +1128,22 @@ function Montage() {
             <section className="panel-glow p-6 sm:p-8">
               <div className="flex flex-wrap items-start justify-between gap-4">
                 <h2 className="text-2xl font-semibold">{tr("Ajoutez vos clips")}</h2>
-                <label className="flex items-center gap-2 rounded-full bg-secondary/50 px-4 py-2 text-sm">
-                  <span>{tr("Options avancées")}</span>
-                  <Switch checked={advanced} onCheckedChange={setAdvanced} />
-                </label>
+                {billing.can.advanced ? (
+                  <label className="flex items-center gap-2 rounded-full bg-secondary/50 px-4 py-2 text-sm">
+                    <span>{tr("Options avancées")}</span>
+                    <Switch checked={advanced} onCheckedChange={setAdvanced} />
+                  </label>
+                ) : (
+                  <Link
+                    to="/pricing"
+                    className="flex items-center gap-2 rounded-full bg-secondary/50 px-4 py-2 text-sm opacity-80 hover:opacity-100"
+                  >
+                    <span>{tr("Options avancées")}</span>
+                    <span className="flex items-center gap-1 rounded-full bg-primary/15 px-2 py-0.5 text-[10px] font-semibold uppercase text-primary">
+                      <Lock className="size-3" /> Pro
+                    </span>
+                  </Link>
+                )}
               </div>
               <p className="mt-2 text-sm text-muted-foreground">
                 {tr("Collez vos liens TikTok à la suite : chaque lien libère automatiquement le champ suivant et se télécharge en HD au fur et à mesure.")}
@@ -1660,21 +1705,38 @@ function Montage() {
                   </p>
                 </button>
 
-                <button
-                  onClick={() => musicFileRef.current?.click()}
-                  className={`rounded-2xl border p-5 text-left transition ${
-                    music && !music.builtin
-                      ? "border-primary bg-primary/10"
-                      : "border-border bg-secondary/40 hover:bg-secondary/60"
-                  }`}
-                >
-                  <p className="font-semibold">{tr("Importer ma musique")}</p>
-                  <p className="mt-1 text-sm text-muted-foreground">
-                    {music && !music.builtin
-                      ? music.name
-                      : tr("Choisir un fichier audio depuis mon ordinateur (MP3, WAV…).")}
-                  </p>
-                </button>
+                {billing.can.importMusic ? (
+                  <button
+                    onClick={() => musicFileRef.current?.click()}
+                    className={`rounded-2xl border p-5 text-left transition ${
+                      music && !music.builtin
+                        ? "border-primary bg-primary/10"
+                        : "border-border bg-secondary/40 hover:bg-secondary/60"
+                    }`}
+                  >
+                    <p className="font-semibold">{tr("Importer ma musique")}</p>
+                    <p className="mt-1 text-sm text-muted-foreground">
+                      {music && !music.builtin
+                        ? music.name
+                        : tr("Choisir un fichier audio depuis mon ordinateur (MP3, WAV…).")}
+                    </p>
+                  </button>
+                ) : (
+                  <Link
+                    to="/pricing"
+                    className="rounded-2xl border border-border bg-secondary/20 p-5 text-left opacity-70 transition hover:opacity-100"
+                  >
+                    <p className="flex items-center gap-2 font-semibold">
+                      {tr("Importer ma musique")}
+                      <span className="flex items-center gap-1 rounded-full bg-primary/15 px-2 py-0.5 text-[10px] font-semibold uppercase text-primary">
+                        <Lock className="size-3" /> Pro
+                      </span>
+                    </p>
+                    <p className="mt-1 text-sm text-muted-foreground">
+                      {tr("Disponible avec les formules Pro et Elite.")}
+                    </p>
+                  </Link>
+                )}
               </div>
 
               <input
@@ -1788,15 +1850,30 @@ function Montage() {
                         ? tr("Arrêter")
                         : tr("Prévisualiser")}
                   </Button>
-                  <Button
-                    size="lg"
-                    onClick={() => void generate()}
-                    disabled={!voice || measuring || clips.length === 0 || busy || playing}
-                  >
-                    {rendering ? tr("Génération…") : tr("Générer la vidéo")}
-                  </Button>
+                  {noCredits ? (
+                    <Button size="lg" asChild>
+                      <Link to="/pricing">
+                        <Lock className="size-4" /> {tr("Plus de crédits — recharger")}
+                      </Link>
+                    </Button>
+                  ) : (
+                    <Button
+                      size="lg"
+                      onClick={() => void generate()}
+                      disabled={!voice || measuring || clips.length === 0 || busy || playing}
+                    >
+                      {rendering ? tr("Génération…") : tr("Générer la vidéo")}
+                    </Button>
+                  )}
                   <p className="text-xs text-muted-foreground">
                     {tr("La vidéo générée est ajoutée automatiquement à l'historique.")}
+                    {billing.signedIn && !billing.loading && (
+                      <>
+                        {" "}
+                        · {CREDITS_PER_VIDEO} {tr("crédits par vidéo")} ·{" "}
+                        {tr("solde")}&nbsp;: {billing.totalCredits}
+                      </>
+                    )}
                   </p>
                 </div>
               </div>
