@@ -204,6 +204,17 @@ function Montage() {
   const [history, setHistory] = useState<UIEntry[]>([]);
   const [tab, setTab] = useState<"editor" | "history">(search.tab);
   const [step, setStep] = useState(0);
+  const { advanced, setAdvanced } = useAdvanced();
+
+  /** Étapes visibles : « Durées & effets » n'apparaît qu'en mode avancé. */
+  const visibleSteps = useMemo(
+    () => (advanced ? [0, 1, 2, 3, 4, 5] : [0, 2, 3, 4, 5]),
+    [advanced],
+  );
+  const stepPos = Math.max(0, visibleSteps.indexOf(step));
+  const isLastStep = stepPos === visibleSteps.length - 1;
+
+
 
   // Étape 3 — voix off
   const [audioBusy, setAudioBusy] = useState(false);
