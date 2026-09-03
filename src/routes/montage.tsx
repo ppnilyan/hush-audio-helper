@@ -786,10 +786,8 @@ function Montage() {
         audio,
       );
       audio.pause();
+      // La musique est déjà en fin de fondu : elle se coupe avec la voix.
       stopMusic();
-      // Laisser le fondu de sortie de la musique s'écrire dans l'enregistrement.
-      if (musicEl) await new Promise((r) => setTimeout(r, MUSIC_FADE_SECONDS * 1000 + 100));
-      musicEl?.pause();
       // Cut the recording on the exact frame the voice ends.
       rec.stop();
       await actx.close();
