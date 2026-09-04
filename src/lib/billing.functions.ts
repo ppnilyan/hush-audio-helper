@@ -108,7 +108,7 @@ export const fakeSubscribe = createServerFn({ method: "POST" })
   .handler(async ({ data, context }) => {
     const { error } = await context.supabase.rpc("fake_subscribe", {
       _plan_id: data.planId,
-      _promo_code: data.promoCode ?? null,
+      _promo_code: data.promoCode ?? undefined,
     });
     if (error) return { ok: false as const, code: fakeError(error.message) };
     return { ok: true as const };
@@ -120,7 +120,7 @@ export const fakeBuyPack = createServerFn({ method: "POST" })
   .handler(async ({ data, context }) => {
     const { error } = await context.supabase.rpc("fake_buy_pack", {
       _pack_id: data.packId,
-      _promo_code: data.promoCode ?? null,
+      _promo_code: data.promoCode ?? undefined,
     });
     if (error) return { ok: false as const, code: fakeError(error.message) };
     return { ok: true as const };
