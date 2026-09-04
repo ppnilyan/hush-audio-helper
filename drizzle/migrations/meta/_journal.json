@@ -15,6 +15,13 @@
       "when": 1788524534397,
       "tag": "0001_promo_codes",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1788524550087,
+      "tag": "0002_drop_old_fake_fns",
+      "breakpoints": true
     }
   ]
 }

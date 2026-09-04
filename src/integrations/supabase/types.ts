@@ -351,19 +351,15 @@ export type Database = {
       billing_ensure: { Args: { _uid: string }; Returns: undefined }
       billing_state: { Args: never; Returns: Json }
       consume_credits: { Args: { _amount: number }; Returns: Json }
-      fake_buy_pack:
-        | { Args: { _pack_id: string }; Returns: undefined }
-        | {
-            Args: { _pack_id: string; _promo_code?: string }
-            Returns: undefined
-          }
+      fake_buy_pack: {
+        Args: { _pack_id: string; _promo_code?: string }
+        Returns: undefined
+      }
       fake_cancel: { Args: never; Returns: undefined }
-      fake_subscribe:
-        | { Args: { _plan_id: string }; Returns: undefined }
-        | {
-            Args: { _plan_id: string; _promo_code?: string }
-            Returns: undefined
-          }
+      fake_subscribe: {
+        Args: { _plan_id: string; _promo_code?: string }
+        Returns: undefined
+      }
       has_role: {
         Args: {
           _role: Database["public"]["Enums"]["app_role"]
