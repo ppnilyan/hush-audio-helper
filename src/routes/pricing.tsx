@@ -70,10 +70,12 @@ function PricingPage() {
   const [promo, setPromo] = useState<{ code: string; percentOff: number } | null>(null);
   const [promoError, setPromoError] = useState<string | null>(null);
   const [promoBusy, setPromoBusy] = useState(false);
-  const [checkoutPriceId, setCheckoutPriceId] = useState<string | null>(null);
+  const [checkoutTarget, setCheckoutTarget] = useState<
+    { kind: "pack"; packId: string } | { kind: "plan"; planId: string } | null
+  >(null);
   const [checkoutAmount, setCheckoutAmount] = useState<number>(0);
-  const openPortal = useServerFn(createPortalSession);
-  const stripeReady = paymentsConfigured();
+  const cancelSub = useServerFn(cancelPaypalSubscription);
+
 
   // Retour depuis le paiement : on rafraîchit le solde.
   useEffect(() => {
