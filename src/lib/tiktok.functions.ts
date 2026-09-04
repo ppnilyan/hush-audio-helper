@@ -90,7 +90,7 @@ export const resolveTikTok = createServerFn({ method: "POST" })
       hd: !!hd,
       title: json.data?.title ?? "Clip TikTok",
       duration: json.data?.duration ?? 0,
-      views: Number.isFinite(rawViews) ? rawViews : undefined,
+      ...(Number.isFinite(rawViews) ? { views: rawViews } : {}),
     };
 
     memory.set(key, { at: Date.now(), value: result });
