@@ -64,6 +64,7 @@ import {
 } from "@/lib/generation-jobs.functions";
 import { useServerFn } from "@tanstack/react-start";
 import { Lock } from "lucide-react";
+import { toast } from "sonner";
 
 import { supabase } from "@/integrations/supabase/client";
 import {
@@ -237,6 +238,7 @@ function Montage() {
   const [progress, setProgress] = useState(0);
   const [history, setHistory] = useState<UIEntry[]>([]);
   const [failed, setFailed] = useState<GenerationJob[]>([]);
+  const [dismissing, setDismissing] = useState<string | null>(null);
   const [tab, setTab] = useState<"editor" | "history">(search.tab);
   const [step, setStep] = useState(0);
   const { advanced, setAdvanced } = useAdvanced();
@@ -318,7 +320,16 @@ function Montage() {
     }));
   }, []);
 
+  /** Montage & historique : fond de page sombre neutre, boutons en dégradé du thème. */
+  useEffect(() => {
+    document.documentElement.dataset["surface"] = "dark";
+    return () => {
+      delete document.documentElement.dataset["surface"];
+    };
+  }, []);
+
   /** Mode simple : réglages figés sur les valeurs recommandées. */
+
   useEffect(() => {
     if (advanced) return;
     setStep((s) => (s === 1 ? 2 : s));
@@ -1134,6 +1145,9 @@ function Montage() {
               <p className="text-sm font-medium">
                 {tr("Générations non terminées — crédits remboursés")}
               </p>
+              <p className="text-xs text-muted-foreground">
+                {tr("La vidéo n'a pas pu être finalisée, vos crédits ont été recrédités automatiquement.")}
+              </p>
               {failed.map((f) => (
                 <div
                   key={f.id}
@@ -1141,20 +1155,31 @@ function Montage() {
                 >
                   <span>
                     {new Date(f.createdAt).toLocaleString(locale)} ·{" "}
-                    {`${f.credits} ${tr("crédits remboursés")}`}
+                    <span className="font-medium text-foreground">
+                      {`+${f.credits} ${tr("crédits remboursés")}`}
+                    </span>{" "}
+                    · {tr("génération non terminée")}
                   </span>
                   <button
+                    disabled={dismissing === f.id}
                     onClick={() => {
+                      if (dismissing) return;
+                      setDismissing(f.id);
                       setFailed((prev) => prev.filter((x) => x.id !== f.id));
                       void (async () => {
-                        await dismissJob({ data: { jobId: f.id } }).catch(() => null);
+                        const res = await dismissJob({ data: { jobId: f.id } }).catch(() => null);
                         void invalidateBilling();
                         void refreshFailed();
+                        setDismissing(null);
+                        const credits = res?.refunded ?? f.credits;
+                        toast.success(`+${credits} ${tr("crédits remboursés")}`, {
+                          description: tr("génération non terminée"),
+                        });
                       })();
                       setTab("editor");
                       setStep(visibleSteps[visibleSteps.length - 1]!);
                     }}
-                    className="text-primary underline"
+                    className="text-primary underline disabled:opacity-50"
                   >
                     {tr("Refaire la vidéo")}
                   </button>
@@ -1163,6 +1188,7 @@ function Montage() {
               ))}
             </div>
           )}
+
           {history.length === 0 ? (
             <p className="text-sm text-muted-foreground">{tr("Aucune vidéo pour l'instant.")}</p>
           ) : (
