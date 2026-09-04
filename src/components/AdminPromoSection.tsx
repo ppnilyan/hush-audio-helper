@@ -5,8 +5,16 @@ import { useState } from "react";
 
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { createPromoCode, deletePromoCode, listPromoCodes } from "@/lib/billing.functions";
+import { Switch } from "@/components/ui/switch";
+import {
+  createPromoCode,
+  deletePromoCode,
+  listPromoCodes,
+  setPromoCodeActive,
+} from "@/lib/billing.functions";
+import { syncPromoCoupon } from "@/lib/payments.functions";
 import { usePrefs } from "@/lib/prefs";
+import { getStripeEnvironment, paymentsConfigured } from "@/lib/stripe";
 
 /** Section « Création » réservée aux administrateurs : gestion des codes de promotion. */
 export function AdminPromoSection() {
