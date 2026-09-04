@@ -9,7 +9,10 @@ type Resolved = {
   title: string;
   duration: number;
   views?: number;
+  /** Page TikTok d'origine : nécessaire pour obtenir les cookies du CDN. */
+  srcUrl?: string;
 };
+
 
 // Les liens de lecture renvoyés par le fournisseur expirent : on garde le cache court.
 const TTL_MS = 2 * 60 * 60 * 1000;
