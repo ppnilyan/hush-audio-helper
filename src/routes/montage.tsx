@@ -53,7 +53,7 @@ import {
 import { useLocale, useTr } from "@/lib/prefs";
 import { CREDITS_PER_VIDEO, useBilling, useInvalidateBilling } from "@/lib/billing";
 
-import { getClipsSnapshot, setClipsSnapshot } from "@/lib/clips-store";
+import { getClipsSnapshot, setClipsSnapshot, takePendingLinks } from "@/lib/clips-store";
 import {
   finishGenerationJob,
   listFailedGenerations,
@@ -202,8 +202,19 @@ function Montage() {
   const [clips, setClips] = useState<ClipInfo[]>(() => getClipsSnapshot()?.clips ?? []);
   const [rows, setRows] = useState<LinkRow[]>(() => {
     const saved = getClipsSnapshot()?.rows;
-    if (!saved || saved.length === 0) return [newRow()];
-    const restored: LinkRow[] = saved.map((r) => ({ id: r.id, url: r.url, status: "done" }));
+    const restored: LinkRow[] = (saved ?? []).map((r) => ({
+      id: r.id,
+      url: r.url,
+      status: "done",
+    }));
+    // Liens saisis sur la page d'accueil publique avant l'inscription.
+    const known = new Set(restored.map((r) => r.url));
+    for (const url of takePendingLinks()) {
+      if (known.has(url)) continue;
+      known.add(url);
+      restored.push({ ...newRow(), url, status: "queued" });
+    }
+    if (restored.length === 0) return [newRow()];
     restored.push(newRow());
     return restored;
   });

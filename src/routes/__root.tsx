@@ -4,6 +4,7 @@ import {
   Link,
   createRootRouteWithContext,
   useRouter,
+  useRouterState,
   HeadContent,
   Scripts,
 } from "@tanstack/react-router";
@@ -150,13 +151,17 @@ function HeaderNav() {
 
 function RootComponent() {
   const { queryClient } = Route.useRouteContext();
+  // La page d'accueil publique porte sa propre barre de navigation.
+  const isLanding = useRouterState({ select: (s) => s.location.pathname === "/" });
 
   return (
     <QueryClientProvider client={queryClient}>
       <PrefsProvider>
-        <header className="sticky top-0 z-50 border-b border-border/60 bg-background/80 backdrop-blur">
-          <HeaderNav />
-        </header>
+        {!isLanding && (
+          <header className="sticky top-0 z-50 border-b border-border/60 bg-background/80 backdrop-blur">
+            <HeaderNav />
+          </header>
+        )}
         {/* Required: nested routes render here. Removing <Outlet /> breaks all child routes. */}
         <Outlet />
       </PrefsProvider>
