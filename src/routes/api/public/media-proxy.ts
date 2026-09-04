@@ -13,9 +13,14 @@ const ALLOWED = [
 const UA =
   "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0 Safari/537.36";
 
-// Le CDN TikTok exige les cookies de la page vidéo : on les garde en mémoire un moment.
-const cookieCache = new Map<string, { at: number; cookie: string }>();
-const COOKIE_TTL_MS = 10 * 60 * 1000;
+// Le CDN TikTok n'accepte le lien de lecture qu'avec les cookies de la même
+// visite de page : on relit la page et on garde le couple lien + cookies.
+const sessionCache = new Map<string, { at: number; playUrl: string; cookie: string }>();
+const SESSION_TTL_MS = 10 * 60 * 1000;
+
+type TikTokItem = {
+  video?: { playAddr?: string; bitrateInfo?: Array<{ PlayAddr?: { UrlList?: string[] }; Bitrate?: number }> };
+};
 
 function isTikTokPage(value: string): URL | null {
   try {
@@ -29,25 +34,44 @@ function isTikTokPage(value: string): URL | null {
   }
 }
 
-async function tiktokCookieFor(pageUrl: URL): Promise<string> {
+async function tiktokSession(pageUrl: URL) {
   const key = pageUrl.toString();
-  const hot = cookieCache.get(key);
-  if (hot && Date.now() - hot.at < COOKIE_TTL_MS) return hot.cookie;
+  const hot = sessionCache.get(key);
+  if (hot && Date.now() - hot.at < SESSION_TTL_MS) return hot;
+
   const res = await fetch(key, {
     redirect: "follow",
     headers: { "User-Agent": UA, "Accept-Language": "en-US,en;q=0.9" },
   });
-  const raw = res.headers.get("set-cookie") ?? "";
-  // On ne lit pas le corps : seuls les cookies nous intéressent.
-  void res.body?.cancel();
-  const cookie = raw
+  if (!res.ok) return null;
+  const cookie = (res.headers.get("set-cookie") ?? "")
     .split(/,(?=[^;]+?=)/)
     .map((c) => c.split(";")[0]!.trim())
     .filter(Boolean)
     .join("; ");
-  cookieCache.set(key, { at: Date.now(), cookie });
-  return cookie;
+  const html = await res.text();
+  const marker = 'id="__UNIVERSAL_DATA_FOR_REHYDRATION__" type="application/json">';
+  const start = html.indexOf(marker);
+  const end = start === -1 ? -1 : html.indexOf("</script>", start);
+  if (start === -1 || end === -1) return null;
+  let item: TikTokItem | undefined;
+  try {
+    const parsed = JSON.parse(html.slice(start + marker.length, end)) as {
+      __DEFAULT_SCOPE__?: Record<string, { itemInfo?: { itemStruct?: TikTokItem } }>;
+    };
+    item = parsed.__DEFAULT_SCOPE__?.["webapp.video-detail"]?.itemInfo?.itemStruct;
+  } catch {
+    return null;
+  }
+  const bitrates = item?.video?.bitrateInfo ?? [];
+  const best = [...bitrates].sort((a, b) => (b.Bitrate ?? 0) - (a.Bitrate ?? 0))[0];
+  const playUrl = best?.PlayAddr?.UrlList?.[0] ?? item?.video?.playAddr;
+  if (!playUrl) return null;
+  const entry = { at: Date.now(), playUrl, cookie };
+  sessionCache.set(key, entry);
+  return entry;
 }
+
 
 export const Route = createFileRoute("/api/public/media-proxy")({
   server: {
