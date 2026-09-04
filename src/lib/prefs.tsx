@@ -330,6 +330,7 @@ export const FR_EN: Record<string, string> = {
   "Plus de crédits — recharger": "Out of credits — top up",
   "crédits par vidéo": "credits per video",
   "solde": "balance",
+  "Recharger le solde": "Top up your balance",
   "Disponible avec les formules Pro et Elite.": "Available with the Pro and Elite plans.",
 };
 
