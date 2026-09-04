@@ -401,6 +401,44 @@ function Montage() {
     }
   }, [userId]);
 
+  // Générations remboursées (échec ou onglet fermé pendant l'export).
+  const refreshFailed = useCallback(async () => {
+    if (!userId) {
+      setFailed([]);
+      return;
+    }
+    const items = await fetchFailed().catch(() => []);
+    setFailed(items);
+  }, [userId, fetchFailed]);
+
+  // Au chargement : on rattrape les générations abandonnées et on rembourse.
+  useEffect(() => {
+    if (!userId) return;
+    let alive = true;
+    void (async () => {
+      const r = await reconcileJobs().catch(() => null);
+      if (!alive) return;
+      if (r && r.refunded > 0) {
+        void invalidateBilling();
+        void refreshHistory();
+      }
+      void refreshFailed();
+    })();
+    return () => {
+      alive = false;
+    };
+  }, [userId, reconcileJobs, invalidateBilling, refreshHistory, refreshFailed]);
+
+  // Les clips saisis survivent au passage par la page de connexion.
+  useEffect(() => {
+    setClipsSnapshot({
+      clips,
+      rows: rows
+        .filter((r) => r.url.trim() !== "")
+        .map((r) => ({ id: r.id, url: r.url })),
+    });
+  }, [clips, rows]);
+
   useEffect(() => {
     void refreshHistory();
   }, [refreshHistory]);
