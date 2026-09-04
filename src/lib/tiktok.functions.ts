@@ -98,12 +98,14 @@ async function resolveFromTikTokPage(url: string): Promise<Resolved | null> {
   const views = item?.stats?.playCount;
   return {
     playUrl,
+    srcUrl: res.url || url,
     // La page fournit la meilleure qualité disponible : on la considère HD.
     hd: true,
     title: item?.desc || "Clip TikTok",
     duration: item?.video?.duration ?? 0,
     ...(typeof views === "number" && Number.isFinite(views) ? { views } : {}),
   };
+
 }
 
 
