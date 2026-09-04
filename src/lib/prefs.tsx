@@ -167,6 +167,8 @@ export const FR_EN: Record<string, string> = {
   "Indisponible (import manuel)": "Unavailable (manual import)",
   Retirer: "Remove",
   "Aucun clip pour l'instant.": "No clip yet.",
+  "Ajoutez au moins 2 clips pour continuer.": "Add at least 2 clips to continue.",
+  "Connectez-vous ou créez un compte pour continuer.": "Sign in or create an account to continue.",
   "Durées et effets": "Durations and effects",
   "Réglez l'intro (3 clips les plus vus) puis les effets appliqués à tout le montage.":
     "Set the intro (3 most-viewed clips) then the effects applied to the whole edit.",
