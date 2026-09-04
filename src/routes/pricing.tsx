@@ -210,9 +210,28 @@ function PricingPage() {
     }
   };
 
+  if (checkoutPriceId) {
+    return (
+      <main className="mx-auto min-h-screen w-full max-w-3xl px-5 py-10">
+        <PaymentTestModeBanner />
+        <div className="mt-6 mb-4 flex items-center justify-between">
+          <h1 className="text-2xl font-semibold">{tr("Paiement")}</h1>
+          <Button variant="secondary" onClick={() => setCheckoutPriceId(null)}>
+            <X className="size-4" /> {tr("Annuler")}
+          </Button>
+        </div>
+        <StripeEmbeddedCheckout
+          priceId={checkoutPriceId}
+          returnUrl={`${typeof window === "undefined" ? "" : window.location.origin}/pricing?checkout=done`}
+        />
+      </main>
+    );
+  }
+
   return (
     <main className="mx-auto min-h-screen w-full max-w-6xl px-5 py-14">
-      <header className="mb-10 text-center">
+      <PaymentTestModeBanner />
+      <header className="mb-10 mt-6 text-center">
         <p className="text-sm font-medium uppercase tracking-[0.25em] text-primary">
           {tr("Tarifs")}
         </p>
