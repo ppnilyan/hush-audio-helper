@@ -195,3 +195,16 @@ export const deletePromoCode = createServerFn({ method: "POST" })
     return { ok: true as const };
   });
 
+
+/** Active ou désactive un code — admin uniquement. */
+export const setPromoCodeActive = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((input: { code: string; active: boolean }) => input)
+  .handler(async ({ data, context }) => {
+    const { error } = await context.supabase.rpc("promo_set_active", {
+      _code: data.code,
+      _active: data.active,
+    });
+    if (error) return { ok: false as const, code: fakeError(error.message) };
+    return { ok: true as const };
+  });
