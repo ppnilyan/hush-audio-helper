@@ -36,6 +36,13 @@
       "when": 1788528278107,
       "tag": "0004_stripe_checkout_support",
       "breakpoints": true
+    },
+    {
+      "idx": 5,
+      "version": "7",
+      "when": 1788528304716,
+      "tag": "0005_fix_stripe_apply_subscription",
+      "breakpoints": true
     }
   ]
 }
