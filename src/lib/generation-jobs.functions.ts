@@ -132,7 +132,42 @@ export const reconcileGenerationJobs = createServerFn({ method: "POST" })
     return { refunded };
   });
 
+/**
+ * « Refaire la vidéo » : garantit le remboursement des crédits du job
+ * (si ce n'est pas déjà fait) puis masque l'avis d'échec.
+ */
+export const dismissFailedGeneration = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((input: { jobId: string }) => input)
+  .handler(async ({ data, context }) => {
+    const { supabase, userId } = context;
+    const { data: job, error } = await supabase
+      .from("generation_jobs")
+      .select("id, status, credits, from_monthly, from_purchased")
+      .eq("id", data.jobId)
+      .eq("user_id", userId)
+      .maybeSingle();
+    if (error) throw new Error(error.message);
+    if (!job) return { ok: true as const, refunded: 0 };
+
+    let refunded = 0;
+    if (job.status === "pending") {
+      await supabase.rpc("refund_credits", {
+        _from_monthly: Math.max(0, job.from_monthly),
+        _from_purchased: Math.max(0, job.from_purchased),
+      });
+      refunded = job.credits;
+    }
+    await supabase
+      .from("generation_jobs")
+      .update({ status: "acknowledged", settled_at: new Date().toISOString() })
+      .eq("id", job.id)
+      .eq("user_id", userId);
+    return { ok: true as const, refunded };
+  });
+
 /** Générations échouées récentes, affichées dans l'historique. */
+
 export const listFailedGenerations = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .handler(async ({ context }) => {
