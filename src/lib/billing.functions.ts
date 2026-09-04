@@ -11,6 +11,7 @@ export type BillingPlanState = {
   allowAllThemes: boolean;
   allowImportMusic: boolean;
   renewsAt: string;
+  cancelAtPeriodEnd?: boolean;
   periodStart: string;
   mode: "test" | "live";
 };

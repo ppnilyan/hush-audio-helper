@@ -50,6 +50,13 @@
       "when": 1788529277502,
       "tag": "0006_seed_plans_and_packs",
       "breakpoints": true
+    },
+    {
+      "idx": 7,
+      "version": "7",
+      "when": 1788529726644,
+      "tag": "0007_cancel_keeps_credits_until_period_end",
+      "breakpoints": true
     }
   ]
 }

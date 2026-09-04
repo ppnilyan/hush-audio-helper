@@ -85,7 +85,9 @@ function AccountPage() {
           <p className="mt-1 text-2xl font-bold">{plan ? plan.name : tr("Gratuit")}</p>
           {plan && (
             <p className="mt-1 text-xs text-muted-foreground">
-              {tr("Renouvellement le")} {fmtDate(plan.renewsAt)}
+              {plan.cancelAtPeriodEnd
+                ? `${tr("Résilié — accès jusqu'au")} ${fmtDate(plan.renewsAt)}`
+                : `${tr("Renouvellement le")} ${fmtDate(plan.renewsAt)}`}
               {plan.mode === "test" && ` · ${tr("test")}`}
             </p>
           )}
@@ -115,7 +117,7 @@ function AccountPage() {
         <Button asChild>
           <Link to="/pricing">{plan ? tr("Changer de formule / recharger") : tr("Voir les formules")}</Link>
         </Button>
-        {plan && s.isAdmin && (
+        {plan && s.isAdmin && !plan.cancelAtPeriodEnd && (
           <Button
             variant="secondary"
             disabled={busy}

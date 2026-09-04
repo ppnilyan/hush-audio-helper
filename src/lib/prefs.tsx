@@ -361,6 +361,7 @@ export const FR_EN: Record<string, string> = {
   "Formule": "Plan",
   "Gratuit": "Free",
   "Renouvellement le": "Renews on",
+  "Résilié — accès jusqu'au": "Canceled — access until",
   "test": "test",
   "Crédits mensuels restants": "Monthly credits left",
   "sur": "of",
