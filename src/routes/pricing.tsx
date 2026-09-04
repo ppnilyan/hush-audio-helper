@@ -254,6 +254,7 @@ function PricingPage() {
         {PLANS.map((p) => (
           <article
 
+
             key={p.id}
             className={`relative flex flex-col rounded-3xl border p-6 ${
               p.highlight ? "panel-glow border-primary/60" : "border-border bg-secondary/30"
