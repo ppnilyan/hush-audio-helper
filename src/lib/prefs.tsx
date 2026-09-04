@@ -535,7 +535,38 @@ export const FR_ES: Record<string, string> = {
   "vidéos / mois": "vídeos / mes",
   "mois": "mes",
   "Le plus choisi": "El más elegido",
+  "Colle tes liens, récupère un TikTok monétisable en quelques minutes.":
+    "Pega tus enlaces y consigue un TikTok monetizable en minutos.",
+  "Ce qui change concrètement avant et après SilenceCut":
+    "Lo que cambia de verdad antes y después de SilenceCut",
+  "Avant": "Antes",
+  "Après": "Después",
+  "Des heures passées à découper à la main": "Horas cortando clips a mano",
+  "Des vidéos brutes que la plateforme ne récompense pas":
+    "Vídeos en bruto que la plataforma no recompensa",
+  "Une publication par semaine, quand tu trouves le temps":
+    "Una publicación por semana, cuando encuentras tiempo",
+  "Un montage vertical prêt en quelques minutes": "Un montaje vertical listo en minutos",
+  "Une vidéo transformée, éligible aux récompenses TikTok":
+    "Un vídeo transformado, elegible para las recompensas de TikTok",
+  "Plusieurs publications par jour, sans y penser": "Varias publicaciones al día, sin esfuerzo",
+  "pour un montage complet": "para un montaje completo",
+  "= une vidéo prête à publier": "= un vídeo listo para publicar",
+  "suffisent pour commencer": "bastan para empezar",
+  "Publie et encaisse": "Publica y cobra",
+  "Tu récupères une vidéo verticale transformée, prête à être publiée et récompensée.":
+    "Recibes un vídeo vertical transformado, listo para publicar y ser recompensado.",
+  "Pourquoi mes vidéos deviennent monétisables ?": "¿Por qué mis vídeos son monetizables?",
+  "Le montage assemble plusieurs sources, ajoute un hook, une voix off et une musique de fond : le résultat est une vidéo transformée, celle que le programme de récompenses TikTok accepte.":
+    "El montaje combina varias fuentes y añade hook, voz en off y música de fondo: el resultado es un vídeo transformado, el que acepta el programa de recompensas de TikTok.",
+  "Combien de vidéos puis-je publier par jour ?": "¿Cuántos vídeos puedo publicar al día?",
+  "Autant que tes crédits le permettent : une vidéo coûte 10 crédits, donc une formule à 600 crédits représente environ 60 montages par mois.":
+    "Tantos como permitan tus créditos: un vídeo cuesta 10 créditos, así que un plan de 600 créditos son unos 60 montajes al mes.",
+  "Combien de temps pour récupérer un montage ?": "¿Cuánto tarda un montaje?",
+  "Environ trois minutes entre le collage des liens et le téléchargement du fichier vertical HD.":
+    "Unos tres minutos desde pegar los enlaces hasta descargar el archivo vertical en HD.",
 };
+
 
 /** Dictionnaire FR → DE (page publique en priorité). */
 export const FR_DE: Record<string, string> = {
