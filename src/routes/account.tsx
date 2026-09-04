@@ -85,7 +85,9 @@ function AccountPage() {
           <p className="mt-1 text-2xl font-bold">{plan ? plan.name : tr("Gratuit")}</p>
           {plan && (
             <p className="mt-1 text-xs text-muted-foreground">
-              {tr("Renouvellement le")} {fmtDate(plan.renewsAt)}
+              {plan.cancelAtPeriodEnd
+                ? `${tr("Résilié — accès jusqu'au")} ${fmtDate(plan.renewsAt)}`
+                : `${tr("Renouvellement le")} ${fmtDate(plan.renewsAt)}`}
               {plan.mode === "test" && ` · ${tr("test")}`}
             </p>
           )}
