@@ -608,7 +608,10 @@ function Montage() {
       setRow(next.id, { status: "loading" });
       try {
         const info = await resolveTikTok({ data: { url: next.url.trim() } });
-        const res = await fetch(`/api/public/media-proxy?url=${encodeURIComponent(info.playUrl)}`);
+        const res = await fetch(
+          `/api/public/media-proxy?url=${encodeURIComponent(info.playUrl)}${info.srcUrl ? `&src=${encodeURIComponent(info.srcUrl)}` : ""}`,
+        );
+
         if (!res.ok) throw new Error(tr("Téléchargement impossible"));
         const blob = await res.blob();
         await addFromUrl(
