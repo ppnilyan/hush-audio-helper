@@ -337,6 +337,41 @@ export function drawFrame(
     if (top > 0) drawBlurredBand(ctx, video, fx, dyn, dx, dy, dw, dh, 0, top);
     if (bottom > 0) drawBlurredBand(ctx, video, fx, dyn, dx, dy, dw, dh, H - bottom, bottom);
   }
+
+  drawWatermarks(ctx, top, bottom);
+}
+
+/**
+ * Three "SilenceCut" watermarks: one just under the top blurred band,
+ * one centered, one near the bottom.
+ */
+export function drawWatermarks(
+  ctx: CanvasRenderingContext2D,
+  topBand = 0,
+  bottomBand = 0,
+) {
+  const W = ctx.canvas.width;
+  const H = ctx.canvas.height;
+  const size = Math.round(W * 0.062);
+  const positions = [
+    topBand + size * 1.6,
+    H / 2,
+    H - bottomBand - size * 1.6,
+  ];
+
+  ctx.save();
+  ctx.filter = "none";
+  ctx.textAlign = "center";
+  ctx.textBaseline = "middle";
+  ctx.font = `700 ${size}px system-ui, -apple-system, "Segoe UI", sans-serif`;
+  ctx.lineWidth = Math.max(2, size * 0.06);
+  ctx.strokeStyle = "rgba(0,0,0,0.28)";
+  ctx.fillStyle = "rgba(255,255,255,0.28)";
+  for (const y of positions) {
+    ctx.strokeText("SilenceCut", W / 2, y);
+    ctx.fillText("SilenceCut", W / 2, y);
+  }
+  ctx.restore();
 }
 
 function drawBlurredBand(
