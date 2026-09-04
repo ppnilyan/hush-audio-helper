@@ -218,3 +218,41 @@ export const createPortalSession = createServerFn({ method: "POST" })
       return { error: getStripeErrorMessage(err) };
     }
   });
+
+/**
+ * Aligne un code promo sur Stripe : coupon créé quand le code est actif,
+ * supprimé dès qu'il est désactivé ou effacé côté administration.
+ */
+export const syncPromoCoupon = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator(
+    (data: {
+      code: string;
+      percentOff: number;
+      active: boolean;
+      environment: StripeEnv;
+    }) => data,
+  )
+  .handler(async ({ data, context }): Promise<{ ok: boolean; error?: string }> => {
+    const { data: isAdmin } = await context.supabase.rpc("has_role", {
+      _user_id: context.userId,
+      _role: "admin",
+    });
+    if (!isAdmin) return { ok: false, error: "forbidden" };
+
+    const code = data.code.trim().toUpperCase();
+    const percent = Math.round(data.percentOff);
+    if (!code || percent <= 0) return { ok: true };
+
+    try {
+      const stripe = createStripeClient(data.environment);
+      if (data.active) {
+        await ensureCoupon(stripe, code, percent);
+      } else {
+        await stripe.coupons.del(couponId(code, percent)).catch(() => null);
+      }
+      return { ok: true };
+    } catch (err) {
+      return { ok: false, error: getStripeErrorMessage(err) };
+    }
+  });
