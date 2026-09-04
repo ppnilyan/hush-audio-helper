@@ -18,7 +18,27 @@ export const PRICE_TO_PACK: Record<string, string> = {
   pack50: "pack50",
   pack100: "pack100",
   pack300: "pack300",
+  // Variantes « abonné » (−20 %) : même pack crédité.
+  pack50_sub: "pack50",
+  pack100_sub: "pack100",
+  pack300_sub: "pack300",
 };
+
+/** Vrai si l'abonnement couvre encore la période payée (même résilié). */
+async function hasActiveSubscription(
+  supabase: { from: (t: "user_subscriptions") => any },
+  userId: string,
+): Promise<boolean> {
+  const { data } = await supabase
+    .from("user_subscriptions")
+    .select("status, renews_at")
+    .eq("user_id", userId)
+    .maybeSingle();
+  if (!data) return false;
+  const active = data.status === "active" || data.status === "canceled";
+  return active && new Date(data.renews_at).getTime() > Date.now();
+}
+
 
 async function resolveOrCreateCustomer(
   stripe: Stripe,
@@ -69,9 +89,18 @@ export const createCheckoutSession = createServerFn({ method: "POST" })
     try {
       const stripe = createStripeClient(data.environment);
 
-      const prices = await stripe.prices.list({ lookup_keys: [data.priceId] });
+      // Les abonnés (même après résiliation, jusqu'à la fin de période) paient −20 % sur les packs.
+      let priceId = data.priceId;
+      if (PRICE_TO_PACK[priceId] && !priceId.endsWith("_sub")) {
+        if (await hasActiveSubscription(context.supabase, context.userId)) {
+          priceId = `${priceId}_sub`;
+        }
+      }
+
+      const prices = await stripe.prices.list({ lookup_keys: [priceId] });
       if (!prices.data.length) return { error: "Prix introuvable" };
       const stripePrice = prices.data[0]!;
+
       const isRecurring = stripePrice.type === "recurring";
 
       const email = context.claims?.email as string | undefined;
@@ -90,7 +119,7 @@ export const createCheckoutSession = createServerFn({ method: "POST" })
 
       const metadata: Record<string, string> = {
         userId: context.userId,
-        priceId: data.priceId,
+        priceId,
         managed_payments: "true",
         ...(data.promoCode ? { promoCode: data.promoCode } : {}),
       };
