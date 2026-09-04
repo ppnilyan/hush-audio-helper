@@ -119,7 +119,7 @@ export const createCheckoutSession = createServerFn({ method: "POST" })
 
       const metadata: Record<string, string> = {
         userId: context.userId,
-        priceId: data.priceId,
+        priceId,
         managed_payments: "true",
         ...(data.promoCode ? { promoCode: data.promoCode } : {}),
       };
