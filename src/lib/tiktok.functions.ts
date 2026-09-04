@@ -31,6 +31,26 @@ function cacheKey(url: string, hdOnly: boolean) {
 // Cache mémoire (même isolate) devant le cache base de données.
 const memory = new Map<string, { at: number; value: Resolved }>();
 
+type TikwmResponse = {
+  code?: number;
+  msg?: string;
+  data?: {
+    play?: string;
+    hdplay?: string;
+    title?: string;
+    duration?: number;
+    play_count?: number | string;
+  };
+};
+
+// Plusieurs miroirs du service gratuit : si l'un refuse, on tente le suivant.
+const ENDPOINTS: Array<(url: string) => string> = [
+  (u) => `https://www.tikwm.com/api/?url=${encodeURIComponent(u)}&hd=1`,
+  (u) => `https://tikwm.com/api/?url=${encodeURIComponent(u)}&hd=1`,
+  (u) => `https://www.tikwm.com/api/feed/search?url=${encodeURIComponent(u)}&hd=1`,
+  (u) => `https://www.tikwm.com/api/?url=${encodeURIComponent(u)}`,
+];
+
 export const resolveTikTok = createServerFn({ method: "POST" })
   .inputValidator((data: unknown) => schema.parse(data))
   .handler(async ({ data }) => {
