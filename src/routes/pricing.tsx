@@ -1,8 +1,10 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
-import { Check, Coins, Lock, Sparkles, Tag, X } from "lucide-react";
-import { useState } from "react";
+import { Check, Coins, CreditCard, Lock, Sparkles, Tag, X } from "lucide-react";
+import { useEffect, useState } from "react";
 
+import { PaymentTestModeBanner } from "@/components/PaymentTestModeBanner";
+import { StripeEmbeddedCheckout } from "@/components/StripeEmbeddedCheckout";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import {
@@ -16,8 +18,9 @@ import {
   type PlanDef,
 } from "@/lib/billing";
 import { fakeBuyPack, fakeSubscribe, lookupPromoCode } from "@/lib/billing.functions";
+import { createPortalSession } from "@/lib/payments.functions";
 import { useLocale, useTr } from "@/lib/prefs";
-
+import { getStripeEnvironment, paymentsConfigured } from "@/lib/stripe";
 
 export const Route = createFileRoute("/pricing")({
   head: () => ({
@@ -68,6 +71,23 @@ function PricingPage() {
   const [promo, setPromo] = useState<{ code: string; percentOff: number } | null>(null);
   const [promoError, setPromoError] = useState<string | null>(null);
   const [promoBusy, setPromoBusy] = useState(false);
+  const [checkoutPriceId, setCheckoutPriceId] = useState<string | null>(null);
+  const openPortal = useServerFn(createPortalSession);
+  const stripeReady = paymentsConfigured();
+
+  // Retour depuis le paiement : on rafraîchit le solde.
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    const params = new URLSearchParams(window.location.search);
+    if (params.get("checkout") !== "done") return;
+    setNotice(tr("Merci ! Votre paiement est en cours de validation, votre solde arrive."));
+    void invalidate();
+    const t = window.setTimeout(() => void invalidate(), 4000);
+    window.history.replaceState({}, "", window.location.pathname);
+    return () => window.clearTimeout(t);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
 
   const isAdmin = !!billing.state?.isAdmin;
   const currentPlan = billing.state?.plan?.id ?? null;
@@ -137,34 +157,81 @@ function PricingPage() {
         </Button>
       );
     }
-    if (!isAdmin) {
-      return (
-        <Button size="lg" className="w-full" variant="secondary" disabled>
-          {tr("Bientôt disponible")}
-        </Button>
-      );
-    }
     return (
-      <Button
-        size="lg"
-        className="w-full"
-        variant={p.highlight ? "default" : "secondary"}
-        disabled={busy !== null}
-        onClick={() =>
-          void run(p.id, () =>
-            subscribe({ data: { planId: p.id, promoCode: promo?.code ?? null } }),
-          )
-        }
-
-      >
-        {busy === p.id ? "…" : currentPlan ? tr("Changer pour cette formule") : tr("S'abonner")}
-      </Button>
+      <div className="space-y-2">
+        <Button
+          size="lg"
+          className="w-full"
+          variant={p.highlight ? "default" : "secondary"}
+          disabled={!stripeReady}
+          onClick={() => {
+            setNotice(null);
+            setCheckoutPriceId(`${p.id}_monthly`);
+          }}
+        >
+          <CreditCard className="size-4" />
+          {currentPlan ? tr("Changer pour cette formule") : tr("S'abonner")}
+        </Button>
+        {isAdmin && (
+          <Button
+            size="sm"
+            variant="ghost"
+            className="w-full text-xs"
+            disabled={busy !== null}
+            onClick={() =>
+              void run(p.id, () =>
+                subscribe({ data: { planId: p.id, promoCode: promo?.code ?? null } }),
+              )
+            }
+          >
+            {busy === p.id ? "…" : tr("Activer sans paiement (admin)")}
+          </Button>
+        )}
+      </div>
     );
   };
 
+  const portal = async () => {
+    setNotice(null);
+    try {
+      const r = await openPortal({
+        data: {
+          environment: getStripeEnvironment(),
+          returnUrl: `${window.location.origin}/pricing`,
+        },
+      });
+      if ("error" in r) {
+        setNotice(r.error);
+        return;
+      }
+      window.open(r.url, "_blank");
+    } catch (e) {
+      setNotice((e as Error).message);
+    }
+  };
+
+  if (checkoutPriceId) {
+    return (
+      <main className="mx-auto min-h-screen w-full max-w-3xl px-5 py-10">
+        <PaymentTestModeBanner />
+        <div className="mt-6 mb-4 flex items-center justify-between">
+          <h1 className="text-2xl font-semibold">{tr("Paiement")}</h1>
+          <Button variant="secondary" onClick={() => setCheckoutPriceId(null)}>
+            <X className="size-4" /> {tr("Annuler")}
+          </Button>
+        </div>
+        <StripeEmbeddedCheckout
+          priceId={checkoutPriceId}
+          returnUrl={`${typeof window === "undefined" ? "" : window.location.origin}/pricing?checkout=done`}
+        />
+      </main>
+    );
+  }
+
   return (
     <main className="mx-auto min-h-screen w-full max-w-6xl px-5 py-14">
-      <header className="mb-10 text-center">
+      <PaymentTestModeBanner />
+      <header className="mb-10 mt-6 text-center">
         <p className="text-sm font-medium uppercase tracking-[0.25em] text-primary">
           {tr("Tarifs")}
         </p>
@@ -177,6 +244,16 @@ function PricingPage() {
             <Coins className="size-4 text-primary" />
             {tr("Votre solde")}&nbsp;: <strong>{billing.totalCredits}</strong> {tr("crédits")}
           </p>
+        )}
+        {subscriber && billing.state?.plan?.mode !== "test" && (
+          <div className="mt-4">
+            <Button variant="secondary" onClick={() => void portal()}>
+              <CreditCard className="size-4" /> {tr("Gérer mon abonnement")}
+            </Button>
+            <p className="mt-2 text-xs text-muted-foreground">
+              {tr("Résiliation possible à tout moment : l'accès et les crédits restent actifs jusqu'à la fin de la période déjà payée.")}
+            </p>
+          </div>
         )}
       </header>
 
@@ -243,9 +320,14 @@ function PricingPage() {
           </p>
         )}
         {promo && (
-          <p className="mt-2 text-sm text-primary">
-            {tr("Code")} {promo.code} {tr("appliqué")} · −{promo.percentOff}%
-          </p>
+          <>
+            <p className="mt-2 text-sm text-primary">
+              {tr("Code")} {promo.code} {tr("appliqué")} · −{promo.percentOff}%
+            </p>
+            <p className="mt-1 text-xs text-muted-foreground">
+              {tr("La remise s'applique au moment du paiement une fois le code enregistré côté paiement ; sinon le prix affiché au paiement reste le prix normal.")}
+            </p>
+          </>
         )}
         {promoError && <p className="mt-2 text-sm text-destructive">{promoError}</p>}
       </section>
@@ -329,29 +411,40 @@ function PricingPage() {
                     </span>
                   )}
                 </p>
-                <div className="mt-4">
+                <div className="mt-4 space-y-2">
                   {!billing.signedIn ? (
                     <Button asChild variant="secondary" className="w-full">
                       <Link to="/auth">{tr("Se connecter")}</Link>
                     </Button>
-                  ) : isAdmin ? (
-                    <Button
-                      variant="secondary"
-                      className="w-full"
-                      disabled={busy !== null}
-                      onClick={() =>
-                        void run(k.id, () =>
-                          buyPack({ data: { packId: k.id, promoCode: promo?.code ?? null } }),
-                        )
-                      }
-                    >
-
-                      {busy === k.id ? "…" : tr("Acheter")}
-                    </Button>
                   ) : (
-                    <Button variant="secondary" className="w-full" disabled>
-                      {tr("Bientôt disponible")}
-                    </Button>
+                    <>
+                      <Button
+                        variant="secondary"
+                        className="w-full"
+                        disabled={!stripeReady}
+                        onClick={() => {
+                          setNotice(null);
+                          setCheckoutPriceId(k.id);
+                        }}
+                      >
+                        <CreditCard className="size-4" /> {tr("Acheter")}
+                      </Button>
+                      {isAdmin && (
+                        <Button
+                          size="sm"
+                          variant="ghost"
+                          className="w-full text-xs"
+                          disabled={busy !== null}
+                          onClick={() =>
+                            void run(k.id, () =>
+                              buyPack({ data: { packId: k.id, promoCode: promo?.code ?? null } }),
+                            )
+                          }
+                        >
+                          {busy === k.id ? "…" : tr("Créditer sans paiement (admin)")}
+                        </Button>
+                      )}
+                    </>
                   )}
                 </div>
               </article>
