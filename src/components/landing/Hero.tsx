@@ -24,25 +24,16 @@ export function Hero() {
   }
 
   return (
-    <section id="top" className="relative overflow-hidden px-4 pt-16 pb-20">
-      <div className="mx-auto grid max-w-6xl items-center gap-12 lg:grid-cols-[1.1fr_1fr]">
-        <div>
-          <h1 className="font-display text-4xl leading-tight font-bold tracking-tight sm:text-5xl lg:text-6xl">
-            {tr("Crée des montages qui")} <span className="gradient-text">{tr("percent")}</span>
-          </h1>
-          <p className="mt-5 max-w-xl text-base text-muted-foreground sm:text-lg">
-            {tr(
-              "Transforme plusieurs vidéos TikTok en un seul montage vertical, prêt à être publié et monétisé.",
-            )}
-          </p>
-          <p className="mt-6 text-xs text-muted-foreground">
-            {tr(
-              "10 crédits offerts à l'inscription, soit une vidéo d'essai. Aucune carte bancaire demandée.",
-            )}
-          </p>
-        </div>
+    <section id="top" className="relative overflow-hidden px-4 pt-14 pb-16">
+      <div className="mx-auto max-w-3xl text-center">
+        <h1 className="font-display text-4xl leading-tight font-bold tracking-tight sm:text-5xl lg:text-6xl">
+          {tr("Crée des montages qui")} <span className="gradient-text">{tr("percent")}</span>
+        </h1>
+        <p className="mx-auto mt-5 max-w-xl text-base text-muted-foreground sm:text-lg">
+          {tr("Colle tes liens, récupère un TikTok monétisable en quelques minutes.")}
+        </p>
 
-        <div className="panel-glow p-6">
+        <div className="card-hover panel-glow mx-auto mt-8 max-w-xl p-6 text-left">
           <h2 className="font-display text-lg font-semibold">{tr("Teste maintenant")}</h2>
           <div className="mt-4 space-y-3">
             {links.map((value, i) => (
@@ -72,6 +63,12 @@ export function Hero() {
           </Button>
           {error && <p className="mt-3 text-sm text-destructive">{error}</p>}
         </div>
+
+        <p className="mt-5 text-xs text-muted-foreground">
+          {tr(
+            "10 crédits offerts à l'inscription, soit une vidéo d'essai. Aucune carte bancaire demandée.",
+          )}
+        </p>
       </div>
     </section>
   );
