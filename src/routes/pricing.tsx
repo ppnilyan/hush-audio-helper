@@ -253,10 +253,8 @@ function PricingPage() {
       <section className="grid gap-5 md:grid-cols-3">
         {PLANS.map((p) => (
           <article
-
-
             key={p.id}
-            className={`relative flex flex-col rounded-3xl border p-6 ${
+            className={`card-hover relative flex flex-col rounded-3xl border p-6 ${
               p.highlight ? "panel-glow border-primary/60" : "border-border bg-secondary/30"
             }`}
           >
@@ -308,7 +306,7 @@ function PricingPage() {
           {PACKS.map((k) => {
             const price = packPrice(k, subscriber);
             return (
-              <article key={k.id} className="rounded-2xl border border-border bg-secondary/30 p-5">
+              <article key={k.id} className="card-hover rounded-2xl border border-border bg-secondary/30 p-5">
                 <p className="text-lg font-semibold">
                   {k.credits} {tr("crédits")}
                 </p>
@@ -381,7 +379,7 @@ function PricingPage() {
             "Chaque nouveau compte reçoit 10 crédits offerts, soit une vidéo d'essai, et peut acheter des packs de crédits.",
           ],
         ].map(([q, a]) => (
-          <div key={q} className="rounded-2xl bg-secondary/30 p-5">
+          <div key={q} className="card-hover-soft rounded-2xl bg-secondary/30 p-5">
             <h3 className="font-semibold">{tr(q!)}</h3>
             <p className="mt-2 text-sm text-muted-foreground">{tr(a!)}</p>
           </div>

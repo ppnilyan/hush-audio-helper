@@ -46,7 +46,7 @@ export function Faq() {
         <h2 className="font-display text-center text-3xl font-bold tracking-tight">
           {tr("Questions fréquentes")}
         </h2>
-        <Accordion type="single" collapsible className="card-hover panel mt-10 px-5">
+        <Accordion type="single" collapsible className="card-hover-soft panel mt-10 px-5">
           {QUESTIONS.map((item, i) => (
             <AccordionItem key={i} value={`q${i}`}>
               <AccordionTrigger className="text-left text-base">{tr(item.q)}</AccordionTrigger>
