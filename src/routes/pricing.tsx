@@ -197,9 +197,63 @@ function PricingPage() {
         <p className="mb-6 rounded-xl bg-secondary/60 px-4 py-3 text-center text-sm">{notice}</p>
       )}
 
+      <section className="mx-auto mb-8 max-w-xl rounded-2xl border border-border bg-secondary/30 p-4">
+        <label htmlFor="promo" className="flex items-center gap-2 text-sm font-medium">
+          <Tag className="size-4 text-primary" /> {tr("Code de promotion")}
+        </label>
+        <div className="mt-3 flex gap-2">
+          <Input
+            id="promo"
+            value={promoInput}
+            placeholder={tr("Entrez votre code")}
+            maxLength={32}
+            onChange={(e) => {
+              setPromoInput(e.target.value.toUpperCase());
+              setPromo(null);
+              setPromoError(null);
+            }}
+            onKeyDown={(e) => {
+              if (e.key === "Enter") void applyPromo();
+            }}
+          />
+          {promo ? (
+            <Button
+              variant="secondary"
+              onClick={() => {
+                setPromo(null);
+                setPromoInput("");
+                setPromoError(null);
+              }}
+            >
+              <X className="size-4" /> {tr("Retirer")}
+            </Button>
+          ) : (
+            <Button
+              variant="secondary"
+              disabled={promoBusy || !promoInput.trim() || !billing.signedIn}
+              onClick={() => void applyPromo()}
+            >
+              {promoBusy ? "…" : tr("Appliquer")}
+            </Button>
+          )}
+        </div>
+        {!billing.signedIn && (
+          <p className="mt-2 text-xs text-muted-foreground">
+            {tr("Connectez-vous pour utiliser un code.")}
+          </p>
+        )}
+        {promo && (
+          <p className="mt-2 text-sm text-primary">
+            {tr("Code")} {promo.code} {tr("appliqué")} · −{promo.percentOff}%
+          </p>
+        )}
+        {promoError && <p className="mt-2 text-sm text-destructive">{promoError}</p>}
+      </section>
+
       <section className="grid gap-5 md:grid-cols-3">
         {PLANS.map((p) => (
           <article
+
             key={p.id}
             className={`relative flex flex-col rounded-3xl border p-6 ${
               p.highlight ? "panel-glow border-primary/60" : "border-border bg-secondary/30"
