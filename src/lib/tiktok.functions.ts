@@ -112,15 +112,30 @@ export const resolveTikTok = createServerFn({ method: "POST" })
       await new Promise((r) => setTimeout(r, 700 * (round + 1)));
     }
 
+    // Repli direct sur la page TikTok : le service gratuit refuse souvent les
+    // requêtes venant des serveurs (quota partagé), la page publique non.
     if (!json) {
+      const direct = await resolveFromTikTokPage(data.url).catch(() => null);
+      if (direct && (!hdOnly || direct.hd)) {
+        memory.set(key, { at: Date.now(), value: direct });
+        await supabaseAdmin
+          .from("tiktok_cache")
+          .upsert(
+            { url_key: key, payload: direct, fetched_at: new Date().toISOString() },
+            { onConflict: "url_key" },
+          )
+          .then(null, () => null);
+        return direct;
+      }
       const stale = staleFallback();
       if (stale && (!hdOnly || stale.hd)) return stale;
       throw new Error(
         /limit/i.test(lastMessage)
-          ? "Le service gratuit de récupération TikTok est momentanément saturé. Réessaie dans une minute."
+          ? "Le service gratuit de récupération TikTok a atteint sa limite quotidienne. Réessaie dans quelques minutes."
           : lastMessage || "Impossible de récupérer cette vidéo TikTok.",
       );
     }
+
 
     const hd = json.data?.hdplay;
     const play = hd || json.data?.play;
