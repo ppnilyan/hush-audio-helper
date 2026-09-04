@@ -12,9 +12,7 @@ import {
   listPromoCodes,
   setPromoCodeActive,
 } from "@/lib/billing.functions";
-import { syncPromoCoupon } from "@/lib/payments.functions";
 import { usePrefs } from "@/lib/prefs";
-import { getStripeEnvironment, paymentsConfigured } from "@/lib/stripe";
 
 /** Section « Création » réservée aux administrateurs : gestion des codes de promotion. */
 export function AdminPromoSection() {
@@ -24,15 +22,6 @@ export function AdminPromoSection() {
   const create = useServerFn(createPromoCode);
   const remove = useServerFn(deletePromoCode);
   const toggle = useServerFn(setPromoCodeActive);
-  const syncStripe = useServerFn(syncPromoCoupon);
-
-  /** Répercute l'état du code sur le prestataire de paiement. */
-  const sync = async (c: string, percentOff: number, active: boolean) => {
-    if (!paymentsConfigured()) return;
-    await syncStripe({
-      data: { code: c, percentOff, active, environment: getStripeEnvironment() },
-    }).catch(() => null);
-  };
 
   const [code, setCode] = useState("");
   const [percent, setPercent] = useState("20");
@@ -57,7 +46,6 @@ export function AdminPromoSection() {
         setError(fr ? "Création impossible." : "Could not create the code.");
       } else {
         setCode("");
-        await sync(value, pct, true);
         await codes.refetch();
       }
     } catch (e) {
@@ -131,7 +119,6 @@ export function AdminPromoSection() {
                 aria-label={fr ? "Activer le code" : "Enable code"}
                 onCheckedChange={async (next) => {
                   await toggle({ data: { code: c.code, active: next } });
-                  await sync(c.code, c.percentOff, next);
                   await codes.refetch();
                 }}
               />
@@ -145,7 +132,6 @@ export function AdminPromoSection() {
               aria-label={fr ? "Supprimer le code" : "Delete code"}
               onClick={async () => {
                 await remove({ data: { code: c.code } });
-                await sync(c.code, c.percentOff, false);
                 await codes.refetch();
               }}
             >

@@ -3,8 +3,7 @@ import { useServerFn } from "@tanstack/react-start";
 import { Check, Coins, CreditCard, Lock, Sparkles, Tag, X } from "lucide-react";
 import { useEffect, useState } from "react";
 
-import { PaymentTestModeBanner } from "@/components/PaymentTestModeBanner";
-import { StripeEmbeddedCheckout } from "@/components/StripeEmbeddedCheckout";
+import { PaypalCheckout } from "@/components/PaypalCheckout";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import {
@@ -18,9 +17,9 @@ import {
   type PlanDef,
 } from "@/lib/billing";
 import { fakeBuyPack, fakeSubscribe, lookupPromoCode } from "@/lib/billing.functions";
-import { createPortalSession } from "@/lib/payments.functions";
+import { cancelPaypalSubscription } from "@/lib/paypal.functions";
 import { useLocale, useTr } from "@/lib/prefs";
-import { getStripeEnvironment, paymentsConfigured } from "@/lib/stripe";
+
 
 export const Route = createFileRoute("/pricing")({
   head: () => ({
@@ -71,10 +70,12 @@ function PricingPage() {
   const [promo, setPromo] = useState<{ code: string; percentOff: number } | null>(null);
   const [promoError, setPromoError] = useState<string | null>(null);
   const [promoBusy, setPromoBusy] = useState(false);
-  const [checkoutPriceId, setCheckoutPriceId] = useState<string | null>(null);
+  const [checkoutTarget, setCheckoutTarget] = useState<
+    { kind: "pack"; packId: string } | { kind: "plan"; planId: string } | null
+  >(null);
   const [checkoutAmount, setCheckoutAmount] = useState<number>(0);
-  const openPortal = useServerFn(createPortalSession);
-  const stripeReady = paymentsConfigured();
+  const cancelSub = useServerFn(cancelPaypalSubscription);
+
 
   // Retour depuis le paiement : on rafraîchit le solde.
   useEffect(() => {
@@ -164,13 +165,13 @@ function PricingPage() {
           size="lg"
           className="w-full"
           variant={p.highlight ? "default" : "secondary"}
-          disabled={!stripeReady}
           onClick={() => {
             setNotice(null);
             setCheckoutAmount(withPromo(p.priceCents));
-            setCheckoutPriceId(`${p.id}_monthly`);
+            setCheckoutTarget({ kind: "plan", planId: p.id });
           }}
         >
+
           <CreditCard className="size-4" />
           {currentPlan ? tr("Changer pour cette formule") : tr("S'abonner")}
         </Button>
@@ -193,32 +194,32 @@ function PricingPage() {
     );
   };
 
-  const portal = async () => {
+  const cancel = async () => {
     setNotice(null);
+    setBusy("cancel");
     try {
-      const r = await openPortal({
-        data: {
-          environment: getStripeEnvironment(),
-          returnUrl: `${window.location.origin}/pricing`,
-        },
-      });
-      if ("error" in r) {
+      const r = await cancelSub({});
+      if (!r.ok) {
         setNotice(r.error);
         return;
       }
-      window.open(r.url, "_blank");
+      setNotice(
+        tr("Abonnement résilié : vos crédits et avantages restent actifs jusqu'à la fin de la période déjà payée."),
+      );
+      await invalidate();
     } catch (e) {
       setNotice((e as Error).message);
+    } finally {
+      setBusy(null);
     }
   };
 
-  if (checkoutPriceId) {
+  if (checkoutTarget) {
     return (
       <main className="mx-auto min-h-screen w-full max-w-3xl px-5 py-10">
-        <PaymentTestModeBanner />
         <div className="mt-6 mb-4 flex items-center justify-between">
           <h1 className="text-2xl font-semibold">{tr("Paiement")}</h1>
-          <Button variant="secondary" onClick={() => setCheckoutPriceId(null)}>
+          <Button variant="secondary" onClick={() => setCheckoutTarget(null)}>
             <X className="size-4" /> {tr("Annuler")}
           </Button>
         </div>
@@ -226,11 +227,16 @@ function PricingPage() {
           {tr("Montant à payer")} : <strong>{formatEuro(checkoutAmount, locale)}</strong>
           {promo && promo.percentOff > 0 ? ` · ${promo.code} −${promo.percentOff}%` : ""}
         </p>
-        <StripeEmbeddedCheckout
-          priceId={checkoutPriceId}
-          {...(promo ? { promoCode: promo.code } : {})}
-          {...(checkoutAmount ? { expectedAmountCents: checkoutAmount } : {})}
-          returnUrl={`${typeof window === "undefined" ? "" : window.location.origin}/pricing?checkout=done`}
+        <PaypalCheckout
+          target={checkoutTarget}
+          promoCode={promo?.code ?? null}
+          expectedAmountCents={checkoutAmount}
+          onDone={() => {
+            setCheckoutTarget(null);
+            setNotice(tr("Paiement confirmé ✓ Vos crédits sont disponibles."));
+            void invalidate();
+          }}
+          onError={(m) => setNotice(m)}
         />
       </main>
     );
@@ -238,7 +244,7 @@ function PricingPage() {
 
   return (
     <main className="mx-auto min-h-screen w-full max-w-6xl px-5 py-14">
-      <PaymentTestModeBanner />
+
       <header className="mb-10 mt-6 text-center">
         <p className="text-sm font-medium uppercase tracking-[0.25em] text-primary">
           {tr("Tarifs")}
@@ -255,9 +261,17 @@ function PricingPage() {
         )}
         {subscriber && billing.state?.plan?.mode !== "test" && (
           <div className="mt-4">
-            <Button variant="secondary" onClick={() => void portal()}>
-              <CreditCard className="size-4" /> {tr("Gérer mon abonnement")}
+            <Button
+              variant="secondary"
+              disabled={busy === "cancel" || !!billing.state?.plan?.cancelAtPeriodEnd}
+              onClick={() => void cancel()}
+            >
+              <CreditCard className="size-4" />{" "}
+              {billing.state?.plan?.cancelAtPeriodEnd
+                ? tr("Abonnement résilié")
+                : tr("Résilier mon abonnement")}
             </Button>
+
             <p className="mt-2 text-xs text-muted-foreground">
               {tr("Résiliation possible à tout moment : l'accès et les crédits restent actifs jusqu'à la fin de la période déjà payée.")}
             </p>
@@ -429,11 +443,11 @@ function PricingPage() {
                       <Button
                         variant="secondary"
                         className="w-full"
-                        disabled={!stripeReady}
                         onClick={() => {
                           setNotice(null);
                           setCheckoutAmount(withPromo(price));
-                          setCheckoutPriceId(k.id);
+                          setCheckoutTarget({ kind: "pack", packId: k.id });
+
                         }}
                       >
                         <CreditCard className="size-4" /> {tr("Acheter")}

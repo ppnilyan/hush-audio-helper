@@ -230,6 +230,69 @@ export type Database = {
         }
         Relationships: []
       }
+      paypal_catalog: {
+        Row: {
+          amount_cents: number
+          created_at: string
+          key: string
+          paypal_id: string
+        }
+        Insert: {
+          amount_cents: number
+          created_at?: string
+          key: string
+          paypal_id: string
+        }
+        Update: {
+          amount_cents?: number
+          created_at?: string
+          key?: string
+          paypal_id?: string
+        }
+        Relationships: []
+      }
+      paypal_events: {
+        Row: {
+          created_at: string
+          id: string
+          type: string
+        }
+        Insert: {
+          created_at?: string
+          id: string
+          type: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          type?: string
+        }
+        Relationships: []
+      }
+      paypal_subscription_owners: {
+        Row: {
+          amount_cents: number
+          created_at: string
+          paypal_subscription_id: string
+          plan_id: string
+          user_id: string
+        }
+        Insert: {
+          amount_cents: number
+          created_at?: string
+          paypal_subscription_id: string
+          plan_id: string
+          user_id: string
+        }
+        Update: {
+          amount_cents?: number
+          created_at?: string
+          paypal_subscription_id?: string
+          plan_id?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       plans: {
         Row: {
           allow_advanced: boolean
