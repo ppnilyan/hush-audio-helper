@@ -992,7 +992,7 @@ function Montage() {
           duration: totalDuration,
           mime: blob.type,
           ext,
-        }).catch(() => {});
+        });
         await refreshHistory();
       } else {
         const entry = {
@@ -1009,12 +1009,14 @@ function Montage() {
       }
       setTab("history");
     } catch (e) {
-      setError((e as Error).message || tr("La génération a échoué."));
-      if (debit) {
-        await refund({ data: debit }).catch(() => {});
-        void invalidateBilling();
-      }
+      setError((e as Error).message || tr("La génération a échoué. Vos 10 crédits ont été remboursés."));
     } finally {
+      // Le serveur vérifie qu'une vidéo est bien arrivée : sinon il rembourse.
+      if (jobId) {
+        await finishJob({ data: { jobId } }).catch(() => {});
+        void invalidateBilling();
+        void refreshFailed();
+      }
       setRendering(false);
       setProgress(0);
     }
