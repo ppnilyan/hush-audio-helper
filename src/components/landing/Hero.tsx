@@ -1,11 +1,22 @@
 import { useNavigate } from "@tanstack/react-router";
-import { ArrowRight, Link2 } from "lucide-react";
-import { useState } from "react";
+import { ArrowRight, Check, Link2, X } from "lucide-react";
+import { useMemo, useState } from "react";
 
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { setPendingLinks } from "@/lib/clips-store";
 import { useTr } from "@/lib/prefs";
+
+function looksLikeTikTokUrl(value: string) {
+  if (!value.trim()) return false;
+  try {
+    const url = new URL(value.trim());
+    const host = url.hostname.toLowerCase().replace(/^www\./, "");
+    return host === "tiktok.com" || host === "vm.tiktok.com";
+  } catch {
+    return false;
+  }
+}
 
 export function Hero() {
   const tr = useTr();
@@ -13,13 +24,22 @@ export function Hero() {
   const [links, setLinks] = useState(["", ""]);
   const [error, setError] = useState<string | null>(null);
 
+  const statuses = useMemo(
+    () => links.map((value) => ({ valid: looksLikeTikTokUrl(value), value })),
+    [links],
+  );
+
+  const hasValidLink = statuses.some((s) => s.valid);
+
   function start() {
-    const clean = links.map((l) => l.trim()).filter(Boolean);
-    if (clean.length === 0) {
-      setError(tr("Ajoute au moins un lien pour commencer."));
+    const validLinks = links
+      .map((l) => l.trim())
+      .filter((l) => looksLikeTikTokUrl(l));
+    if (validLinks.length === 0) {
+      setError(tr("Ajoute au moins un lien TikTok valide pour commencer."));
       return;
     }
-    setPendingLinks(clean);
+    setPendingLinks(validLinks);
     void navigate({ to: "/auth" });
   }
 
@@ -36,29 +56,50 @@ export function Hero() {
         <div className="card-hover panel-glow mx-auto mt-8 max-w-xl p-6 text-left">
           <h2 className="font-display text-lg font-semibold">{tr("Teste maintenant")}</h2>
           <div className="mt-4 space-y-3">
-            {links.map((value, i) => (
-              <div key={i} className="relative">
-                <Link2 className="pointer-events-none absolute top-1/2 left-3 size-4 -translate-y-1/2 text-muted-foreground" />
-                <Input
-                  value={value}
-                  onChange={(e) => {
-                    const next = [...links];
-                    next[i] = e.target.value;
-                    setLinks(next);
-                    setError(null);
-                  }}
-                  placeholder={
-                    i === 0
-                      ? tr("Colle le lien de ta première vidéo")
-                      : tr("Colle un deuxième lien")
-                  }
-                  className="pl-9"
-                  inputMode="url"
-                />
-              </div>
-            ))}
+            {links.map((value, i) => {
+              const status = statuses[i]!;
+              const dirty = value.trim().length > 0;
+              return (
+                <div key={i} className="relative">
+                  <Link2 className="pointer-events-none absolute top-1/2 left-3 size-4 -translate-y-1/2 text-muted-foreground" />
+                  <Input
+                    value={value}
+                    onChange={(e) => {
+                      const next = [...links];
+                      next[i] = e.target.value;
+                      setLinks(next);
+                      setError(null);
+                    }}
+                    placeholder={
+                      i === 0
+                        ? tr("Colle le lien de ta première vidéo")
+                        : tr("Colle un deuxième lien")
+                    }
+                    className="pl-9 pr-9"
+                    inputMode="url"
+                  />
+                  {dirty && (
+                    <span
+                      className={`pointer-events-none absolute top-1/2 right-3 flex size-6 -translate-y-1/2 items-center justify-center rounded-full ${
+                        status.valid ? "bg-green/15" : "bg-destructive/15"
+                      }`}
+                    >
+                      {status.valid ? (
+                        <Check className="size-3.5 text-green" />
+                      ) : (
+                        <X className="size-3.5 text-destructive" />
+                      )}
+                    </span>
+                  )}
+                </div>
+              );
+            })}
           </div>
-          <Button className="mt-4 w-full rounded-full" onClick={start}>
+          <Button
+            className="mt-4 w-full rounded-full"
+            onClick={start}
+            disabled={!hasValidLink}
+          >
             {tr("Commencer gratuitement")} <ArrowRight className="size-4" />
           </Button>
           {error && <p className="mt-3 text-sm text-destructive">{error}</p>}
