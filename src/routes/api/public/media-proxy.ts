@@ -95,8 +95,13 @@ export const Route = createFileRoute("/api/public/media-proxy")({
         const fromTikwm = parsed.hostname.endsWith("tikwm.com");
         const src = params.get("src");
         const srcPage = !fromTikwm && src ? isTikTokPage(src) : null;
-        const cookie = srcPage ? await tiktokCookieFor(srcPage).catch(() => "") : "";
-        const upstream = await fetch(parsed.toString(), {
+        // Le lien de lecture n'est valable qu'avec les cookies de la même visite :
+        // on relit la page pour obtenir un couple lien + cookies cohérent.
+        const session = srcPage ? await tiktokSession(srcPage).catch(() => null) : null;
+        const cookie = session?.cookie ?? "";
+        const finalUrl = session?.playUrl ?? parsed.toString();
+        const upstream = await fetch(finalUrl, {
+
           headers: {
             "User-Agent": fromTikwm ? "Mozilla/5.0" : UA,
             Referer: fromTikwm ? "https://www.tikwm.com/" : "https://www.tiktok.com/",
