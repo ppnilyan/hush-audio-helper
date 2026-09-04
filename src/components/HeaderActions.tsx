@@ -2,6 +2,7 @@ import { Link, useNavigate } from "@tanstack/react-router";
 import { Coins, Lock, Settings, User } from "lucide-react";
 import { useState } from "react";
 
+import { AdminFaqSection } from "@/components/AdminFaqSection";
 import { AdminPromoSection } from "@/components/AdminPromoSection";
 import { Button } from "@/components/ui/button";
 
@@ -206,6 +207,7 @@ export function HeaderActions() {
             </section>
 
             {billing.state?.isAdmin && <AdminPromoSection />}
+            {billing.state?.isAdmin && <AdminFaqSection />}
           </div>
 
         </DialogContent>
