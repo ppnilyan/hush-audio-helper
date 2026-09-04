@@ -28,7 +28,7 @@ async function handleEvent(event: Stripe.Event, env: StripeEnv, stripe: Stripe) 
   if (seenError) return;
 
   const applySubscription = async (subscriptionId: string, amountCents: number) => {
-    const sub = await stripe.subscriptions.retrieve(subscriptionId, { expand: ["items.data.price"] });
+    const sub = await stripe.subscriptions.retrieve(subscriptionId);
     const userId =
       (sub.metadata?.["userId"] as string | undefined) ??
       (typeof sub.customer === "string"
@@ -42,7 +42,7 @@ async function handleEvent(event: Stripe.Event, env: StripeEnv, stripe: Stripe) 
     const periodStart = new Date((item.current_period_start ?? 0) * 1000).toISOString();
     const renewsAt = new Date((item.current_period_end ?? 0) * 1000).toISOString();
 
-    await supabaseAdmin.rpc("stripe_apply_subscription", {
+    const { error: rpcError } = await supabaseAdmin.rpc("stripe_apply_subscription", {
       _user_id: userId,
       _plan_id: planId,
       _mode: mode,
@@ -54,6 +54,7 @@ async function handleEvent(event: Stripe.Event, env: StripeEnv, stripe: Stripe) 
       _cancel_at_period_end: !!sub.cancel_at_period_end,
       _amount_cents: amountCents,
     });
+    if (rpcError) throw new Error(`stripe_apply_subscription: ${rpcError.message}`);
   };
 
   switch (event.type) {
@@ -72,12 +73,13 @@ async function handleEvent(event: Stripe.Event, env: StripeEnv, stripe: Stripe) 
       const key = session.metadata?.["priceId"];
       const packId = key ? PRICE_TO_PACK[key] : undefined;
       if (userId && packId) {
-        await supabaseAdmin.rpc("stripe_apply_pack", {
+        const { error: packError } = await supabaseAdmin.rpc("stripe_apply_pack", {
           _user_id: userId,
           _pack_id: packId,
           _mode: mode,
           _amount_cents: session.amount_total ?? 0,
         });
+        if (packError) throw new Error(`stripe_apply_pack: ${packError.message}`);
       }
       break;
     }
@@ -101,6 +103,14 @@ async function handleEvent(event: Stripe.Event, env: StripeEnv, stripe: Stripe) 
         _cancel: !!sub.cancel_at_period_end,
       });
       // Changement de formule : on aligne le quota sur la nouvelle formule.
+      if (sub.status === "active" || sub.status === "trialing") {
+        await applySubscription(sub.id, 0);
+      }
+      break;
+    }
+
+    case "customer.subscription.created": {
+      const sub = event.data.object;
       if (sub.status === "active" || sub.status === "trialing") {
         await applySubscription(sub.id, 0);
       }
@@ -141,7 +151,14 @@ export const Route = createFileRoute("/api/public/payments/webhook")({
         try {
           await handleEvent(event, env, stripe);
         } catch (error) {
-          console.error("stripe webhook", error);
+          console.error("stripe webhook", event.type, error);
+          // On libère le verrou d'idempotence pour que Stripe puisse réessayer.
+          try {
+            const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+            await supabaseAdmin.from("stripe_events").delete().eq("id", event.id);
+          } catch (cleanupError) {
+            console.error("stripe webhook cleanup", cleanupError);
+          }
           return new Response("error", { status: 500 });
         }
         return new Response("ok");

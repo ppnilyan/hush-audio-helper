@@ -43,6 +43,13 @@
       "when": 1788528304716,
       "tag": "0005_fix_stripe_apply_subscription",
       "breakpoints": true
+    },
+    {
+      "idx": 6,
+      "version": "7",
+      "when": 1788529277502,
+      "tag": "0006_seed_plans_and_packs",
+      "breakpoints": true
     }
   ]
 }
