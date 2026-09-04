@@ -71,6 +71,23 @@ function PricingPage() {
   const [promo, setPromo] = useState<{ code: string; percentOff: number } | null>(null);
   const [promoError, setPromoError] = useState<string | null>(null);
   const [promoBusy, setPromoBusy] = useState(false);
+  const [checkoutPriceId, setCheckoutPriceId] = useState<string | null>(null);
+  const openPortal = useServerFn(createPortalSession);
+  const stripeReady = paymentsConfigured();
+
+  // Retour depuis le paiement : on rafraîchit le solde.
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    const params = new URLSearchParams(window.location.search);
+    if (params.get("checkout") !== "done") return;
+    setNotice(tr("Merci ! Votre paiement est en cours de validation, votre solde arrive."));
+    void invalidate();
+    const t = window.setTimeout(() => void invalidate(), 4000);
+    window.history.replaceState({}, "", window.location.pathname);
+    return () => window.clearTimeout(t);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
 
   const isAdmin = !!billing.state?.isAdmin;
   const currentPlan = billing.state?.plan?.id ?? null;
