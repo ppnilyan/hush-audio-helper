@@ -57,6 +57,7 @@ export function AdminPromoSection() {
         setError(fr ? "Création impossible." : "Could not create the code.");
       } else {
         setCode("");
+        await sync(value, pct, true);
         await codes.refetch();
       }
     } catch (e) {
