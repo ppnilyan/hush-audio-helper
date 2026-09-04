@@ -1914,7 +1914,16 @@ function Montage() {
             {!isLastStep && (
               <Button
                 size="lg"
-                onClick={() => setStep(visibleSteps[stepPos + 1]!)}
+                onClick={() => {
+                  // Un compte est obligatoire pour continuer au-delà des clips.
+                  if (step === 0 && session !== undefined && !userId) {
+                    setError(tr("Connectez-vous ou créez un compte pour continuer."));
+                    void navigate({ to: "/auth" });
+                    return;
+                  }
+                  setError(null);
+                  setStep(visibleSteps[stepPos + 1]!);
+                }}
                 disabled={!canNext}
               >
                 {tr("Suivant →")}
