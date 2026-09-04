@@ -441,7 +441,39 @@ export const FR_EN: Record<string, string> = {
   "Montage vertical automatisé pour les créateurs.": "Automated vertical editing for creators.",
   "Tous droits réservés.": "All rights reserved.",
   "Ajoute au moins un lien pour commencer.": "Add at least one link to get started.",
+  "Colle tes liens, récupère un TikTok monétisable en quelques minutes.":
+    "Paste your links, get a monetizable TikTok in minutes.",
+  "Ce qui change concrètement avant et après SilenceCut":
+    "What actually changes before and after SilenceCut",
+  "Avant": "Before",
+  "Après": "After",
+  "Des heures passées à découper à la main": "Hours spent cutting clips by hand",
+  "Des vidéos brutes que la plateforme ne récompense pas":
+    "Raw videos the platform will not reward",
+  "Une publication par semaine, quand tu trouves le temps":
+    "One post a week, whenever you find the time",
+  "Un montage vertical prêt en quelques minutes": "A vertical edit ready in minutes",
+  "Une vidéo transformée, éligible aux récompenses TikTok":
+    "A transformed video, eligible for TikTok rewards",
+  "Plusieurs publications par jour, sans y penser":
+    "Several posts a day, without thinking about it",
+  "pour un montage complet": "for a full edit",
+  "= une vidéo prête à publier": "= one video ready to post",
+  "suffisent pour commencer": "are enough to start",
+  "Publie et encaisse": "Post and get paid",
+  "Tu récupères une vidéo verticale transformée, prête à être publiée et récompensée.":
+    "You get a transformed vertical video, ready to be posted and rewarded.",
+  "Pourquoi mes vidéos deviennent monétisables ?": "Why do my videos become monetizable?",
+  "Le montage assemble plusieurs sources, ajoute un hook, une voix off et une musique de fond : le résultat est une vidéo transformée, celle que le programme de récompenses TikTok accepte.":
+    "The edit combines several sources and adds a hook, a voiceover and background music: the result is a transformed video, the kind the TikTok rewards program accepts.",
+  "Combien de vidéos puis-je publier par jour ?": "How many videos can I post per day?",
+  "Autant que tes crédits le permettent : une vidéo coûte 10 crédits, donc une formule à 600 crédits représente environ 60 montages par mois.":
+    "As many as your credits allow: one video costs 10 credits, so a 600-credit plan is about 60 edits a month.",
+  "Combien de temps pour récupérer un montage ?": "How long does an edit take?",
+  "Environ trois minutes entre le collage des liens et le téléchargement du fichier vertical HD.":
+    "About three minutes from pasting the links to downloading the vertical HD file.",
 };
+
 
 /** Dictionnaire FR → ES (page publique en priorité). */
 export const FR_ES: Record<string, string> = {
