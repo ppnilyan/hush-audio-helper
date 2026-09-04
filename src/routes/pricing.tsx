@@ -3,8 +3,7 @@ import { useServerFn } from "@tanstack/react-start";
 import { Check, Coins, CreditCard, Lock, Sparkles, Tag, X } from "lucide-react";
 import { useEffect, useState } from "react";
 
-import { PaymentTestModeBanner } from "@/components/PaymentTestModeBanner";
-import { StripeEmbeddedCheckout } from "@/components/StripeEmbeddedCheckout";
+import { PaypalCheckout } from "@/components/PaypalCheckout";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import {
@@ -18,9 +17,9 @@ import {
   type PlanDef,
 } from "@/lib/billing";
 import { fakeBuyPack, fakeSubscribe, lookupPromoCode } from "@/lib/billing.functions";
-import { createPortalSession } from "@/lib/payments.functions";
+import { cancelPaypalSubscription } from "@/lib/paypal.functions";
 import { useLocale, useTr } from "@/lib/prefs";
-import { getStripeEnvironment, paymentsConfigured } from "@/lib/stripe";
+
 
 export const Route = createFileRoute("/pricing")({
   head: () => ({
