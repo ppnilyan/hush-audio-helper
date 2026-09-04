@@ -2,11 +2,15 @@ import { createFileRoute } from "@tanstack/react-router";
 
 const ALLOWED = [
   "tikwm.com",
+  "tiktok.com",
   "tiktokcdn.com",
   "tiktokcdn-us.com",
+  "tiktokcdn-eu.com",
   "tiktokv.com",
   "byteoversea.com",
+  "ttwstatic.com",
 ];
+
 
 export const Route = createFileRoute("/api/public/media-proxy")({
   server: {
