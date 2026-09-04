@@ -74,6 +74,9 @@ import {
   type MusicTrack,
 } from "@/lib/music-store";
 
+/** Nombre minimal de clips (liens ou fichiers) pour lancer un montage. */
+const MIN_CLIPS = 2;
+
 type UIEntry = {
   id: string;
   url: string;
