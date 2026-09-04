@@ -104,18 +104,24 @@ const fakeError = (message: string) => {
 
 export const fakeSubscribe = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input: { planId: string }) => input)
+  .inputValidator((input: { planId: string; promoCode?: string | null }) => input)
   .handler(async ({ data, context }) => {
-    const { error } = await context.supabase.rpc("fake_subscribe", { _plan_id: data.planId });
+    const { error } = await context.supabase.rpc("fake_subscribe", {
+      _plan_id: data.planId,
+      ...(data.promoCode ? { _promo_code: data.promoCode } : {}),
+    });
     if (error) return { ok: false as const, code: fakeError(error.message) };
     return { ok: true as const };
   });
 
 export const fakeBuyPack = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input: { packId: string }) => input)
+  .inputValidator((input: { packId: string; promoCode?: string | null }) => input)
   .handler(async ({ data, context }) => {
-    const { error } = await context.supabase.rpc("fake_buy_pack", { _pack_id: data.packId });
+    const { error } = await context.supabase.rpc("fake_buy_pack", {
+      _pack_id: data.packId,
+      ...(data.promoCode ? { _promo_code: data.promoCode } : {}),
+    });
     if (error) return { ok: false as const, code: fakeError(error.message) };
     return { ok: true as const };
   });
@@ -127,3 +133,64 @@ export const fakeCancel = createServerFn({ method: "POST" })
     if (error) return { ok: false as const, code: fakeError(error.message) };
     return { ok: true as const };
   });
+
+/* ---------------- Codes de promotion ---------------- */
+
+export type PromoCode = { code: string; percentOff: number; active: boolean; uses: number };
+
+/** Vérifie un code saisi par un client (tout compte connecté). */
+export const lookupPromoCode = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((input: { code: string }) => input)
+  .handler(async ({ data, context }) => {
+    const { data: res, error } = await context.supabase.rpc("promo_lookup", { _code: data.code });
+    if (error) throw new Error(error.message);
+    return res as unknown as { ok: boolean; code?: string; percentOff?: number };
+  });
+
+/** Liste des codes (admin uniquement, RLS). */
+export const listPromoCodes = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .handler(async ({ context }) => {
+    const { data, error } = await context.supabase
+      .from("promo_codes")
+      .select("code, percent_off, active, uses")
+      .order("created_at", { ascending: false });
+    if (error) throw new Error(error.message);
+    return (data ?? []).map(
+      (r): PromoCode => ({
+        code: r.code,
+        percentOff: r.percent_off,
+        active: r.active,
+        uses: r.uses,
+      }),
+    );
+  });
+
+/** Crée (ou met à jour) un code de promotion — admin uniquement. */
+export const createPromoCode = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((input: { code: string; percentOff: number }) => input)
+  .handler(async ({ data, context }) => {
+    const code = data.code.trim().toUpperCase();
+    const percent = Math.round(data.percentOff);
+    if (!code || code.length > 32) return { ok: false as const, code: "invalid_code" as const };
+    if (percent < 0 || percent > 100) return { ok: false as const, code: "invalid_percent" as const };
+    const { error } = await context.supabase.rpc("promo_create", {
+      _code: code,
+      _percent: percent,
+    });
+    if (error) return { ok: false as const, code: fakeError(error.message) };
+    return { ok: true as const };
+  });
+
+/** Supprime un code — admin uniquement. */
+export const deletePromoCode = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((input: { code: string }) => input)
+  .handler(async ({ data, context }) => {
+    const { error } = await context.supabase.rpc("promo_delete", { _code: data.code });
+    if (error) return { ok: false as const, code: fakeError(error.message) };
+    return { ok: true as const };
+  });
+

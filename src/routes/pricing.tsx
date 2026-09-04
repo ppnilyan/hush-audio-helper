@@ -1,9 +1,10 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
-import { Check, Coins, Lock, Sparkles } from "lucide-react";
+import { Check, Coins, Lock, Sparkles, Tag, X } from "lucide-react";
 import { useState } from "react";
 
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 import {
   CREDITS_PER_VIDEO,
   PACKS,
@@ -14,8 +15,9 @@ import {
   useInvalidateBilling,
   type PlanDef,
 } from "@/lib/billing";
-import { fakeBuyPack, fakeSubscribe } from "@/lib/billing.functions";
+import { fakeBuyPack, fakeSubscribe, lookupPromoCode } from "@/lib/billing.functions";
 import { useLocale, useTr } from "@/lib/prefs";
+
 
 export const Route = createFileRoute("/pricing")({
   head: () => ({
@@ -59,12 +61,44 @@ function PricingPage() {
   const invalidate = useInvalidateBilling();
   const subscribe = useServerFn(fakeSubscribe);
   const buyPack = useServerFn(fakeBuyPack);
+  const checkPromo = useServerFn(lookupPromoCode);
   const [busy, setBusy] = useState<string | null>(null);
   const [notice, setNotice] = useState<string | null>(null);
+  const [promoInput, setPromoInput] = useState("");
+  const [promo, setPromo] = useState<{ code: string; percentOff: number } | null>(null);
+  const [promoError, setPromoError] = useState<string | null>(null);
+  const [promoBusy, setPromoBusy] = useState(false);
 
   const isAdmin = !!billing.state?.isAdmin;
   const currentPlan = billing.state?.plan?.id ?? null;
   const subscriber = !!currentPlan;
+
+  /** Prix après application du code promo. */
+  const withPromo = (cents: number) =>
+    promo ? Math.round((cents * (100 - promo.percentOff)) / 100) : cents;
+
+  const applyPromo = async () => {
+    const code = promoInput.trim();
+    if (!code) return;
+    setPromoBusy(true);
+    setPromoError(null);
+    try {
+      const r = await checkPromo({ data: { code } });
+      if (r.ok && r.code && typeof r.percentOff === "number") {
+        setPromo({ code: r.code, percentOff: r.percentOff });
+        setPromoInput(r.code);
+      } else {
+        setPromo(null);
+        setPromoError(tr("Code invalide ou expiré."));
+      }
+    } catch {
+      setPromo(null);
+      setPromoError(tr("Code invalide ou expiré."));
+    } finally {
+      setPromoBusy(false);
+    }
+  };
+
 
   const run = async (key: string, fn: () => Promise<{ ok: boolean; code?: string }>) => {
     setBusy(key);
@@ -116,7 +150,12 @@ function PricingPage() {
         className="w-full"
         variant={p.highlight ? "default" : "secondary"}
         disabled={busy !== null}
-        onClick={() => void run(p.id, () => subscribe({ data: { planId: p.id } }))}
+        onClick={() =>
+          void run(p.id, () =>
+            subscribe({ data: { planId: p.id, promoCode: promo?.code ?? null } }),
+          )
+        }
+
       >
         {busy === p.id ? "…" : currentPlan ? tr("Changer pour cette formule") : tr("S'abonner")}
       </Button>
@@ -158,9 +197,64 @@ function PricingPage() {
         <p className="mb-6 rounded-xl bg-secondary/60 px-4 py-3 text-center text-sm">{notice}</p>
       )}
 
+      <section className="mx-auto mb-8 max-w-xl rounded-2xl border border-border bg-secondary/30 p-4">
+        <label htmlFor="promo" className="flex items-center gap-2 text-sm font-medium">
+          <Tag className="size-4 text-primary" /> {tr("Code de promotion")}
+        </label>
+        <div className="mt-3 flex gap-2">
+          <Input
+            id="promo"
+            value={promoInput}
+            placeholder={tr("Entrez votre code")}
+            maxLength={32}
+            onChange={(e) => {
+              setPromoInput(e.target.value.toUpperCase());
+              setPromo(null);
+              setPromoError(null);
+            }}
+            onKeyDown={(e) => {
+              if (e.key === "Enter") void applyPromo();
+            }}
+          />
+          {promo ? (
+            <Button
+              variant="secondary"
+              onClick={() => {
+                setPromo(null);
+                setPromoInput("");
+                setPromoError(null);
+              }}
+            >
+              <X className="size-4" /> {tr("Retirer")}
+            </Button>
+          ) : (
+            <Button
+              variant="secondary"
+              disabled={promoBusy || !promoInput.trim() || !billing.signedIn}
+              onClick={() => void applyPromo()}
+            >
+              {promoBusy ? "…" : tr("Appliquer")}
+            </Button>
+          )}
+        </div>
+        {!billing.signedIn && (
+          <p className="mt-2 text-xs text-muted-foreground">
+            {tr("Connectez-vous pour utiliser un code.")}
+          </p>
+        )}
+        {promo && (
+          <p className="mt-2 text-sm text-primary">
+            {tr("Code")} {promo.code} {tr("appliqué")} · −{promo.percentOff}%
+          </p>
+        )}
+        {promoError && <p className="mt-2 text-sm text-destructive">{promoError}</p>}
+      </section>
+
       <section className="grid gap-5 md:grid-cols-3">
         {PLANS.map((p) => (
           <article
+
+
             key={p.id}
             className={`relative flex flex-col rounded-3xl border p-6 ${
               p.highlight ? "panel-glow border-primary/60" : "border-border bg-secondary/30"
@@ -172,10 +266,16 @@ function PricingPage() {
               </span>
             )}
             <h2 className="text-xl font-semibold">{p.name}</h2>
-            <p className="mt-3 flex items-baseline gap-1">
-              <span className="text-4xl font-bold">{formatEuro(p.priceCents, locale)}</span>
+            <p className="mt-3 flex flex-wrap items-baseline gap-2">
+              {promo && promo.percentOff > 0 && (
+                <span className="text-lg text-muted-foreground line-through">
+                  {formatEuro(p.priceCents, locale)}
+                </span>
+              )}
+              <span className="text-4xl font-bold">{formatEuro(withPromo(p.priceCents), locale)}</span>
               <span className="text-sm text-muted-foreground">/ {tr("mois")}</span>
             </p>
+
             <p className="mt-1 text-sm text-primary">
               {p.monthlyCredits} {tr("crédits")} · {p.monthlyCredits / CREDITS_PER_VIDEO} {tr("vidéos / mois")}
             </p>
@@ -215,9 +315,13 @@ function PricingPage() {
                 <p className="text-sm text-muted-foreground">
                   {k.credits / CREDITS_PER_VIDEO} {tr("vidéos")}
                 </p>
-                <p className="mt-3 flex items-baseline gap-2">
-                  <span className="text-2xl font-bold">{formatEuro(price, locale)}</span>
-                  {subscriber ? (
+                <p className="mt-3 flex flex-wrap items-baseline gap-2">
+                  <span className="text-2xl font-bold">{formatEuro(withPromo(price), locale)}</span>
+                  {promo && promo.percentOff > 0 ? (
+                    <span className="text-sm text-muted-foreground line-through">
+                      {formatEuro(price, locale)}
+                    </span>
+                  ) : subscriber ? (
                     <span className="text-sm text-muted-foreground line-through">
                       {formatEuro(k.priceCents, locale)}
                     </span>
@@ -237,8 +341,13 @@ function PricingPage() {
                       variant="secondary"
                       className="w-full"
                       disabled={busy !== null}
-                      onClick={() => void run(k.id, () => buyPack({ data: { packId: k.id } }))}
+                      onClick={() =>
+                        void run(k.id, () =>
+                          buyPack({ data: { packId: k.id, promoCode: promo?.code ?? null } }),
+                        )
+                      }
                     >
+
                       {busy === k.id ? "…" : tr("Acheter")}
                     </Button>
                   ) : (
