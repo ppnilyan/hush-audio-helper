@@ -79,11 +79,15 @@ export function Hero() {
                     inputMode="url"
                   />
                   {dirty && (
-                    <span className="pointer-events-none absolute top-1/2 right-3 -translate-y-1/2">
+                    <span
+                      className={`pointer-events-none absolute top-1/2 right-3 flex size-6 -translate-y-1/2 items-center justify-center rounded-full ${
+                        status.valid ? "bg-green/15" : "bg-destructive/15"
+                      }`}
+                    >
                       {status.valid ? (
-                        <Check className="size-4 text-green" />
+                        <Check className="size-3.5 text-green" />
                       ) : (
-                        <X className="size-4 text-destructive" />
+                        <X className="size-3.5 text-destructive" />
                       )}
                     </span>
                   )}
