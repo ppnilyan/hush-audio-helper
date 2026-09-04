@@ -125,12 +125,27 @@ export function AdminPromoSection() {
             <span className="text-xs text-muted-foreground">
               {c.uses} {fr ? "util." : "uses"}
             </span>
+            <div className="flex items-center gap-2">
+              <Switch
+                checked={c.active}
+                aria-label={fr ? "Activer le code" : "Enable code"}
+                onCheckedChange={async (next) => {
+                  await toggle({ data: { code: c.code, active: next } });
+                  await sync(c.code, c.percentOff, next);
+                  await codes.refetch();
+                }}
+              />
+              <span className="text-xs text-muted-foreground">
+                {c.active ? (fr ? "Actif" : "Active") : fr ? "Désactivé" : "Disabled"}
+              </span>
+            </div>
             <Button
               size="icon"
               variant="ghost"
               aria-label={fr ? "Supprimer le code" : "Delete code"}
               onClick={async () => {
                 await remove({ data: { code: c.code } });
+                await sync(c.code, c.percentOff, false);
                 await codes.refetch();
               }}
             >
