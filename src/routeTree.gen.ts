@@ -15,6 +15,7 @@ import { Route as AuthRouteImport } from './routes/auth'
 import { Route as MontageRouteImport } from './routes/montage'
 import { Route as PricingRouteImport } from './routes/pricing'
 import { Route as ApiPublicMediaProxyRouteImport } from './routes/api/public/media-proxy'
+import { Route as ApiPublicTiktokDiagRouteImport } from './routes/api/public/tiktok-diag'
 import { Route as ApiPublicPaymentsWebhookRouteImport } from './routes/api/public/payments/webhook'
 
 const IndexRoute = IndexRouteImport.update({
@@ -47,6 +48,11 @@ const ApiPublicMediaProxyRoute = ApiPublicMediaProxyRouteImport.update({
   path: '/api/public/media-proxy',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiPublicTiktokDiagRoute = ApiPublicTiktokDiagRouteImport.update({
+  id: '/api/public/tiktok-diag',
+  path: '/api/public/tiktok-diag',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ApiPublicPaymentsWebhookRoute =
   ApiPublicPaymentsWebhookRouteImport.update({
     id: '/api/public/payments/webhook',
@@ -61,6 +67,7 @@ export interface FileRoutesByFullPath {
   '/montage': typeof MontageRoute
   '/pricing': typeof PricingRoute
   '/api/public/media-proxy': typeof ApiPublicMediaProxyRoute
+  '/api/public/tiktok-diag': typeof ApiPublicTiktokDiagRoute
   '/api/public/payments/webhook': typeof ApiPublicPaymentsWebhookRoute
 }
 export interface FileRoutesByTo {
@@ -70,6 +77,7 @@ export interface FileRoutesByTo {
   '/montage': typeof MontageRoute
   '/pricing': typeof PricingRoute
   '/api/public/media-proxy': typeof ApiPublicMediaProxyRoute
+  '/api/public/tiktok-diag': typeof ApiPublicTiktokDiagRoute
   '/api/public/payments/webhook': typeof ApiPublicPaymentsWebhookRoute
 }
 export interface FileRoutesById {
@@ -80,6 +88,7 @@ export interface FileRoutesById {
   '/montage': typeof MontageRoute
   '/pricing': typeof PricingRoute
   '/api/public/media-proxy': typeof ApiPublicMediaProxyRoute
+  '/api/public/tiktok-diag': typeof ApiPublicTiktokDiagRoute
   '/api/public/payments/webhook': typeof ApiPublicPaymentsWebhookRoute
 }
 export interface FileRouteTypes {
@@ -91,6 +100,7 @@ export interface FileRouteTypes {
     | '/montage'
     | '/pricing'
     | '/api/public/media-proxy'
+    | '/api/public/tiktok-diag'
     | '/api/public/payments/webhook'
   fileRoutesByTo: FileRoutesByTo
   to:
@@ -100,6 +110,7 @@ export interface FileRouteTypes {
     | '/montage'
     | '/pricing'
     | '/api/public/media-proxy'
+    | '/api/public/tiktok-diag'
     | '/api/public/payments/webhook'
   id:
     | '__root__'
@@ -109,6 +120,7 @@ export interface FileRouteTypes {
     | '/montage'
     | '/pricing'
     | '/api/public/media-proxy'
+    | '/api/public/tiktok-diag'
     | '/api/public/payments/webhook'
   fileRoutesById: FileRoutesById
 }
@@ -119,6 +131,7 @@ export interface RootRouteChildren {
   MontageRoute: typeof MontageRoute
   PricingRoute: typeof PricingRoute
   ApiPublicMediaProxyRoute: typeof ApiPublicMediaProxyRoute
+  ApiPublicTiktokDiagRoute: typeof ApiPublicTiktokDiagRoute
   ApiPublicPaymentsWebhookRoute: typeof ApiPublicPaymentsWebhookRoute
 }
 
@@ -166,6 +179,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiPublicMediaProxyRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/public/tiktok-diag': {
+      id: '/api/public/tiktok-diag'
+      path: '/api/public/tiktok-diag'
+      fullPath: '/api/public/tiktok-diag'
+      preLoaderRoute: typeof ApiPublicTiktokDiagRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/public/payments/webhook': {
       id: '/api/public/payments/webhook'
       path: '/api/public/payments/webhook'
@@ -183,6 +203,7 @@ const rootRouteChildren: RootRouteChildren = {
   MontageRoute: MontageRoute,
   PricingRoute: PricingRoute,
   ApiPublicMediaProxyRoute: ApiPublicMediaProxyRoute,
+  ApiPublicTiktokDiagRoute: ApiPublicTiktokDiagRoute,
   ApiPublicPaymentsWebhookRoute: ApiPublicPaymentsWebhookRoute,
 }
 export const routeTree = rootRouteImport
