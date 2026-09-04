@@ -234,56 +234,88 @@
   -webkit-tap-highlight-color: transparent;
   transition:
     transform 0.42s cubic-bezier(0.16, 0.84, 0.24, 1),
-    box-shadow 0.42s cubic-bezier(0.16, 0.84, 0.24, 1),
-    border-color 0.42s ease;
+    box-shadow 0.42s cubic-bezier(0.16, 0.84, 0.24, 1);
   will-change: transform;
+
+  /* Halo extérieur subtil derrière la carte */
   &::after {
     content: "";
     position: absolute;
-    inset: -14px;
+    inset: -10px;
     z-index: -1;
-    border-radius: inherit;
+    border-radius: calc(var(--radius-2xl) + 10px);
     background-image: var(--gradient-brand);
-    filter: blur(30px);
+    filter: blur(22px);
     opacity: 0;
-    transform: scale(0.94);
+    transform: scale(0.92);
     transition:
       opacity 0.45s ease,
       transform 0.45s cubic-bezier(0.16, 0.84, 0.24, 1);
     pointer-events: none;
   }
+
+  /* Bordure lumineuse juste autour de la case, jamais à l'intérieur */
+  &::before {
+    content: "";
+    position: absolute;
+    inset: -1px;
+    z-index: -1;
+    border-radius: inherit;
+    padding: 1px;
+    background-image: var(--gradient-brand);
+    opacity: 0;
+    -webkit-mask:
+      linear-gradient(#000 0 0) content-box,
+      linear-gradient(#000 0 0);
+    -webkit-mask-composite: xor;
+    mask-composite: exclude;
+    transition: opacity 0.35s ease;
+    pointer-events: none;
+  }
+
   @media (hover: hover) {
     &:hover {
-      transform: translateY(-6px) scale(1.035);
+      transform: translateY(-5px) scale(1.025);
       box-shadow:
-        var(--shadow-glow),
-        0 22px 45px -20px rgb(0 0 0 / 0.55);
+        0 18px 40px -16px rgb(0 0 0 / 0.45),
+        0 0 0 1px var(--color-border);
       transition-duration: 0.22s;
     }
     &:hover::after {
-      opacity: 0.5;
+      opacity: 0.28;
       transform: scale(1);
       transition-duration: 0.28s;
     }
+    &:hover::before {
+      opacity: 0.75;
+    }
   }
+
   &:focus-visible {
     outline: none;
-    transform: translateY(-4px) scale(1.02);
-    box-shadow: var(--shadow-glow);
+    transform: translateY(-3px) scale(1.015);
+    box-shadow: 0 14px 34px -16px rgb(0 0 0 / 0.4);
   }
   &:focus-visible::after {
-    opacity: 0.4;
+    opacity: 0.22;
     transform: scale(1);
   }
+  &:focus-visible::before {
+    opacity: 0.6;
+  }
+
   &:active {
-    transform: translateY(-2px) scale(0.985);
-    box-shadow: var(--shadow-glow);
+    transform: translateY(-1px) scale(0.99);
+    box-shadow: 0 10px 28px -14px rgb(0 0 0 / 0.4);
     transition-duration: 0.12s;
   }
   &:active::after {
-    opacity: 0.55;
+    opacity: 0.32;
     transform: scale(1);
     transition-duration: 0.14s;
+  }
+  &:active::before {
+    opacity: 0.85;
   }
 }
 
