@@ -1782,12 +1782,32 @@ function Montage() {
           {step === 5 && (
             <section className="panel-glow grid gap-8 p-6 sm:p-8 lg:grid-cols-[360px_minmax(0,1fr)]">
               <div>
-                <canvas
-                  ref={canvasRef}
-                  width={W}
-                  height={H}
-                  className="w-full rounded-2xl bg-black"
-                />
+                <div className="relative overflow-hidden rounded-2xl">
+                  <canvas
+                    ref={canvasRef}
+                    width={W}
+                    height={H}
+                    className="block w-full bg-black"
+                  />
+                  {noCredits && (
+                    <Link
+                      to="/pricing"
+                      aria-label={tr("Recharger le solde")}
+                      className="absolute inset-0 grid grid-cols-2 place-items-center gap-y-10 overflow-hidden"
+                    >
+                      {Array.from({ length: 12 }, (_, i) => (
+                        <span
+                          key={i}
+                          className="-rotate-[28deg] select-none whitespace-nowrap text-center text-[11px] font-bold uppercase leading-tight tracking-[0.2em] text-foreground/45 drop-shadow-[0_1px_2px_hsl(var(--background)/0.8)] sm:text-xs"
+                        >
+                          SilenceCut
+                          <br />
+                          <span className="text-primary/80">{tr("Recharger le solde")}</span>
+                        </span>
+                      ))}
+                    </Link>
+                  )}
+                </div>
                 <div className="mt-3 h-1.5 w-full overflow-hidden rounded-full bg-secondary">
                   <div
                     className="gradient-brand h-full transition-[width]"
