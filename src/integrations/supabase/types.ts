@@ -311,6 +311,24 @@ export type Database = {
         }
         Relationships: []
       }
+      tiktok_cache: {
+        Row: {
+          fetched_at: string
+          payload: Json
+          url_key: string
+        }
+        Insert: {
+          fetched_at?: string
+          payload: Json
+          url_key: string
+        }
+        Update: {
+          fetched_at?: string
+          payload?: Json
+          url_key?: string
+        }
+        Relationships: []
+      }
       user_roles: {
         Row: {
           created_at: string
