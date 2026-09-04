@@ -28,7 +28,7 @@ async function handleEvent(event: Stripe.Event, env: StripeEnv, stripe: Stripe) 
   if (seenError) return;
 
   const applySubscription = async (subscriptionId: string, amountCents: number) => {
-    const sub = await stripe.subscriptions.retrieve(subscriptionId, { expand: ["items.data.price"] });
+    const sub = await stripe.subscriptions.retrieve(subscriptionId);
     const userId =
       (sub.metadata?.["userId"] as string | undefined) ??
       (typeof sub.customer === "string"
