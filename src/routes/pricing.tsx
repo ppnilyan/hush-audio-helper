@@ -72,6 +72,7 @@ function PricingPage() {
   const [promoError, setPromoError] = useState<string | null>(null);
   const [promoBusy, setPromoBusy] = useState(false);
   const [checkoutPriceId, setCheckoutPriceId] = useState<string | null>(null);
+  const [checkoutAmount, setCheckoutAmount] = useState<number>(0);
   const openPortal = useServerFn(createPortalSession);
   const stripeReady = paymentsConfigured();
 
@@ -166,6 +167,7 @@ function PricingPage() {
           disabled={!stripeReady}
           onClick={() => {
             setNotice(null);
+            setCheckoutAmount(withPromo(p.priceCents));
             setCheckoutPriceId(`${p.id}_monthly`);
           }}
         >
@@ -220,8 +222,14 @@ function PricingPage() {
             <X className="size-4" /> {tr("Annuler")}
           </Button>
         </div>
+        <p className="mb-4 text-sm text-muted-foreground">
+          {tr("Montant à payer")} : <strong>{formatEuro(checkoutAmount, locale)}</strong>
+          {promo && promo.percentOff > 0 ? ` · ${promo.code} −${promo.percentOff}%` : ""}
+        </p>
         <StripeEmbeddedCheckout
           priceId={checkoutPriceId}
+          {...(promo ? { promoCode: promo.code } : {})}
+          {...(checkoutAmount ? { expectedAmountCents: checkoutAmount } : {})}
           returnUrl={`${typeof window === "undefined" ? "" : window.location.origin}/pricing?checkout=done`}
         />
       </main>
@@ -424,6 +432,7 @@ function PricingPage() {
                         disabled={!stripeReady}
                         onClick={() => {
                           setNotice(null);
+                          setCheckoutAmount(withPromo(price));
                           setCheckoutPriceId(k.id);
                         }}
                       >
