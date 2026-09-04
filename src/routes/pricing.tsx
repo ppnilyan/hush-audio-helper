@@ -1,8 +1,10 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
-import { Check, Coins, Lock, Sparkles, Tag, X } from "lucide-react";
-import { useState } from "react";
+import { Check, Coins, CreditCard, Lock, Sparkles, Tag, X } from "lucide-react";
+import { useEffect, useState } from "react";
 
+import { PaymentTestModeBanner } from "@/components/PaymentTestModeBanner";
+import { StripeEmbeddedCheckout } from "@/components/StripeEmbeddedCheckout";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import {
@@ -16,8 +18,9 @@ import {
   type PlanDef,
 } from "@/lib/billing";
 import { fakeBuyPack, fakeSubscribe, lookupPromoCode } from "@/lib/billing.functions";
+import { createPortalSession } from "@/lib/payments.functions";
 import { useLocale, useTr } from "@/lib/prefs";
-
+import { getStripeEnvironment, paymentsConfigured } from "@/lib/stripe";
 
 export const Route = createFileRoute("/pricing")({
   head: () => ({
