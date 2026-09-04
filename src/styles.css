@@ -237,24 +237,24 @@
     box-shadow 0.42s cubic-bezier(0.16, 0.84, 0.24, 1);
   will-change: transform;
 
-  /* Halo extérieur subtil derrière la carte */
+  /* Halo extérieur très soft derrière la carte */
   &::after {
     content: "";
     position: absolute;
-    inset: -10px;
+    inset: -8px;
     z-index: -1;
-    border-radius: calc(var(--radius-2xl) + 10px);
+    border-radius: calc(var(--radius-2xl) + 8px);
     background-image: var(--gradient-brand);
-    filter: blur(22px);
+    filter: blur(18px);
     opacity: 0;
-    transform: scale(0.92);
+    transform: scale(0.94);
     transition:
       opacity 0.45s ease,
       transform 0.45s cubic-bezier(0.16, 0.84, 0.24, 1);
     pointer-events: none;
   }
 
-  /* Bordure lumineuse juste autour de la case, jamais à l'intérieur */
+  /* Bordure lumineuse discrète juste autour de la case, jamais à l'intérieur */
   &::before {
     content: "";
     position: absolute;
@@ -275,19 +275,19 @@
 
   @media (hover: hover) {
     &:hover {
-      transform: translateY(-5px) scale(1.025);
+      transform: translateY(-4px) scale(1.02);
       box-shadow:
-        0 18px 40px -16px rgb(0 0 0 / 0.45),
+        0 16px 36px -16px rgb(0 0 0 / 0.4),
         0 0 0 1px var(--color-border);
       transition-duration: 0.22s;
     }
     &:hover::after {
-      opacity: 0.28;
+      opacity: 0.16;
       transform: scale(1);
       transition-duration: 0.28s;
     }
     &:hover::before {
-      opacity: 0.75;
+      opacity: 0.45;
     }
   }
 
@@ -297,11 +297,11 @@
     box-shadow: 0 14px 34px -16px rgb(0 0 0 / 0.4);
   }
   &:focus-visible::after {
-    opacity: 0.22;
+    opacity: 0.12;
     transform: scale(1);
   }
   &:focus-visible::before {
-    opacity: 0.6;
+    opacity: 0.4;
   }
 
   &:active {
@@ -310,12 +310,12 @@
     transition-duration: 0.12s;
   }
   &:active::after {
-    opacity: 0.32;
+    opacity: 0.2;
     transform: scale(1);
     transition-duration: 0.14s;
   }
   &:active::before {
-    opacity: 0.85;
+    opacity: 0.55;
   }
 }
 
