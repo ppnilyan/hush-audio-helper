@@ -306,7 +306,7 @@ function PricingPage() {
           {PACKS.map((k) => {
             const price = packPrice(k, subscriber);
             return (
-              <article key={k.id} className="rounded-2xl border border-border bg-secondary/30 p-5">
+              <article key={k.id} className="card-hover rounded-2xl border border-border bg-secondary/30 p-5">
                 <p className="text-lg font-semibold">
                   {k.credits} {tr("crédits")}
                 </p>
