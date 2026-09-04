@@ -40,6 +40,29 @@ async function hasActiveSubscription(
 }
 
 
+/** Identifiant déterministe du coupon Stripe correspondant à un code promo. */
+function couponId(code: string, percentOff: number): string {
+  return `promo_${code.toUpperCase().replace(/[^A-Z0-9_]/g, "")}_${percentOff}`;
+}
+
+/** Récupère (ou crée) le coupon Stripe correspondant au code promo. */
+async function ensureCoupon(stripe: Stripe, code: string, percentOff: number): Promise<string> {
+  const id = couponId(code, percentOff);
+  try {
+    const existing = await stripe.coupons.retrieve(id);
+    if (!existing.deleted) return id;
+  } catch {
+    /* coupon absent : on le crée */
+  }
+  const created = await stripe.coupons.create({
+    id,
+    percent_off: percentOff,
+    duration: "forever",
+    name: `${code.toUpperCase()} −${percentOff}%`,
+  });
+  return created.id;
+}
+
 async function resolveOrCreateCustomer(
   stripe: Stripe,
   options: { email?: string; userId?: string },
