@@ -487,29 +487,30 @@ function Montage() {
   };
 
   /**
-   * Force un vrai téléchargement : les URLs signées du stockage sont
-   * cross-origin, l'attribut `download` y est ignoré (le navigateur ouvre
-   * la vidéo). On récupère donc le fichier puis on déclenche un blob local.
+   * Téléchargement immédiat : les URLs signées du stockage acceptent un
+   * paramètre `download=<nom>` qui force le navigateur à enregistrer le
+   * fichier (au lieu de l'ouvrir) sans devoir d'abord le charger en mémoire.
+   * Les vidéos locales (blob:) utilisent directement l'attribut `download`.
    */
-  const downloadMontage = async (h: { id: string; url: string; ext: string }) => {
+  const downloadMontage = (h: { id: string; url: string; ext: string }) => {
+    const filename = `montage-${h.id}.${h.ext}`;
     let href = h.url;
-    let revoke = false;
-    try {
-      const res = await fetch(h.url);
-      if (res.ok) {
-        href = URL.createObjectURL(await res.blob());
-        revoke = true;
+    if (!href.startsWith("blob:")) {
+      try {
+        const u = new URL(href, window.location.href);
+        u.searchParams.set("download", filename);
+        href = u.toString();
+      } catch {
+        /* URL invalide : on garde telle quelle */
       }
-    } catch {
-      /* on retombe sur l'URL directe */
     }
     const a = document.createElement("a");
     a.href = href;
-    a.download = `montage-${h.id}.${h.ext}`;
+    a.download = filename;
+    a.rel = "noopener";
     document.body.appendChild(a);
     a.click();
     a.remove();
-    if (revoke) window.setTimeout(() => URL.revokeObjectURL(href), 10_000);
   };
 
   // Sequential downloader: picks up queued links one after another.
