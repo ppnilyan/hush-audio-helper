@@ -411,29 +411,40 @@ function PricingPage() {
                     </span>
                   )}
                 </p>
-                <div className="mt-4">
+                <div className="mt-4 space-y-2">
                   {!billing.signedIn ? (
                     <Button asChild variant="secondary" className="w-full">
                       <Link to="/auth">{tr("Se connecter")}</Link>
                     </Button>
-                  ) : isAdmin ? (
-                    <Button
-                      variant="secondary"
-                      className="w-full"
-                      disabled={busy !== null}
-                      onClick={() =>
-                        void run(k.id, () =>
-                          buyPack({ data: { packId: k.id, promoCode: promo?.code ?? null } }),
-                        )
-                      }
-                    >
-
-                      {busy === k.id ? "…" : tr("Acheter")}
-                    </Button>
                   ) : (
-                    <Button variant="secondary" className="w-full" disabled>
-                      {tr("Bientôt disponible")}
-                    </Button>
+                    <>
+                      <Button
+                        variant="secondary"
+                        className="w-full"
+                        disabled={!stripeReady}
+                        onClick={() => {
+                          setNotice(null);
+                          setCheckoutPriceId(k.id);
+                        }}
+                      >
+                        <CreditCard className="size-4" /> {tr("Acheter")}
+                      </Button>
+                      {isAdmin && (
+                        <Button
+                          size="sm"
+                          variant="ghost"
+                          className="w-full text-xs"
+                          disabled={busy !== null}
+                          onClick={() =>
+                            void run(k.id, () =>
+                              buyPack({ data: { packId: k.id, promoCode: promo?.code ?? null } }),
+                            )
+                          }
+                        >
+                          {busy === k.id ? "…" : tr("Créditer sans paiement (admin)")}
+                        </Button>
+                      )}
+                    </>
                   )}
                 </div>
               </article>
