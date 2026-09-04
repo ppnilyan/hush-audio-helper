@@ -73,12 +73,13 @@ async function handleEvent(event: Stripe.Event, env: StripeEnv, stripe: Stripe) 
       const key = session.metadata?.["priceId"];
       const packId = key ? PRICE_TO_PACK[key] : undefined;
       if (userId && packId) {
-        await supabaseAdmin.rpc("stripe_apply_pack", {
+        const { error: packError } = await supabaseAdmin.rpc("stripe_apply_pack", {
           _user_id: userId,
           _pack_id: packId,
           _mode: mode,
           _amount_cents: session.amount_total ?? 0,
         });
+        if (packError) throw new Error(`stripe_apply_pack: ${packError.message}`);
       }
       break;
     }
