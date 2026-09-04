@@ -54,6 +54,7 @@ async function handleEvent(event: Stripe.Event, env: StripeEnv, stripe: Stripe) 
       _cancel_at_period_end: !!sub.cancel_at_period_end,
       _amount_cents: amountCents,
     });
+    if (rpcError) throw new Error(`stripe_apply_subscription: ${rpcError.message}`);
   };
 
   switch (event.type) {
