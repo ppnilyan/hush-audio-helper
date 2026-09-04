@@ -45,14 +45,18 @@ export const Route = createFileRoute("/api/public/media-proxy")({
         if (!upstream.ok || !upstream.body) {
           return new Response("Upstream error", { status: 502 });
         }
+        const contentRange = upstream.headers.get("content-range");
         return new Response(upstream.body, {
-          status: 200,
+          status: upstream.status === 206 ? 206 : 200,
           headers: {
             "Content-Type": upstream.headers.get("content-type") ?? "video/mp4",
             "Cache-Control": "no-store",
             "Access-Control-Allow-Origin": "*",
+            "Accept-Ranges": "bytes",
+            ...(contentRange ? { "Content-Range": contentRange } : {}),
           },
         });
+
       },
     },
   },
