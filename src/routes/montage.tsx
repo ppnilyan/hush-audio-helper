@@ -64,6 +64,7 @@ import {
 } from "@/lib/generation-jobs.functions";
 import { useServerFn } from "@tanstack/react-start";
 import { Lock } from "lucide-react";
+import { toast } from "sonner";
 
 import { supabase } from "@/integrations/supabase/client";
 import {
@@ -237,6 +238,7 @@ function Montage() {
   const [progress, setProgress] = useState(0);
   const [history, setHistory] = useState<UIEntry[]>([]);
   const [failed, setFailed] = useState<GenerationJob[]>([]);
+  const [dismissing, setDismissing] = useState<string | null>(null);
   const [tab, setTab] = useState<"editor" | "history">(search.tab);
   const [step, setStep] = useState(0);
   const { advanced, setAdvanced } = useAdvanced();
