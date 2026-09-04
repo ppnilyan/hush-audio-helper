@@ -165,13 +165,13 @@ function PricingPage() {
           size="lg"
           className="w-full"
           variant={p.highlight ? "default" : "secondary"}
-          disabled={!stripeReady}
           onClick={() => {
             setNotice(null);
             setCheckoutAmount(withPromo(p.priceCents));
-            setCheckoutPriceId(`${p.id}_monthly`);
+            setCheckoutTarget({ kind: "plan", planId: p.id });
           }}
         >
+
           <CreditCard className="size-4" />
           {currentPlan ? tr("Changer pour cette formule") : tr("S'abonner")}
         </Button>
