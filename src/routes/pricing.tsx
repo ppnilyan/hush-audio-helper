@@ -266,10 +266,16 @@ function PricingPage() {
               </span>
             )}
             <h2 className="text-xl font-semibold">{p.name}</h2>
-            <p className="mt-3 flex items-baseline gap-1">
-              <span className="text-4xl font-bold">{formatEuro(p.priceCents, locale)}</span>
+            <p className="mt-3 flex flex-wrap items-baseline gap-2">
+              {promo && promo.percentOff > 0 && (
+                <span className="text-lg text-muted-foreground line-through">
+                  {formatEuro(p.priceCents, locale)}
+                </span>
+              )}
+              <span className="text-4xl font-bold">{formatEuro(withPromo(p.priceCents), locale)}</span>
               <span className="text-sm text-muted-foreground">/ {tr("mois")}</span>
             </p>
+
             <p className="mt-1 text-sm text-primary">
               {p.monthlyCredits} {tr("crédits")} · {p.monthlyCredits / CREDITS_PER_VIDEO} {tr("vidéos / mois")}
             </p>
