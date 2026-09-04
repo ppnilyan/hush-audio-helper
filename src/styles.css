@@ -231,30 +231,74 @@
 
 @utility card-hover {
   position: relative;
+  -webkit-tap-highlight-color: transparent;
   transition:
-    transform 0.28s cubic-bezier(0.2, 0.7, 0.3, 1),
-    box-shadow 0.28s ease;
+    transform 0.42s cubic-bezier(0.16, 0.84, 0.24, 1),
+    box-shadow 0.42s cubic-bezier(0.16, 0.84, 0.24, 1),
+    border-color 0.42s ease;
   will-change: transform;
   &::after {
     content: "";
     position: absolute;
-    inset: -12px;
+    inset: -14px;
     z-index: -1;
     border-radius: inherit;
     background-image: var(--gradient-brand);
-    filter: blur(26px);
+    filter: blur(30px);
     opacity: 0;
-    transition: opacity 0.3s ease;
+    transform: scale(0.94);
+    transition:
+      opacity 0.45s ease,
+      transform 0.45s cubic-bezier(0.16, 0.84, 0.24, 1);
     pointer-events: none;
   }
-  &:hover {
-    transform: translateY(-4px) scale(1.025);
+  @media (hover: hover) {
+    &:hover {
+      transform: translateY(-6px) scale(1.035);
+      box-shadow:
+        var(--shadow-glow),
+        0 22px 45px -20px rgb(0 0 0 / 0.55);
+      transition-duration: 0.22s;
+    }
+    &:hover::after {
+      opacity: 0.5;
+      transform: scale(1);
+      transition-duration: 0.28s;
+    }
+  }
+  &:focus-visible {
+    outline: none;
+    transform: translateY(-4px) scale(1.02);
     box-shadow: var(--shadow-glow);
   }
-  &:hover::after {
-    opacity: 0.45;
+  &:focus-visible::after {
+    opacity: 0.4;
+    transform: scale(1);
+  }
+  &:active {
+    transform: translateY(-2px) scale(0.985);
+    box-shadow: var(--shadow-glow);
+    transition-duration: 0.12s;
+  }
+  &:active::after {
+    opacity: 0.55;
+    transform: scale(1);
+    transition-duration: 0.14s;
   }
 }
+
+@media (prefers-reduced-motion: reduce) {
+  .card-hover,
+  .card-hover::after {
+    transition-duration: 0.01ms !important;
+  }
+  .card-hover:hover,
+  .card-hover:active,
+  .card-hover:focus-visible {
+    transform: none;
+  }
+}
+
 
 
 
