@@ -56,6 +56,7 @@ import { CREDITS_PER_VIDEO, useBilling, useInvalidateBilling } from "@/lib/billi
 import { getClipsSnapshot, setClipsSnapshot, takePendingLinks } from "@/lib/clips-store";
 import {
   finishGenerationJob,
+  dismissFailedGeneration,
   listFailedGenerations,
   reconcileGenerationJobs,
   startGenerationJob,
@@ -245,6 +246,7 @@ function Montage() {
   const finishJob = useServerFn(finishGenerationJob);
   const reconcileJobs = useServerFn(reconcileGenerationJobs);
   const fetchFailed = useServerFn(listFailedGenerations);
+  const dismissJob = useServerFn(dismissFailedGeneration);
   const noCredits = billing.signedIn && !billing.loading && billing.totalCredits < CREDITS_PER_VIDEO;
 
   /** Étapes visibles : « Durées & effets » n'apparaît qu'en mode avancé. */
@@ -1143,6 +1145,12 @@ function Montage() {
                   </span>
                   <button
                     onClick={() => {
+                      setFailed((prev) => prev.filter((x) => x.id !== f.id));
+                      void (async () => {
+                        await dismissJob({ data: { jobId: f.id } }).catch(() => null);
+                        void invalidateBilling();
+                        void refreshFailed();
+                      })();
                       setTab("editor");
                       setStep(visibleSteps[visibleSteps.length - 1]!);
                     }}
@@ -1150,6 +1158,7 @@ function Montage() {
                   >
                     {tr("Refaire la vidéo")}
                   </button>
+
                 </div>
               ))}
             </div>
