@@ -320,9 +320,14 @@ function PricingPage() {
           </p>
         )}
         {promo && (
-          <p className="mt-2 text-sm text-primary">
-            {tr("Code")} {promo.code} {tr("appliqué")} · −{promo.percentOff}%
-          </p>
+          <>
+            <p className="mt-2 text-sm text-primary">
+              {tr("Code")} {promo.code} {tr("appliqué")} · −{promo.percentOff}%
+            </p>
+            <p className="mt-1 text-xs text-muted-foreground">
+              {tr("La remise s'applique au moment du paiement une fois le code enregistré côté paiement ; sinon le prix affiché au paiement reste le prix normal.")}
+            </p>
+          </>
         )}
         {promoError && <p className="mt-2 text-sm text-destructive">{promoError}</p>}
       </section>
