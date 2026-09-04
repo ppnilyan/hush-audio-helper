@@ -78,19 +78,26 @@ async function settleJob(
     await supabase
       .from("generation_jobs")
       .update({ status: "done", settled_at: new Date().toISOString() })
-      .eq("id", job.id);
+      .eq("id", job.id)
+      .eq("status", "pending");
     return "done";
   }
+  // Réservation atomique avant remboursement : évite tout double crédit.
+  const { data: claimed } = await supabase
+    .from("generation_jobs")
+    .update({ status: "refunded", settled_at: new Date().toISOString() })
+    .eq("id", job.id)
+    .eq("status", "pending")
+    .select("id")
+    .maybeSingle();
+  if (!claimed) return "refunded";
   await supabase.rpc("refund_credits", {
     _from_monthly: Math.max(0, job.from_monthly),
     _from_purchased: Math.max(0, job.from_purchased),
   });
-  await supabase
-    .from("generation_jobs")
-    .update({ status: "refunded", settled_at: new Date().toISOString() })
-    .eq("id", job.id);
   return "refunded";
 }
+
 
 /**
  * Clôture un job : terminé seulement si l'historique compte une vidéo de plus,
