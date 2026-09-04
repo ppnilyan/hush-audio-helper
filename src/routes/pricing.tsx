@@ -150,7 +150,12 @@ function PricingPage() {
         className="w-full"
         variant={p.highlight ? "default" : "secondary"}
         disabled={busy !== null}
-        onClick={() => void run(p.id, () => subscribe({ data: { planId: p.id } }))}
+        onClick={() =>
+          void run(p.id, () =>
+            subscribe({ data: { planId: p.id, promoCode: promo?.code ?? null } }),
+          )
+        }
+
       >
         {busy === p.id ? "…" : currentPlan ? tr("Changer pour cette formule") : tr("S'abonner")}
       </Button>
