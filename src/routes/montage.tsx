@@ -964,6 +964,7 @@ function Montage() {
         );
       },
       audioRef.current,
+      true,
     );
   };
 
