@@ -3,7 +3,16 @@ import { createContext, useContext, useEffect, useState, type ReactNode } from "
 export const THEMES = ["aurora", "ocean", "sunset", "sakura", "citrus"] as const;
 export type ThemeId = (typeof THEMES)[number];
 
-export type Lang = "fr" | "en";
+export const LANGS = ["fr", "en", "es", "de"] as const;
+export type Lang = (typeof LANGS)[number];
+
+/** Drapeau + libellé court affichés dans le sélecteur de langue. */
+export const LANG_META: Record<Lang, { flag: string; label: string; locale: string }> = {
+  fr: { flag: "🇫🇷", label: "FR", locale: "fr-FR" },
+  en: { flag: "🇬🇧", label: "EN", locale: "en-US" },
+  es: { flag: "🇪🇸", label: "ES", locale: "es-ES" },
+  de: { flag: "🇩🇪", label: "DE", locale: "de-DE" },
+};
 
 const THEME_KEY = "sc.theme";
 const LANG_KEY = "sc.lang";
@@ -60,7 +69,51 @@ const en: Record<keyof typeof fr, string> = {
   themeCitrus: "Citrus (lime → teal)",
 };
 
-const dict = { fr, en };
+const es: Record<keyof typeof fr, string> = {
+  montage: "Editor",
+  history: "Historial",
+  account: "Mi cuenta",
+  settings: "Ajustes",
+  signIn: "Iniciar sesión",
+  signOut: "Cerrar sesión",
+  signedInAs: "Conectado como",
+  notSignedIn: "No has iniciado sesión.",
+  appTheme: "Tema de la aplicación",
+  language: "Idioma",
+  french: "Français",
+  english: "English",
+  close: "Cerrar",
+  settingsDesc: "Personaliza la apariencia y el idioma de la aplicación.",
+  themeAurora: "Aurora (verde → violeta)",
+  themeOcean: "Océano (cian → índigo)",
+  themeSunset: "Atardecer (ámbar → rosa)",
+  themeSakura: "Sakura (rosa → violeta)",
+  themeCitrus: "Cítrico (lima → turquesa)",
+};
+
+const de: Record<keyof typeof fr, string> = {
+  montage: "Editor",
+  history: "Verlauf",
+  account: "Mein Konto",
+  settings: "Einstellungen",
+  signIn: "Anmelden",
+  signOut: "Abmelden",
+  signedInAs: "Angemeldet als",
+  notSignedIn: "Du bist nicht angemeldet.",
+  appTheme: "App-Design",
+  language: "Sprache",
+  french: "Français",
+  english: "English",
+  close: "Schließen",
+  settingsDesc: "Passe Aussehen und Sprache der App an.",
+  themeAurora: "Aurora (grün → violett)",
+  themeOcean: "Ozean (cyan → indigo)",
+  themeSunset: "Sonnenuntergang (amber → pink)",
+  themeSakura: "Sakura (pink → violett)",
+  themeCitrus: "Zitrus (lime → türkis)",
+};
+
+const dict: Record<Lang, Record<keyof typeof fr, string>> = { fr, en, es, de };
 
 const Ctx = createContext<PrefsCtx | null>(null);
 
@@ -72,7 +125,7 @@ export function PrefsProvider({ children }: { children: ReactNode }) {
     const storedTheme = localStorage.getItem(THEME_KEY) as ThemeId | null;
     const storedLang = localStorage.getItem(LANG_KEY) as Lang | null;
     if (storedTheme && THEMES.includes(storedTheme)) setThemeState(storedTheme);
-    if (storedLang === "fr" || storedLang === "en") setLangState(storedLang);
+    if (storedLang && LANGS.includes(storedLang)) setLangState(storedLang);
   }, []);
 
   useEffect(() => {
@@ -334,16 +387,200 @@ export const FR_EN: Record<string, string> = {
   "solde": "balance",
   "Recharger le solde": "Top up your balance",
   "Disponible avec les formules Pro et Elite.": "Available with the Pro and Elite plans.",
+  // Page d'accueil publique
+  "Notre solution": "How it works",
+  "Résultats": "Results",
+  "Nos offres": "Plans",
+  "Connexion": "Log in",
+  "Inscription": "Sign up",
+  "Crée des montages qui": "Create edits that",
+  "percent": "hit hard",
+  "Transforme plusieurs vidéos TikTok en un seul montage vertical, prêt à être publié et monétisé.":
+    "Turn several TikTok videos into one vertical edit, ready to post and monetize.",
+  "Teste maintenant": "Try it now",
+  "Colle le lien de ta première vidéo": "Paste the link of your first video",
+  "Colle un deuxième lien": "Paste a second link",
+  "Commencer gratuitement": "Start for free",
+  "10 crédits offerts à l'inscription, soit une vidéo d'essai. Aucune carte bancaire demandée.":
+    "10 free credits on sign-up — one trial video. No card required.",
+  "Tes clips": "Your clips",
+  "Ton montage prêt": "Your finished edit",
+  "Plusieurs liens TikTok collés en quelques secondes.":
+    "Several TikTok links pasted in seconds.",
+  "Coupe des blancs, hook, effets, voix off et musique.":
+    "Silence cutting, hook, effects, voiceover and music.",
+  "Une vidéo verticale HD, prête à publier.": "One vertical HD video, ready to post.",
+  "Trois étapes, aucun logiciel de montage": "Three steps, no editing software",
+  "Colle tes liens": "Paste your links",
+  "Ajoute les liens de tes vidéos préférées : chacun se télécharge en HD automatiquement.":
+    "Add the links of your favourite videos: each one downloads in HD automatically.",
+  "Personnalise": "Customize",
+  "Voix off, musique de fond, hook d'accroche, durées et effets : tout est réglable, ou laissé en automatique.":
+    "Voiceover, background music, hook, durations and effects: adjust everything, or leave it automatic.",
+  "Récupère ta vidéo": "Get your video",
+  "Le montage se génère tout seul et reste disponible 5 heures dans ton historique.":
+    "The edit renders on its own and stays available for 5 hours in your history.",
+  "Crée ton compte": "Create your account",
+  "Choisis ton rythme de publication": "Pick your publishing pace",
+  "Questions fréquentes": "Frequently asked questions",
+  "Puis-je annuler à tout moment ?": "Can I cancel anytime?",
+  "Oui. L'abonnement est sans engagement et s'arrête à la fin du mois en cours.":
+    "Yes. The subscription has no commitment and stops at the end of the current month.",
+  "Que deviennent mes vidéos ?": "What happens to my videos?",
+  "Elles restent 5 heures dans ton historique, le temps de les télécharger, puis sont supprimées.":
+    "They stay 5 hours in your history, long enough to download them, then they are deleted.",
+  "Faut-il savoir monter ?": "Do I need editing skills?",
+  "Non. Le mode simple ne demande que des liens ; le mode avancé est là si tu veux tout régler.":
+    "No. Simple mode only asks for links; advanced mode is there if you want full control.",
+  "Quelles plateformes sont compatibles ?": "Which platforms are supported?",
+  "Le format vertical généré convient à TikTok, Reels et Shorts.":
+    "The vertical format works for TikTok, Reels and Shorts.",
+  "Est-ce que les vidéos sont bien monétisables ?": "Are the videos really monetizable?",
+  "Oui : le montage combine plusieurs sources, une voix off et une musique de fond, ce qui en fait une vidéo transformée éligible au programme de récompenses TikTok.":
+    "Yes: the edit combines several sources, a voiceover and background music, which makes it a transformed video eligible for the TikTok rewards program.",
+  "Montage vertical automatisé pour les créateurs.": "Automated vertical editing for creators.",
+  "Tous droits réservés.": "All rights reserved.",
+  "Ajoute au moins un lien pour commencer.": "Add at least one link to get started.",
+};
+
+/** Dictionnaire FR → ES (page publique en priorité). */
+export const FR_ES: Record<string, string> = {
+  "Notre solution": "Cómo funciona",
+  "Résultats": "Resultados",
+  "Nos offres": "Planes",
+  "Connexion": "Iniciar sesión",
+  "Inscription": "Registrarse",
+  "Crée des montages qui": "Crea montajes que",
+  "percent": "impactan",
+  "Transforme plusieurs vidéos TikTok en un seul montage vertical, prêt à être publié et monétisé.":
+    "Convierte varios vídeos de TikTok en un único montaje vertical, listo para publicar y monetizar.",
+  "Teste maintenant": "Pruébalo ahora",
+  "Colle le lien de ta première vidéo": "Pega el enlace de tu primer vídeo",
+  "Colle un deuxième lien": "Pega un segundo enlace",
+  "Commencer gratuitement": "Empezar gratis",
+  "10 crédits offerts à l'inscription, soit une vidéo d'essai. Aucune carte bancaire demandée.":
+    "10 créditos de regalo al registrarte, un vídeo de prueba. Sin tarjeta bancaria.",
+  "Tes clips": "Tus clips",
+  "Ton montage prêt": "Tu montaje listo",
+  "Plusieurs liens TikTok collés en quelques secondes.":
+    "Varios enlaces de TikTok pegados en segundos.",
+  "Coupe des blancs, hook, effets, voix off et musique.":
+    "Corte de silencios, hook, efectos, voz en off y música.",
+  "Une vidéo verticale HD, prête à publier.": "Un vídeo vertical en HD, listo para publicar.",
+  "Trois étapes, aucun logiciel de montage": "Tres pasos, sin programas de edición",
+  "Colle tes liens": "Pega tus enlaces",
+  "Ajoute les liens de tes vidéos préférées : chacun se télécharge en HD automatiquement.":
+    "Añade los enlaces de tus vídeos favoritos: cada uno se descarga en HD automáticamente.",
+  "Personnalise": "Personaliza",
+  "Voix off, musique de fond, hook d'accroche, durées et effets : tout est réglable, ou laissé en automatique.":
+    "Voz en off, música de fondo, hook, duraciones y efectos: todo ajustable o en automático.",
+  "Récupère ta vidéo": "Recibe tu vídeo",
+  "Le montage se génère tout seul et reste disponible 5 heures dans ton historique.":
+    "El montaje se genera solo y queda disponible 5 horas en tu historial.",
+  "Crée ton compte": "Crea tu cuenta",
+  "Choisis ton rythme de publication": "Elige tu ritmo de publicación",
+  "Questions fréquentes": "Preguntas frecuentes",
+  "Puis-je annuler à tout moment ?": "¿Puedo cancelar cuando quiera?",
+  "Oui. L'abonnement est sans engagement et s'arrête à la fin du mois en cours.":
+    "Sí. La suscripción no tiene compromiso y termina al final del mes en curso.",
+  "Que deviennent mes vidéos ?": "¿Qué pasa con mis vídeos?",
+  "Elles restent 5 heures dans ton historique, le temps de les télécharger, puis sont supprimées.":
+    "Permanecen 5 horas en tu historial para descargarlos y luego se eliminan.",
+  "Faut-il savoir monter ?": "¿Hace falta saber editar?",
+  "Non. Le mode simple ne demande que des liens ; le mode avancé est là si tu veux tout régler.":
+    "No. El modo simple solo pide enlaces; el modo avanzado está ahí si quieres controlarlo todo.",
+  "Quelles plateformes sont compatibles ?": "¿Qué plataformas son compatibles?",
+  "Le format vertical généré convient à TikTok, Reels et Shorts.":
+    "El formato vertical funciona en TikTok, Reels y Shorts.",
+  "Est-ce que les vidéos sont bien monétisables ?": "¿Los vídeos se pueden monetizar?",
+  "Oui : le montage combine plusieurs sources, une voix off et une musique de fond, ce qui en fait une vidéo transformée éligible au programme de récompenses TikTok.":
+    "Sí: el montaje combina varias fuentes, una voz en off y música de fondo, lo que lo convierte en un vídeo transformado elegible para el programa de recompensas de TikTok.",
+  "Montage vertical automatisé pour les créateurs.":
+    "Montaje vertical automatizado para creadores.",
+  "Tous droits réservés.": "Todos los derechos reservados.",
+  "Ajoute au moins un lien pour commencer.": "Añade al menos un enlace para empezar.",
+  "crédits / mois": "créditos / mes",
+  "vidéos / mois": "vídeos / mes",
+  "mois": "mes",
+  "Le plus choisi": "El más elegido",
+};
+
+/** Dictionnaire FR → DE (page publique en priorité). */
+export const FR_DE: Record<string, string> = {
+  "Notre solution": "So funktioniert es",
+  "Résultats": "Ergebnisse",
+  "Nos offres": "Tarife",
+  "Connexion": "Anmelden",
+  "Inscription": "Registrieren",
+  "Crée des montages qui": "Erstelle Schnitte, die",
+  "percent": "einschlagen",
+  "Transforme plusieurs vidéos TikTok en un seul montage vertical, prêt à être publié et monétisé.":
+    "Verwandle mehrere TikTok-Videos in einen vertikalen Schnitt, bereit zum Posten und Monetarisieren.",
+  "Teste maintenant": "Jetzt testen",
+  "Colle le lien de ta première vidéo": "Füge den Link deines ersten Videos ein",
+  "Colle un deuxième lien": "Füge einen zweiten Link ein",
+  "Commencer gratuitement": "Kostenlos starten",
+  "10 crédits offerts à l'inscription, soit une vidéo d'essai. Aucune carte bancaire demandée.":
+    "10 Gratis-Credits bei der Anmeldung – ein Testvideo. Keine Kreditkarte nötig.",
+  "Tes clips": "Deine Clips",
+  "Ton montage prêt": "Dein fertiger Schnitt",
+  "Plusieurs liens TikTok collés en quelques secondes.":
+    "Mehrere TikTok-Links in Sekunden eingefügt.",
+  "Coupe des blancs, hook, effets, voix off et musique.":
+    "Stille schneiden, Hook, Effekte, Voiceover und Musik.",
+  "Une vidéo verticale HD, prête à publier.": "Ein vertikales HD-Video, bereit zum Posten.",
+  "Trois étapes, aucun logiciel de montage": "Drei Schritte, keine Schnittsoftware",
+  "Colle tes liens": "Links einfügen",
+  "Ajoute les liens de tes vidéos préférées : chacun se télécharge en HD automatiquement.":
+    "Füge die Links deiner Lieblingsvideos ein: jedes wird automatisch in HD geladen.",
+  "Personnalise": "Anpassen",
+  "Voix off, musique de fond, hook d'accroche, durées et effets : tout est réglable, ou laissé en automatique.":
+    "Voiceover, Hintergrundmusik, Hook, Längen und Effekte: alles einstellbar oder automatisch.",
+  "Récupère ta vidéo": "Video abholen",
+  "Le montage se génère tout seul et reste disponible 5 heures dans ton historique.":
+    "Der Schnitt entsteht automatisch und bleibt 5 Stunden in deinem Verlauf.",
+  "Crée ton compte": "Konto erstellen",
+  "Choisis ton rythme de publication": "Wähle dein Veröffentlichungstempo",
+  "Questions fréquentes": "Häufige Fragen",
+  "Puis-je annuler à tout moment ?": "Kann ich jederzeit kündigen?",
+  "Oui. L'abonnement est sans engagement et s'arrête à la fin du mois en cours.":
+    "Ja. Das Abo ist unverbindlich und endet zum Ende des laufenden Monats.",
+  "Que deviennent mes vidéos ?": "Was passiert mit meinen Videos?",
+  "Elles restent 5 heures dans ton historique, le temps de les télécharger, puis sont supprimées.":
+    "Sie bleiben 5 Stunden im Verlauf zum Herunterladen und werden dann gelöscht.",
+  "Faut-il savoir monter ?": "Brauche ich Schnitt-Erfahrung?",
+  "Non. Le mode simple ne demande que des liens ; le mode avancé est là si tu veux tout régler.":
+    "Nein. Der einfache Modus braucht nur Links; der erweiterte Modus ist für volle Kontrolle da.",
+  "Quelles plateformes sont compatibles ?": "Welche Plattformen werden unterstützt?",
+  "Le format vertical généré convient à TikTok, Reels et Shorts.":
+    "Das vertikale Format passt zu TikTok, Reels und Shorts.",
+  "Est-ce que les vidéos sont bien monétisables ?": "Sind die Videos monetarisierbar?",
+  "Oui : le montage combine plusieurs sources, une voix off et une musique de fond, ce qui en fait une vidéo transformée éligible au programme de récompenses TikTok.":
+    "Ja: der Schnitt kombiniert mehrere Quellen, ein Voiceover und Hintergrundmusik – ein transformiertes Video, das für das TikTok-Belohnungsprogramm infrage kommt.",
+  "Montage vertical automatisé pour les créateurs.":
+    "Automatisierter vertikaler Schnitt für Creator.",
+  "Tous droits réservés.": "Alle Rechte vorbehalten.",
+  "Ajoute au moins un lien pour commencer.": "Füge mindestens einen Link hinzu.",
+  "crédits / mois": "Credits / Monat",
+  "vidéos / mois": "Videos / Monat",
+  "mois": "Monat",
+  "Le plus choisi": "Am beliebtesten",
+};
+
+const CONTENT: Partial<Record<Lang, Record<string, string>>> = {
+  en: FR_EN,
+  es: FR_ES,
+  de: FR_DE,
 };
 
 /** Traduit une chaîne écrite en français vers la langue active. */
 export function useTr() {
   const { lang } = usePrefs();
-  return (s: string) => (lang === "en" ? (FR_EN[s] ?? s) : s);
+  return (s: string) => CONTENT[lang]?.[s] ?? s;
 }
 
 /** Locale utilisée pour les dates et les nombres. */
 export function useLocale() {
   const { lang } = usePrefs();
-  return lang === "en" ? "en-US" : "fr-FR";
+  return LANG_META[lang].locale;
 }

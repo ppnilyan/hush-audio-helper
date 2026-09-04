@@ -26,11 +26,12 @@ import { useSession } from "@/lib/account";
 import { useAdvanced } from "@/lib/advanced-mode";
 import { useBilling } from "@/lib/billing";
 import {
+  LANGS,
+  LANG_META,
   THEMES,
   THEME_LABEL_KEYS,
   THEME_SWATCH,
   usePrefs,
-  type Lang,
 } from "@/lib/prefs";
 
 export function HeaderActions() {
@@ -159,7 +160,7 @@ export function HeaderActions() {
             <section className="space-y-3">
               <h3 className="text-sm font-medium">{t("language")}</h3>
               <div className="flex gap-2">
-                {(["fr", "en"] as Lang[]).map((l) => (
+                {LANGS.map((l) => (
                   <Button
                     key={l}
                     type="button"
@@ -167,7 +168,7 @@ export function HeaderActions() {
                     variant={lang === l ? "default" : "secondary"}
                     onClick={() => setLang(l)}
                   >
-                    {l === "fr" ? t("french") : t("english")}
+                    <span aria-hidden>{LANG_META[l].flag}</span> {LANG_META[l].label}
                   </Button>
                 ))}
               </div>
