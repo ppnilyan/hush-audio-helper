@@ -109,6 +109,14 @@ async function handleEvent(event: Stripe.Event, env: StripeEnv, stripe: Stripe) 
       break;
     }
 
+    case "customer.subscription.created": {
+      const sub = event.data.object;
+      if (sub.status === "active" || sub.status === "trialing") {
+        await applySubscription(sub.id, 0);
+      }
+      break;
+    }
+
     case "customer.subscription.deleted": {
       await supabaseAdmin.rpc("stripe_end_subscription", {
         _stripe_subscription_id: event.data.object.id,
