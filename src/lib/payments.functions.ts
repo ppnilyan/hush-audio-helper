@@ -18,7 +18,27 @@ export const PRICE_TO_PACK: Record<string, string> = {
   pack50: "pack50",
   pack100: "pack100",
   pack300: "pack300",
+  // Variantes « abonné » (−20 %) : même pack crédité.
+  pack50_sub: "pack50",
+  pack100_sub: "pack100",
+  pack300_sub: "pack300",
 };
+
+/** Vrai si l'abonnement couvre encore la période payée (même résilié). */
+async function hasActiveSubscription(
+  supabase: { from: (t: "user_subscriptions") => any },
+  userId: string,
+): Promise<boolean> {
+  const { data } = await supabase
+    .from("user_subscriptions")
+    .select("status, renews_at")
+    .eq("user_id", userId)
+    .maybeSingle();
+  if (!data) return false;
+  const active = data.status === "active" || data.status === "canceled";
+  return active && new Date(data.renews_at).getTime() > Date.now();
+}
+
 
 async function resolveOrCreateCustomer(
   stripe: Stripe,
