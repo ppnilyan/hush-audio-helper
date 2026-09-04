@@ -194,32 +194,32 @@ function PricingPage() {
     );
   };
 
-  const portal = async () => {
+  const cancel = async () => {
     setNotice(null);
+    setBusy("cancel");
     try {
-      const r = await openPortal({
-        data: {
-          environment: getStripeEnvironment(),
-          returnUrl: `${window.location.origin}/pricing`,
-        },
-      });
-      if ("error" in r) {
+      const r = await cancelSub({});
+      if (!r.ok) {
         setNotice(r.error);
         return;
       }
-      window.open(r.url, "_blank");
+      setNotice(
+        tr("Abonnement résilié : vos crédits et avantages restent actifs jusqu'à la fin de la période déjà payée."),
+      );
+      await invalidate();
     } catch (e) {
       setNotice((e as Error).message);
+    } finally {
+      setBusy(null);
     }
   };
 
-  if (checkoutPriceId) {
+  if (checkoutTarget) {
     return (
       <main className="mx-auto min-h-screen w-full max-w-3xl px-5 py-10">
-        <PaymentTestModeBanner />
         <div className="mt-6 mb-4 flex items-center justify-between">
           <h1 className="text-2xl font-semibold">{tr("Paiement")}</h1>
-          <Button variant="secondary" onClick={() => setCheckoutPriceId(null)}>
+          <Button variant="secondary" onClick={() => setCheckoutTarget(null)}>
             <X className="size-4" /> {tr("Annuler")}
           </Button>
         </div>
@@ -227,11 +227,16 @@ function PricingPage() {
           {tr("Montant à payer")} : <strong>{formatEuro(checkoutAmount, locale)}</strong>
           {promo && promo.percentOff > 0 ? ` · ${promo.code} −${promo.percentOff}%` : ""}
         </p>
-        <StripeEmbeddedCheckout
-          priceId={checkoutPriceId}
-          {...(promo ? { promoCode: promo.code } : {})}
-          {...(checkoutAmount ? { expectedAmountCents: checkoutAmount } : {})}
-          returnUrl={`${typeof window === "undefined" ? "" : window.location.origin}/pricing?checkout=done`}
+        <PaypalCheckout
+          target={checkoutTarget}
+          promoCode={promo?.code ?? null}
+          expectedAmountCents={checkoutAmount}
+          onDone={() => {
+            setCheckoutTarget(null);
+            setNotice(tr("Paiement confirmé ✓ Vos crédits sont disponibles."));
+            void invalidate();
+          }}
+          onError={(m) => setNotice(m)}
         />
       </main>
     );
@@ -239,7 +244,7 @@ function PricingPage() {
 
   return (
     <main className="mx-auto min-h-screen w-full max-w-6xl px-5 py-14">
-      <PaymentTestModeBanner />
+
       <header className="mb-10 mt-6 text-center">
         <p className="text-sm font-medium uppercase tracking-[0.25em] text-primary">
           {tr("Tarifs")}
