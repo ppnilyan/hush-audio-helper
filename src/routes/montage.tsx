@@ -52,7 +52,15 @@ import {
 } from "@/lib/advanced-mode";
 import { useLocale, useTr } from "@/lib/prefs";
 import { CREDITS_PER_VIDEO, useBilling, useInvalidateBilling } from "@/lib/billing";
-import { consumeCredits, refundCredits } from "@/lib/billing.functions";
+
+import { getClipsSnapshot, setClipsSnapshot } from "@/lib/clips-store";
+import {
+  finishGenerationJob,
+  listFailedGenerations,
+  reconcileGenerationJobs,
+  startGenerationJob,
+  type GenerationJob,
+} from "@/lib/generation-jobs.functions";
 import { useServerFn } from "@tanstack/react-start";
 import { Lock } from "lucide-react";
 
@@ -191,8 +199,14 @@ function Montage() {
   const search = Route.useSearch();
   const navigate = useNavigate();
 
-  const [clips, setClips] = useState<ClipInfo[]>([]);
-  const [rows, setRows] = useState<LinkRow[]>(() => [newRow()]);
+  const [clips, setClips] = useState<ClipInfo[]>(() => getClipsSnapshot()?.clips ?? []);
+  const [rows, setRows] = useState<LinkRow[]>(() => {
+    const saved = getClipsSnapshot()?.rows;
+    if (!saved || saved.length === 0) return [newRow()];
+    const restored: LinkRow[] = saved.map((r) => ({ id: r.id, url: r.url, status: "done" }));
+    restored.push(newRow());
+    return restored;
+  });
   const [loading, setLoading] = useState(false);
   const [hdMenu, setHdMenu] = useState<string | null>(null);
   const [hdStatus, setHdStatus] = useState<
@@ -210,13 +224,16 @@ function Montage() {
   const [rendering, setRendering] = useState(false);
   const [progress, setProgress] = useState(0);
   const [history, setHistory] = useState<UIEntry[]>([]);
+  const [failed, setFailed] = useState<GenerationJob[]>([]);
   const [tab, setTab] = useState<"editor" | "history">(search.tab);
   const [step, setStep] = useState(0);
   const { advanced, setAdvanced } = useAdvanced();
   const billing = useBilling();
   const invalidateBilling = useInvalidateBilling();
-  const consume = useServerFn(consumeCredits);
-  const refund = useServerFn(refundCredits);
+  const startJob = useServerFn(startGenerationJob);
+  const finishJob = useServerFn(finishGenerationJob);
+  const reconcileJobs = useServerFn(reconcileGenerationJobs);
+  const fetchFailed = useServerFn(listFailedGenerations);
   const noCredits = billing.signedIn && !billing.loading && billing.totalCredits < CREDITS_PER_VIDEO;
 
   /** Étapes visibles : « Durées & effets » n'apparaît qu'en mode avancé. */
@@ -383,6 +400,44 @@ function Montage() {
       setHistory(items);
     }
   }, [userId]);
+
+  // Générations remboursées (échec ou onglet fermé pendant l'export).
+  const refreshFailed = useCallback(async () => {
+    if (!userId) {
+      setFailed([]);
+      return;
+    }
+    const items = await fetchFailed().catch(() => []);
+    setFailed(items);
+  }, [userId, fetchFailed]);
+
+  // Au chargement : on rattrape les générations abandonnées et on rembourse.
+  useEffect(() => {
+    if (!userId) return;
+    let alive = true;
+    void (async () => {
+      const r = await reconcileJobs().catch(() => null);
+      if (!alive) return;
+      if (r && r.refunded > 0) {
+        void invalidateBilling();
+        void refreshHistory();
+      }
+      void refreshFailed();
+    })();
+    return () => {
+      alive = false;
+    };
+  }, [userId, reconcileJobs, invalidateBilling, refreshHistory, refreshFailed]);
+
+  // Les clips saisis survivent au passage par la page de connexion.
+  useEffect(() => {
+    setClipsSnapshot({
+      clips,
+      rows: rows
+        .filter((r) => r.url.trim() !== "")
+        .map((r) => ({ id: r.id, url: r.url })),
+    });
+  }, [clips, rows]);
 
   useEffect(() => {
     void refreshHistory();
@@ -895,16 +950,16 @@ function Montage() {
     }
     setRendering(true);
     setError(null);
-    // Débit des crédits avant l'export ; remboursés si la génération échoue.
-    let debit: { fromMonthly: number; fromPurchased: number } | null = null;
+    // Débit des crédits + ouverture d'un job suivi côté serveur.
+    let jobId: string | null = null;
     try {
-      const r = await consume();
+      const r = await startJob();
       if (!r.ok) {
         setError(tr("Plus de crédits : rechargez ou abonnez-vous pour générer cette vidéo."));
         setRendering(false);
         return;
       }
-      debit = { fromMonthly: r.fromMonthly, fromPurchased: r.fromPurchased };
+      jobId = r.jobId;
       void invalidateBilling();
     } catch (e) {
       setError((e as Error).message || tr("La génération a échoué."));
@@ -975,7 +1030,7 @@ function Montage() {
           duration: totalDuration,
           mime: blob.type,
           ext,
-        }).catch(() => {});
+        });
         await refreshHistory();
       } else {
         const entry = {
@@ -992,12 +1047,14 @@ function Montage() {
       }
       setTab("history");
     } catch (e) {
-      setError((e as Error).message || tr("La génération a échoué."));
-      if (debit) {
-        await refund({ data: debit }).catch(() => {});
-        void invalidateBilling();
-      }
+      setError((e as Error).message || tr("La génération a échoué. Vos 10 crédits ont été remboursés."));
     } finally {
+      // Le serveur vérifie qu'une vidéo est bien arrivée : sinon il rembourse.
+      if (jobId) {
+        await finishJob({ data: { jobId } }).catch(() => {});
+        void invalidateBilling();
+        void refreshFailed();
+      }
       setRendering(false);
       setProgress(0);
     }
@@ -1059,6 +1116,33 @@ function Montage() {
               ? tr("Les vidéos générées restent disponibles 5 heures sur votre compte, depuis n'importe quel appareil.")
               : tr("Les vidéos générées restent disponibles 5 heures sur cet appareil. Connectez-vous pour lier votre historique à votre compte.")}
           </p>
+          {failed.length > 0 && (
+            <div className="space-y-2 rounded-xl border border-destructive/40 bg-destructive/10 p-4">
+              <p className="text-sm font-medium">
+                {tr("Générations non terminées — crédits remboursés")}
+              </p>
+              {failed.map((f) => (
+                <div
+                  key={f.id}
+                  className="flex flex-wrap items-center justify-between gap-3 text-xs text-muted-foreground"
+                >
+                  <span>
+                    {new Date(f.createdAt).toLocaleString(locale)} ·{" "}
+                    {`${f.credits} ${tr("crédits remboursés")}`}
+                  </span>
+                  <button
+                    onClick={() => {
+                      setTab("editor");
+                      setStep(visibleSteps[visibleSteps.length - 1]!);
+                    }}
+                    className="text-primary underline"
+                  >
+                    {tr("Refaire la vidéo")}
+                  </button>
+                </div>
+              ))}
+            </div>
+          )}
           {history.length === 0 ? (
             <p className="text-sm text-muted-foreground">{tr("Aucune vidéo pour l'instant.")}</p>
           ) : (
