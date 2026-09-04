@@ -1116,6 +1116,33 @@ function Montage() {
               ? tr("Les vidéos générées restent disponibles 5 heures sur votre compte, depuis n'importe quel appareil.")
               : tr("Les vidéos générées restent disponibles 5 heures sur cet appareil. Connectez-vous pour lier votre historique à votre compte.")}
           </p>
+          {failed.length > 0 && (
+            <div className="space-y-2 rounded-xl border border-destructive/40 bg-destructive/10 p-4">
+              <p className="text-sm font-medium">
+                {tr("Générations non terminées — crédits remboursés")}
+              </p>
+              {failed.map((f) => (
+                <div
+                  key={f.id}
+                  className="flex flex-wrap items-center justify-between gap-3 text-xs text-muted-foreground"
+                >
+                  <span>
+                    {new Date(f.createdAt).toLocaleString(locale)} ·{" "}
+                    {`${f.credits} ${tr("crédits remboursés")}`}
+                  </span>
+                  <button
+                    onClick={() => {
+                      setTab("editor");
+                      setStep(visibleSteps[visibleSteps.length - 1]!);
+                    }}
+                    className="text-primary underline"
+                  >
+                    {tr("Refaire la vidéo")}
+                  </button>
+                </div>
+              ))}
+            </div>
+          )}
           {history.length === 0 ? (
             <p className="text-sm text-muted-foreground">{tr("Aucune vidéo pour l'instant.")}</p>
           ) : (
