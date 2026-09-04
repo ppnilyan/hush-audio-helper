@@ -202,7 +202,10 @@ export function HeaderActions() {
                 </Button>
               )}
             </section>
+
+            {billing.state?.isAdmin && <AdminPromoSection />}
           </div>
+
         </DialogContent>
       </Dialog>
     </div>
