@@ -16,8 +16,8 @@ const STEPS = [
   },
   {
     n: "03",
-    title: "Récupère ta vidéo",
-    text: "Le montage se génère tout seul et reste disponible 5 heures dans ton historique.",
+    title: "Publie et encaisse",
+    text: "Tu récupères une vidéo verticale transformée, prête à être publiée et récompensée.",
   },
 ];
 
@@ -41,7 +41,7 @@ export function SolutionSteps() {
           />
           <div className="grid gap-6 md:grid-cols-3">
             {STEPS.map((s) => (
-              <div key={s.n} className="relative">
+              <div key={s.n} className="card-hover panel relative p-6">
                 <span className="gradient-brand font-display relative z-10 flex size-16 items-center justify-center rounded-full text-lg font-bold text-primary-foreground">
                   {s.n}
                 </span>
