@@ -57,7 +57,7 @@ export function Hero() {
           <h2 className="font-display text-lg font-semibold">{tr("Teste maintenant")}</h2>
           <div className="mt-4 space-y-3">
             {links.map((value, i) => {
-              const status = statuses[i];
+              const status = statuses[i]!;
               const dirty = value.trim().length > 0;
               return (
                 <div key={i} className="relative">
