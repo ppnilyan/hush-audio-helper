@@ -261,9 +261,17 @@ function PricingPage() {
         )}
         {subscriber && billing.state?.plan?.mode !== "test" && (
           <div className="mt-4">
-            <Button variant="secondary" onClick={() => void portal()}>
-              <CreditCard className="size-4" /> {tr("Gérer mon abonnement")}
+            <Button
+              variant="secondary"
+              disabled={busy === "cancel" || !!billing.state?.plan?.cancelAtPeriodEnd}
+              onClick={() => void cancel()}
+            >
+              <CreditCard className="size-4" />{" "}
+              {billing.state?.plan?.cancelAtPeriodEnd
+                ? tr("Abonnement résilié")
+                : tr("Résilier mon abonnement")}
             </Button>
+
             <p className="mt-2 text-xs text-muted-foreground">
               {tr("Résiliation possible à tout moment : l'accès et les crédits restent actifs jusqu'à la fin de la période déjà payée.")}
             </p>
