@@ -112,7 +112,7 @@ export function PaypalCheckout({ target, promoCode, expectedAmountCents, onDone,
                 }
               },
             })}
-        onError={(err) => onError((err as Error).message || "Paiement interrompu.")}
+        onError={(err) => onError((err as unknown as Error)?.message || "Paiement interrompu.")}
       />
     </PayPalScriptProvider>
   );
