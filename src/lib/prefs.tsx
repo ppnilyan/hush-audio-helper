@@ -597,7 +597,38 @@ export const FR_DE: Record<string, string> = {
   "vidéos / mois": "Videos / Monat",
   "mois": "Monat",
   "Le plus choisi": "Am beliebtesten",
+  "Colle tes liens, récupère un TikTok monétisable en quelques minutes.":
+    "Links einfügen, in Minuten ein monetarisierbares TikTok erhalten.",
+  "Ce qui change concrètement avant et après SilenceCut":
+    "Was sich mit SilenceCut konkret ändert",
+  "Avant": "Vorher",
+  "Après": "Nachher",
+  "Des heures passées à découper à la main": "Stunden manuelles Schneiden",
+  "Des vidéos brutes que la plateforme ne récompense pas":
+    "Rohe Videos, die die Plattform nicht belohnt",
+  "Une publication par semaine, quand tu trouves le temps":
+    "Ein Post pro Woche, wenn du Zeit findest",
+  "Un montage vertical prêt en quelques minutes": "Ein vertikaler Schnitt in wenigen Minuten",
+  "Une vidéo transformée, éligible aux récompenses TikTok":
+    "Ein transformiertes Video, geeignet für TikTok-Belohnungen",
+  "Plusieurs publications par jour, sans y penser": "Mehrere Posts pro Tag, ganz nebenbei",
+  "pour un montage complet": "für einen kompletten Schnitt",
+  "= une vidéo prête à publier": "= ein Video bereit zum Posten",
+  "suffisent pour commencer": "genügen für den Start",
+  "Publie et encaisse": "Posten und verdienen",
+  "Tu récupères une vidéo verticale transformée, prête à être publiée et récompensée.":
+    "Du bekommst ein transformiertes vertikales Video, bereit zum Posten und Belohnen.",
+  "Pourquoi mes vidéos deviennent monétisables ?": "Warum sind meine Videos monetarisierbar?",
+  "Le montage assemble plusieurs sources, ajoute un hook, une voix off et une musique de fond : le résultat est une vidéo transformée, celle que le programme de récompenses TikTok accepte.":
+    "Der Schnitt kombiniert mehrere Quellen und ergänzt Hook, Voiceover und Hintergrundmusik: das Ergebnis ist ein transformiertes Video, wie es das TikTok-Belohnungsprogramm akzeptiert.",
+  "Combien de vidéos puis-je publier par jour ?": "Wie viele Videos kann ich pro Tag posten?",
+  "Autant que tes crédits le permettent : une vidéo coûte 10 crédits, donc une formule à 600 crédits représente environ 60 montages par mois.":
+    "So viele, wie deine Credits erlauben: ein Video kostet 10 Credits, ein 600-Credits-Tarif sind also rund 60 Schnitte pro Monat.",
+  "Combien de temps pour récupérer un montage ?": "Wie lange dauert ein Schnitt?",
+  "Environ trois minutes entre le collage des liens et le téléchargement du fichier vertical HD.":
+    "Etwa drei Minuten vom Einfügen der Links bis zum Download der vertikalen HD-Datei.",
 };
+
 
 const CONTENT: Partial<Record<Lang, Record<string, string>>> = {
   en: FR_EN,
