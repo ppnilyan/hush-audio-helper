@@ -23,6 +23,16 @@ export function AdminPromoSection() {
   const fetchCodes = useServerFn(listPromoCodes);
   const create = useServerFn(createPromoCode);
   const remove = useServerFn(deletePromoCode);
+  const toggle = useServerFn(setPromoCodeActive);
+  const syncStripe = useServerFn(syncPromoCoupon);
+
+  /** Répercute l'état du code sur le prestataire de paiement. */
+  const sync = async (c: string, percentOff: number, active: boolean) => {
+    if (!paymentsConfigured()) return;
+    await syncStripe({
+      data: { code: c, percentOff, active, environment: getStripeEnvironment() },
+    }).catch(() => null);
+  };
 
   const [code, setCode] = useState("");
   const [percent, setPercent] = useState("20");
