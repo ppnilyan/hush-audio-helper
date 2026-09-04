@@ -1143,6 +1143,12 @@ function Montage() {
                   </span>
                   <button
                     onClick={() => {
+                      setFailed((prev) => prev.filter((x) => x.id !== f.id));
+                      void (async () => {
+                        await dismissJob({ data: { jobId: f.id } }).catch(() => null);
+                        void invalidateBilling();
+                        void refreshFailed();
+                      })();
                       setTab("editor");
                       setStep(visibleSteps[visibleSteps.length - 1]!);
                     }}
@@ -1150,6 +1156,7 @@ function Montage() {
                   >
                     {tr("Refaire la vidéo")}
                   </button>
+
                 </div>
               ))}
             </div>
