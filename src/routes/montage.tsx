@@ -191,8 +191,14 @@ function Montage() {
   const search = Route.useSearch();
   const navigate = useNavigate();
 
-  const [clips, setClips] = useState<ClipInfo[]>([]);
-  const [rows, setRows] = useState<LinkRow[]>(() => [newRow()]);
+  const [clips, setClips] = useState<ClipInfo[]>(() => getClipsSnapshot()?.clips ?? []);
+  const [rows, setRows] = useState<LinkRow[]>(() => {
+    const saved = getClipsSnapshot()?.rows;
+    if (!saved || saved.length === 0) return [newRow()];
+    const restored: LinkRow[] = saved.map((r) => ({ id: r.id, url: r.url, status: "done" }));
+    restored.push(newRow());
+    return restored;
+  });
   const [loading, setLoading] = useState(false);
   const [hdMenu, setHdMenu] = useState<string | null>(null);
   const [hdStatus, setHdStatus] = useState<
