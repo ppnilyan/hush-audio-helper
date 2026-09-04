@@ -56,27 +56,55 @@ export const resolveTikTok = createServerFn({ method: "POST" })
       }
     }
 
-    const res = await fetch(
-      `https://www.tikwm.com/api/?url=${encodeURIComponent(data.url)}&hd=1`,
-      { headers: { "User-Agent": "Mozilla/5.0" } },
-    );
-    if (!res.ok) {
-      throw new Error(`Service de téléchargement indisponible (${res.status})`);
-    }
-    const json = (await res.json()) as {
-      code?: number;
-      msg?: string;
-      data?: {
-        play?: string;
-        hdplay?: string;
-        title?: string;
-        duration?: number;
-        play_count?: number | string;
-      };
+    const staleFallback = () => {
+      if (cached.data?.payload) return cached.data.payload as Resolved;
+      return null;
     };
+
+    let json: TikwmResponse | null = null;
+    let lastMessage = "";
+    outer: for (let round = 0; round < 3; round++) {
+      for (const endpoint of ENDPOINTS) {
+        try {
+          const res = await fetch(endpoint(data.url), {
+            headers: {
+              "User-Agent":
+                "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0 Safari/537.36",
+              Accept: "application/json",
+              Referer: "https://www.tikwm.com/",
+            },
+          });
+          if (!res.ok) {
+            lastMessage = `Service indisponible (${res.status})`;
+            continue;
+          }
+          const parsed = (await res.json()) as TikwmResponse;
+          if (parsed.code === 0 && (parsed.data?.play || parsed.data?.hdplay)) {
+            json = parsed;
+            break outer;
+          }
+          lastMessage = parsed.msg || lastMessage;
+        } catch {
+          lastMessage = lastMessage || "Réseau indisponible";
+        }
+      }
+      // Petite pause croissante : la plupart des refus du service gratuit sont temporaires.
+      await new Promise((r) => setTimeout(r, 700 * (round + 1)));
+    }
+
+    if (!json) {
+      const stale = staleFallback();
+      if (stale && (!hdOnly || stale.hd)) return stale;
+      throw new Error(
+        /limit/i.test(lastMessage)
+          ? "Le service gratuit de récupération TikTok est momentanément saturé. Réessaie dans une minute."
+          : lastMessage || "Impossible de récupérer cette vidéo TikTok.",
+      );
+    }
+
     const hd = json.data?.hdplay;
     const play = hd || json.data?.play;
-    if (json.code !== 0 || !play) {
+    if (!play) {
       throw new Error(json.msg || "Impossible de récupérer cette vidéo TikTok.");
     }
     if (hdOnly && !hd) {
