@@ -315,9 +315,13 @@ function PricingPage() {
                 <p className="text-sm text-muted-foreground">
                   {k.credits / CREDITS_PER_VIDEO} {tr("vidéos")}
                 </p>
-                <p className="mt-3 flex items-baseline gap-2">
-                  <span className="text-2xl font-bold">{formatEuro(price, locale)}</span>
-                  {subscriber ? (
+                <p className="mt-3 flex flex-wrap items-baseline gap-2">
+                  <span className="text-2xl font-bold">{formatEuro(withPromo(price), locale)}</span>
+                  {promo && promo.percentOff > 0 ? (
+                    <span className="text-sm text-muted-foreground line-through">
+                      {formatEuro(price, locale)}
+                    </span>
+                  ) : subscriber ? (
                     <span className="text-sm text-muted-foreground line-through">
                       {formatEuro(k.priceCents, locale)}
                     </span>
@@ -337,8 +341,13 @@ function PricingPage() {
                       variant="secondary"
                       className="w-full"
                       disabled={busy !== null}
-                      onClick={() => void run(k.id, () => buyPack({ data: { packId: k.id } }))}
+                      onClick={() =>
+                        void run(k.id, () =>
+                          buyPack({ data: { packId: k.id, promoCode: promo?.code ?? null } }),
+                        )
+                      }
                     >
+
                       {busy === k.id ? "…" : tr("Acheter")}
                     </Button>
                   ) : (
