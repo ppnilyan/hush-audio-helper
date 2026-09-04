@@ -141,30 +141,47 @@ export const dismissFailedGeneration = createServerFn({ method: "POST" })
   .inputValidator((input: { jobId: string }) => input)
   .handler(async ({ data, context }) => {
     const { supabase, userId } = context;
-    const { data: job, error } = await supabase
+
+    // Verrou atomique : seul le premier appel voit une ligne revenir,
+    // donc un double-clic (ou un rechargement) ne rembourse jamais deux fois.
+    const { data: claimed, error: claimError } = await supabase
       .from("generation_jobs")
-      .select("id, status, credits, from_monthly, from_purchased")
+      .update({ status: "acknowledged", settled_at: new Date().toISOString() })
+      .eq("id", data.jobId)
+      .eq("user_id", userId)
+      .eq("status", "pending")
+      .select("id, credits, from_monthly, from_purchased")
+      .maybeSingle();
+    if (claimError) throw new Error(claimError.message);
+
+    if (claimed) {
+      await supabase.rpc("refund_credits", {
+        _from_monthly: Math.max(0, claimed.from_monthly),
+        _from_purchased: Math.max(0, claimed.from_purchased),
+      });
+      return { ok: true as const, refunded: claimed.credits as number, alreadyRefunded: false };
+    }
+
+    // Job déjà réglé (remboursé automatiquement ou par un précédent clic) :
+    // on masque simplement l'avis, sans re-créditer.
+    const { data: job } = await supabase
+      .from("generation_jobs")
+      .select("status, credits")
       .eq("id", data.jobId)
       .eq("user_id", userId)
       .maybeSingle();
-    if (error) throw new Error(error.message);
-    if (!job) return { ok: true as const, refunded: 0 };
-
-    let refunded = 0;
-    if (job.status === "pending") {
-      await supabase.rpc("refund_credits", {
-        _from_monthly: Math.max(0, job.from_monthly),
-        _from_purchased: Math.max(0, job.from_purchased),
-      });
-      refunded = job.credits;
+    if (job && job.status === "refunded") {
+      await supabase
+        .from("generation_jobs")
+        .update({ status: "acknowledged" })
+        .eq("id", data.jobId)
+        .eq("user_id", userId)
+        .eq("status", "refunded");
+      return { ok: true as const, refunded: job.credits as number, alreadyRefunded: true };
     }
-    await supabase
-      .from("generation_jobs")
-      .update({ status: "acknowledged", settled_at: new Date().toISOString() })
-      .eq("id", job.id)
-      .eq("user_id", userId);
-    return { ok: true as const, refunded };
+    return { ok: true as const, refunded: 0, alreadyRefunded: true };
   });
+
 
 /** Générations échouées récentes, affichées dans l'historique. */
 
