@@ -1,9 +1,10 @@
 import { Link, useNavigate } from "@tanstack/react-router";
-import { Coins, Lock, Settings, User } from "lucide-react";
+import { Coins, HelpCircle, Lock, Settings, User } from "lucide-react";
 import { useState } from "react";
 
 import { AdminFaqSection } from "@/components/AdminFaqSection";
 import { AdminPromoSection } from "@/components/AdminPromoSection";
+import { Faq } from "@/components/landing/Faq";
 import { Button } from "@/components/ui/button";
 
 import { Label } from "@/components/ui/label";
@@ -44,6 +45,7 @@ export function HeaderActions() {
   const billing = useBilling();
   const navigate = useNavigate();
   const [open, setOpen] = useState(false);
+  const [faqOpen, setFaqOpen] = useState(false);
 
   const goPricing = () => {
     setOpen(false);
@@ -210,6 +212,22 @@ export function HeaderActions() {
             {billing.state?.isAdmin && <AdminFaqSection />}
           </div>
 
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={faqOpen} onOpenChange={setFaqOpen}>
+        <DialogTrigger asChild>
+          <Button variant="secondary" size="sm" className="rounded-full">
+            <HelpCircle className="size-4" />
+            <span className="hidden sm:inline">{t("faq")}</span>
+          </Button>
+        </DialogTrigger>
+        <DialogContent className="max-h-[90vh] overflow-y-auto sm:max-w-3xl">
+          <DialogHeader>
+            <DialogTitle>{t("faq")}</DialogTitle>
+            <DialogDescription>{t("faqDesc")}</DialogDescription>
+          </DialogHeader>
+          <Faq />
         </DialogContent>
       </Dialog>
     </div>
