@@ -89,9 +89,18 @@ export const createCheckoutSession = createServerFn({ method: "POST" })
     try {
       const stripe = createStripeClient(data.environment);
 
-      const prices = await stripe.prices.list({ lookup_keys: [data.priceId] });
+      // Les abonnés (même après résiliation, jusqu'à la fin de période) paient −20 % sur les packs.
+      let priceId = data.priceId;
+      if (PRICE_TO_PACK[priceId] && !priceId.endsWith("_sub")) {
+        if (await hasActiveSubscription(context.supabase, context.userId)) {
+          priceId = `${priceId}_sub`;
+        }
+      }
+
+      const prices = await stripe.prices.list({ lookup_keys: [priceId] });
       if (!prices.data.length) return { error: "Prix introuvable" };
       const stripePrice = prices.data[0]!;
+
       const isRecurring = stripePrice.type === "recurring";
 
       const email = context.claims?.email as string | undefined;
