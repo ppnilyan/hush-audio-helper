@@ -379,7 +379,7 @@ function PricingPage() {
             "Chaque nouveau compte reçoit 10 crédits offerts, soit une vidéo d'essai, et peut acheter des packs de crédits.",
           ],
         ].map(([q, a]) => (
-          <div key={q} className="rounded-2xl bg-secondary/30 p-5">
+          <div key={q} className="card-hover-soft rounded-2xl bg-secondary/30 p-5">
             <h3 className="font-semibold">{tr(q!)}</h3>
             <p className="mt-2 text-sm text-muted-foreground">{tr(a!)}</p>
           </div>
