@@ -30,9 +30,18 @@ export const Route = createFileRoute("/api/public/media-proxy")({
           return new Response("Host not allowed", { status: 403 });
         }
 
+        const fromTikwm = parsed.hostname.endsWith("tikwm.com");
         const upstream = await fetch(parsed.toString(), {
-          headers: { "User-Agent": "Mozilla/5.0", Referer: "https://www.tikwm.com/" },
+          headers: {
+            "User-Agent": fromTikwm
+              ? "Mozilla/5.0"
+              : "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0 Safari/537.36",
+            Referer: fromTikwm ? "https://www.tikwm.com/" : "https://www.tiktok.com/",
+            ...(parsed.hostname.endsWith("tikwm.com") ? {} : { Origin: "https://www.tiktok.com" }),
+            ...(request.headers.get("range") ? { Range: request.headers.get("range")! } : {}),
+          },
         });
+
         if (!upstream.ok || !upstream.body) {
           return new Response("Upstream error", { status: 502 });
         }
