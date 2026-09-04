@@ -119,7 +119,7 @@ async function handleEvent(event: Stripe.Event, env: StripeEnv, stripe: Stripe) 
   }
 }
 
-export const Route = createFileRoute("/api/public/stripe-webhook")({
+export const Route = createFileRoute("/api/public/payments/webhook")({
   server: {
     handlers: {
       POST: async ({ request }) => {
