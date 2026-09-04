@@ -6,4 +6,4 @@
   - [x] Abonnements Starter / Pro / Elite via PayPal
   - [x] Crédits/abonnements activés uniquement après vérification serveur (capture + webhook)
   - [x] Retirer Stripe du parcours utilisateur, garder le design actuel
-  - [ ] Ajouter le secret PAYPAL_WEBHOOK_ID + webhook PayPal vers /api/public/paypal/webhook
+  - [x] Ajouter le secret PAYPAL_WEBHOOK_ID + webhook PayPal vers /api/public/paypal/webhook
