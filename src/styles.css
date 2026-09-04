@@ -463,3 +463,26 @@
     radial-gradient(circle at 50% 100%, oklch(0.82 0.15 160 / 0.12), transparent 60%);
   --shadow-glow: 0 12px 40px -12px oklch(0.88 0.19 120 / 0.5);
 }
+
+/* ---------------- Surface sombre neutre (montage / historique) ----------------
+   Le fond de page devient sombre et neutre, mais les couleurs de marque
+   (primary, accent, dégradés des boutons) restent celles du thème choisi. */
+[data-surface="dark"] {
+  --background: oklch(0.13 0 0);
+  --card: oklch(0.17 0 0);
+  --popover: oklch(0.17 0 0);
+  --secondary: oklch(0.23 0 0);
+  --secondary-foreground: oklch(0.96 0 0);
+  --muted: oklch(0.22 0 0);
+  --muted-foreground: oklch(0.72 0 0);
+  --foreground: oklch(0.97 0 0);
+  --card-foreground: oklch(0.97 0 0);
+  --popover-foreground: oklch(0.97 0 0);
+  --border: oklch(1 0 0 / 10%);
+  --input: oklch(1 0 0 / 14%);
+  --sidebar: oklch(0.15 0 0);
+  --sidebar-accent: oklch(0.23 0 0);
+  --sidebar-border: oklch(1 0 0 / 10%);
+  --gradient-glow: radial-gradient(circle at 12% -5%, oklch(1 0 0 / 0.05), transparent 55%),
+    radial-gradient(circle at 88% 5%, oklch(1 0 0 / 0.04), transparent 55%);
+}
