@@ -100,7 +100,14 @@ async function resolveOrCreateCustomer(
 export const createCheckoutSession = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator(
-    (data: { priceId: string; returnUrl: string; environment: StripeEnv; promoCode?: string }) => {
+    (data: {
+      priceId: string;
+      returnUrl: string;
+      environment: StripeEnv;
+      promoCode?: string;
+      /** Montant affiché au client (centimes) : sert de contrôle avant paiement. */
+      expectedAmountCents?: number;
+    }) => {
       if (!/^[a-zA-Z0-9_-]+$/.test(data.priceId)) throw new Error("Invalid priceId");
       if (!PRICE_TO_PLAN[data.priceId] && !PRICE_TO_PACK[data.priceId]) {
         throw new Error("Unknown priceId");
