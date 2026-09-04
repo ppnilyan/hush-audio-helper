@@ -39,8 +39,9 @@ export function PlansSection() {
           {PLANS.map((plan) => (
             <div
               key={plan.id}
-              className={`${plan.highlight ? "panel-glow" : "panel"} flex flex-col p-6`}
+              className={`${plan.highlight ? "panel-glow" : "panel"} card-hover flex flex-col p-6`}
             >
+
               {plan.highlight && (
                 <span className="mb-3 self-start rounded-full bg-primary/15 px-3 py-1 text-[10px] font-semibold tracking-wide text-primary uppercase">
                   {tr("Le plus choisi")}
