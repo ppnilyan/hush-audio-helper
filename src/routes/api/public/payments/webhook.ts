@@ -42,7 +42,7 @@ async function handleEvent(event: Stripe.Event, env: StripeEnv, stripe: Stripe) 
     const periodStart = new Date((item.current_period_start ?? 0) * 1000).toISOString();
     const renewsAt = new Date((item.current_period_end ?? 0) * 1000).toISOString();
 
-    await supabaseAdmin.rpc("stripe_apply_subscription", {
+    const { error: rpcError } = await supabaseAdmin.rpc("stripe_apply_subscription", {
       _user_id: userId,
       _plan_id: planId,
       _mode: mode,
