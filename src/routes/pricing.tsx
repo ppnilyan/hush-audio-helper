@@ -443,11 +443,11 @@ function PricingPage() {
                       <Button
                         variant="secondary"
                         className="w-full"
-                        disabled={!stripeReady}
                         onClick={() => {
                           setNotice(null);
                           setCheckoutAmount(withPromo(price));
-                          setCheckoutPriceId(k.id);
+                          setCheckoutTarget({ kind: "pack", packId: k.id });
+
                         }}
                       >
                         <CreditCard className="size-4" /> {tr("Acheter")}
