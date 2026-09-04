@@ -196,6 +196,22 @@ export const createCheckoutSession = createServerFn({ method: "POST" })
         } as Stripe.Checkout.SessionCreateParams);
       }
 
+      // Contrôle : le montant affiché doit correspondre au montant que Stripe va débiter.
+      if (typeof data.expectedAmountCents === "number" && data.expectedAmountCents > 0) {
+        const unit = stripePrice.unit_amount ?? 0;
+        const expectedServer = promoPercent
+          ? Math.round((unit * (100 - promoPercent)) / 100)
+          : unit;
+        const billed = session.amount_total ?? expectedServer;
+        const shown = Math.round(data.expectedAmountCents);
+        if (Math.abs(expectedServer - shown) > 1 || Math.abs(billed - shown) > 1) {
+          await stripe.checkout.sessions.expire(session.id).catch(() => null);
+          return {
+            error: `Le montant affiché (${(shown / 100).toFixed(2)} €) ne correspond pas au montant à débiter (${(billed / 100).toFixed(2)} €). Réapplique ton code de promotion puis réessaie.`,
+          };
+        }
+      }
+
       return { clientSecret: session.client_secret ?? "" };
     } catch (error) {
       return { error: getStripeErrorMessage(error) };
