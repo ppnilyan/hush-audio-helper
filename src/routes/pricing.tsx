@@ -1,9 +1,10 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
-import { Check, Coins, Lock, Sparkles } from "lucide-react";
+import { Check, Coins, Lock, Sparkles, Tag, X } from "lucide-react";
 import { useState } from "react";
 
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 import {
   CREDITS_PER_VIDEO,
   PACKS,
@@ -14,8 +15,9 @@ import {
   useInvalidateBilling,
   type PlanDef,
 } from "@/lib/billing";
-import { fakeBuyPack, fakeSubscribe } from "@/lib/billing.functions";
+import { fakeBuyPack, fakeSubscribe, lookupPromoCode } from "@/lib/billing.functions";
 import { useLocale, useTr } from "@/lib/prefs";
+
 
 export const Route = createFileRoute("/pricing")({
   head: () => ({
