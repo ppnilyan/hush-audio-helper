@@ -51,6 +51,59 @@ const ENDPOINTS: Array<(url: string) => string> = [
   (u) => `https://tikwm.com/api/?url=${encodeURIComponent(u)}`,
 ];
 
+type TikTokItem = {
+  desc?: string;
+  video?: {
+    duration?: number;
+    playAddr?: string;
+    bitrateInfo?: Array<{ PlayAddr?: { UrlList?: string[] }; Bitrate?: number }>;
+  };
+  stats?: { playCount?: number };
+};
+
+/** Lit directement la page TikTok et extrait le lien de lecture. */
+async function resolveFromTikTokPage(url: string): Promise<Resolved | null> {
+  const res = await fetch(url, {
+    redirect: "follow",
+    headers: {
+      "User-Agent":
+        "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0 Safari/537.36",
+      "Accept-Language": "en-US,en;q=0.9",
+      Accept: "text/html,application/xhtml+xml",
+    },
+  });
+  if (!res.ok) return null;
+  const html = await res.text();
+  const marker = 'id="__UNIVERSAL_DATA_FOR_REHYDRATION__" type="application/json">';
+  const start = html.indexOf(marker);
+  if (start === -1) return null;
+  const end = html.indexOf("</script>", start);
+  if (end === -1) return null;
+  let item: TikTokItem | undefined;
+  try {
+    const parsed = JSON.parse(html.slice(start + marker.length, end)) as {
+      __DEFAULT_SCOPE__?: Record<string, { itemInfo?: { itemStruct?: TikTokItem } }>;
+    };
+    item = parsed.__DEFAULT_SCOPE__?.["webapp.video-detail"]?.itemInfo?.itemStruct;
+  } catch {
+    return null;
+  }
+  const bitrates = item?.video?.bitrateInfo ?? [];
+  const best = [...bitrates].sort((a, b) => (b.Bitrate ?? 0) - (a.Bitrate ?? 0))[0];
+  const playUrl = best?.PlayAddr?.UrlList?.[0] ?? item?.video?.playAddr;
+  if (!playUrl) return null;
+  const views = item?.stats?.playCount;
+  return {
+    playUrl,
+    // La page fournit la meilleure qualité disponible : on la considère HD.
+    hd: true,
+    title: item?.desc || "Clip TikTok",
+    duration: item?.video?.duration ?? 0,
+    ...(typeof views === "number" && Number.isFinite(views) ? { views } : {}),
+  };
+}
+
+
 export const resolveTikTok = createServerFn({ method: "POST" })
   .inputValidator((data: unknown) => schema.parse(data))
   .handler(async ({ data }) => {
@@ -112,15 +165,30 @@ export const resolveTikTok = createServerFn({ method: "POST" })
       await new Promise((r) => setTimeout(r, 700 * (round + 1)));
     }
 
+    // Repli direct sur la page TikTok : le service gratuit refuse souvent les
+    // requêtes venant des serveurs (quota partagé), la page publique non.
     if (!json) {
+      const direct = await resolveFromTikTokPage(data.url).catch(() => null);
+      if (direct && (!hdOnly || direct.hd)) {
+        memory.set(key, { at: Date.now(), value: direct });
+        await supabaseAdmin
+          .from("tiktok_cache")
+          .upsert(
+            { url_key: key, payload: direct, fetched_at: new Date().toISOString() },
+            { onConflict: "url_key" },
+          )
+          .then(null, () => null);
+        return direct;
+      }
       const stale = staleFallback();
       if (stale && (!hdOnly || stale.hd)) return stale;
       throw new Error(
         /limit/i.test(lastMessage)
-          ? "Le service gratuit de récupération TikTok est momentanément saturé. Réessaie dans une minute."
+          ? "Le service gratuit de récupération TikTok a atteint sa limite quotidienne. Réessaie dans quelques minutes."
           : lastMessage || "Impossible de récupérer cette vidéo TikTok.",
       );
     }
+
 
     const hd = json.data?.hdplay;
     const play = hd || json.data?.play;

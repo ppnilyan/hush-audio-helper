@@ -2,11 +2,15 @@ import { createFileRoute } from "@tanstack/react-router";
 
 const ALLOWED = [
   "tikwm.com",
+  "tiktok.com",
   "tiktokcdn.com",
   "tiktokcdn-us.com",
+  "tiktokcdn-eu.com",
   "tiktokv.com",
   "byteoversea.com",
+  "ttwstatic.com",
 ];
+
 
 export const Route = createFileRoute("/api/public/media-proxy")({
   server: {
@@ -26,20 +30,33 @@ export const Route = createFileRoute("/api/public/media-proxy")({
           return new Response("Host not allowed", { status: 403 });
         }
 
+        const fromTikwm = parsed.hostname.endsWith("tikwm.com");
         const upstream = await fetch(parsed.toString(), {
-          headers: { "User-Agent": "Mozilla/5.0", Referer: "https://www.tikwm.com/" },
+          headers: {
+            "User-Agent": fromTikwm
+              ? "Mozilla/5.0"
+              : "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0 Safari/537.36",
+            Referer: fromTikwm ? "https://www.tikwm.com/" : "https://www.tiktok.com/",
+            ...(parsed.hostname.endsWith("tikwm.com") ? {} : { Origin: "https://www.tiktok.com" }),
+            ...(request.headers.get("range") ? { Range: request.headers.get("range")! } : {}),
+          },
         });
+
         if (!upstream.ok || !upstream.body) {
           return new Response("Upstream error", { status: 502 });
         }
+        const contentRange = upstream.headers.get("content-range");
         return new Response(upstream.body, {
-          status: 200,
+          status: upstream.status === 206 ? 206 : 200,
           headers: {
             "Content-Type": upstream.headers.get("content-type") ?? "video/mp4",
             "Cache-Control": "no-store",
             "Access-Control-Allow-Origin": "*",
+            "Accept-Ranges": "bytes",
+            ...(contentRange ? { "Content-Range": contentRange } : {}),
           },
         });
+
       },
     },
   },
