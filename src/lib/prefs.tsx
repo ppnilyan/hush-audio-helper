@@ -441,7 +441,39 @@ export const FR_EN: Record<string, string> = {
   "Montage vertical automatisé pour les créateurs.": "Automated vertical editing for creators.",
   "Tous droits réservés.": "All rights reserved.",
   "Ajoute au moins un lien pour commencer.": "Add at least one link to get started.",
+  "Colle tes liens, récupère un TikTok monétisable en quelques minutes.":
+    "Paste your links, get a monetizable TikTok in minutes.",
+  "Ce qui change concrètement avant et après SilenceCut":
+    "What actually changes before and after SilenceCut",
+  "Avant": "Before",
+  "Après": "After",
+  "Des heures passées à découper à la main": "Hours spent cutting clips by hand",
+  "Des vidéos brutes que la plateforme ne récompense pas":
+    "Raw videos the platform will not reward",
+  "Une publication par semaine, quand tu trouves le temps":
+    "One post a week, whenever you find the time",
+  "Un montage vertical prêt en quelques minutes": "A vertical edit ready in minutes",
+  "Une vidéo transformée, éligible aux récompenses TikTok":
+    "A transformed video, eligible for TikTok rewards",
+  "Plusieurs publications par jour, sans y penser":
+    "Several posts a day, without thinking about it",
+  "pour un montage complet": "for a full edit",
+  "= une vidéo prête à publier": "= one video ready to post",
+  "suffisent pour commencer": "are enough to start",
+  "Publie et encaisse": "Post and get paid",
+  "Tu récupères une vidéo verticale transformée, prête à être publiée et récompensée.":
+    "You get a transformed vertical video, ready to be posted and rewarded.",
+  "Pourquoi mes vidéos deviennent monétisables ?": "Why do my videos become monetizable?",
+  "Le montage assemble plusieurs sources, ajoute un hook, une voix off et une musique de fond : le résultat est une vidéo transformée, celle que le programme de récompenses TikTok accepte.":
+    "The edit combines several sources and adds a hook, a voiceover and background music: the result is a transformed video, the kind the TikTok rewards program accepts.",
+  "Combien de vidéos puis-je publier par jour ?": "How many videos can I post per day?",
+  "Autant que tes crédits le permettent : une vidéo coûte 10 crédits, donc une formule à 600 crédits représente environ 60 montages par mois.":
+    "As many as your credits allow: one video costs 10 credits, so a 600-credit plan is about 60 edits a month.",
+  "Combien de temps pour récupérer un montage ?": "How long does an edit take?",
+  "Environ trois minutes entre le collage des liens et le téléchargement du fichier vertical HD.":
+    "About three minutes from pasting the links to downloading the vertical HD file.",
 };
+
 
 /** Dictionnaire FR → ES (page publique en priorité). */
 export const FR_ES: Record<string, string> = {
@@ -503,7 +535,38 @@ export const FR_ES: Record<string, string> = {
   "vidéos / mois": "vídeos / mes",
   "mois": "mes",
   "Le plus choisi": "El más elegido",
+  "Colle tes liens, récupère un TikTok monétisable en quelques minutes.":
+    "Pega tus enlaces y consigue un TikTok monetizable en minutos.",
+  "Ce qui change concrètement avant et après SilenceCut":
+    "Lo que cambia de verdad antes y después de SilenceCut",
+  "Avant": "Antes",
+  "Après": "Después",
+  "Des heures passées à découper à la main": "Horas cortando clips a mano",
+  "Des vidéos brutes que la plateforme ne récompense pas":
+    "Vídeos en bruto que la plataforma no recompensa",
+  "Une publication par semaine, quand tu trouves le temps":
+    "Una publicación por semana, cuando encuentras tiempo",
+  "Un montage vertical prêt en quelques minutes": "Un montaje vertical listo en minutos",
+  "Une vidéo transformée, éligible aux récompenses TikTok":
+    "Un vídeo transformado, elegible para las recompensas de TikTok",
+  "Plusieurs publications par jour, sans y penser": "Varias publicaciones al día, sin esfuerzo",
+  "pour un montage complet": "para un montaje completo",
+  "= une vidéo prête à publier": "= un vídeo listo para publicar",
+  "suffisent pour commencer": "bastan para empezar",
+  "Publie et encaisse": "Publica y cobra",
+  "Tu récupères une vidéo verticale transformée, prête à être publiée et récompensée.":
+    "Recibes un vídeo vertical transformado, listo para publicar y ser recompensado.",
+  "Pourquoi mes vidéos deviennent monétisables ?": "¿Por qué mis vídeos son monetizables?",
+  "Le montage assemble plusieurs sources, ajoute un hook, une voix off et une musique de fond : le résultat est une vidéo transformée, celle que le programme de récompenses TikTok accepte.":
+    "El montaje combina varias fuentes y añade hook, voz en off y música de fondo: el resultado es un vídeo transformado, el que acepta el programa de recompensas de TikTok.",
+  "Combien de vidéos puis-je publier par jour ?": "¿Cuántos vídeos puedo publicar al día?",
+  "Autant que tes crédits le permettent : une vidéo coûte 10 crédits, donc une formule à 600 crédits représente environ 60 montages par mois.":
+    "Tantos como permitan tus créditos: un vídeo cuesta 10 créditos, así que un plan de 600 créditos son unos 60 montajes al mes.",
+  "Combien de temps pour récupérer un montage ?": "¿Cuánto tarda un montaje?",
+  "Environ trois minutes entre le collage des liens et le téléchargement du fichier vertical HD.":
+    "Unos tres minutos desde pegar los enlaces hasta descargar el archivo vertical en HD.",
 };
+
 
 /** Dictionnaire FR → DE (page publique en priorité). */
 export const FR_DE: Record<string, string> = {
@@ -565,7 +628,38 @@ export const FR_DE: Record<string, string> = {
   "vidéos / mois": "Videos / Monat",
   "mois": "Monat",
   "Le plus choisi": "Am beliebtesten",
+  "Colle tes liens, récupère un TikTok monétisable en quelques minutes.":
+    "Links einfügen, in Minuten ein monetarisierbares TikTok erhalten.",
+  "Ce qui change concrètement avant et après SilenceCut":
+    "Was sich mit SilenceCut konkret ändert",
+  "Avant": "Vorher",
+  "Après": "Nachher",
+  "Des heures passées à découper à la main": "Stunden manuelles Schneiden",
+  "Des vidéos brutes que la plateforme ne récompense pas":
+    "Rohe Videos, die die Plattform nicht belohnt",
+  "Une publication par semaine, quand tu trouves le temps":
+    "Ein Post pro Woche, wenn du Zeit findest",
+  "Un montage vertical prêt en quelques minutes": "Ein vertikaler Schnitt in wenigen Minuten",
+  "Une vidéo transformée, éligible aux récompenses TikTok":
+    "Ein transformiertes Video, geeignet für TikTok-Belohnungen",
+  "Plusieurs publications par jour, sans y penser": "Mehrere Posts pro Tag, ganz nebenbei",
+  "pour un montage complet": "für einen kompletten Schnitt",
+  "= une vidéo prête à publier": "= ein Video bereit zum Posten",
+  "suffisent pour commencer": "genügen für den Start",
+  "Publie et encaisse": "Posten und verdienen",
+  "Tu récupères une vidéo verticale transformée, prête à être publiée et récompensée.":
+    "Du bekommst ein transformiertes vertikales Video, bereit zum Posten und Belohnen.",
+  "Pourquoi mes vidéos deviennent monétisables ?": "Warum sind meine Videos monetarisierbar?",
+  "Le montage assemble plusieurs sources, ajoute un hook, une voix off et une musique de fond : le résultat est une vidéo transformée, celle que le programme de récompenses TikTok accepte.":
+    "Der Schnitt kombiniert mehrere Quellen und ergänzt Hook, Voiceover und Hintergrundmusik: das Ergebnis ist ein transformiertes Video, wie es das TikTok-Belohnungsprogramm akzeptiert.",
+  "Combien de vidéos puis-je publier par jour ?": "Wie viele Videos kann ich pro Tag posten?",
+  "Autant que tes crédits le permettent : une vidéo coûte 10 crédits, donc une formule à 600 crédits représente environ 60 montages par mois.":
+    "So viele, wie deine Credits erlauben: ein Video kostet 10 Credits, ein 600-Credits-Tarif sind also rund 60 Schnitte pro Monat.",
+  "Combien de temps pour récupérer un montage ?": "Wie lange dauert ein Schnitt?",
+  "Environ trois minutes entre le collage des liens et le téléchargement du fichier vertical HD.":
+    "Etwa drei Minuten vom Einfügen der Links bis zum Download der vertikalen HD-Datei.",
 };
+
 
 const CONTENT: Partial<Record<Lang, Record<string, string>>> = {
   en: FR_EN,
