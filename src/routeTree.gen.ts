@@ -15,7 +15,6 @@ import { Route as AuthRouteImport } from './routes/auth'
 import { Route as MontageRouteImport } from './routes/montage'
 import { Route as PricingRouteImport } from './routes/pricing'
 import { Route as ApiPublicMediaProxyRouteImport } from './routes/api/public/media-proxy'
-import { Route as ApiPublicPaypalDiagRouteImport } from './routes/api/public/paypal-diag'
 import { Route as ApiPublicPaypalWebhookRouteImport } from './routes/api/public/paypal/webhook'
 
 const IndexRoute = IndexRouteImport.update({
@@ -48,11 +47,6 @@ const ApiPublicMediaProxyRoute = ApiPublicMediaProxyRouteImport.update({
   path: '/api/public/media-proxy',
   getParentRoute: () => rootRouteImport,
 } as any)
-const ApiPublicPaypalDiagRoute = ApiPublicPaypalDiagRouteImport.update({
-  id: '/api/public/paypal-diag',
-  path: '/api/public/paypal-diag',
-  getParentRoute: () => rootRouteImport,
-} as any)
 const ApiPublicPaypalWebhookRoute = ApiPublicPaypalWebhookRouteImport.update({
   id: '/api/public/paypal/webhook',
   path: '/api/public/paypal/webhook',
@@ -66,7 +60,6 @@ export interface FileRoutesByFullPath {
   '/montage': typeof MontageRoute
   '/pricing': typeof PricingRoute
   '/api/public/media-proxy': typeof ApiPublicMediaProxyRoute
-  '/api/public/paypal-diag': typeof ApiPublicPaypalDiagRoute
   '/api/public/paypal/webhook': typeof ApiPublicPaypalWebhookRoute
 }
 export interface FileRoutesByTo {
@@ -76,7 +69,6 @@ export interface FileRoutesByTo {
   '/montage': typeof MontageRoute
   '/pricing': typeof PricingRoute
   '/api/public/media-proxy': typeof ApiPublicMediaProxyRoute
-  '/api/public/paypal-diag': typeof ApiPublicPaypalDiagRoute
   '/api/public/paypal/webhook': typeof ApiPublicPaypalWebhookRoute
 }
 export interface FileRoutesById {
@@ -87,7 +79,6 @@ export interface FileRoutesById {
   '/montage': typeof MontageRoute
   '/pricing': typeof PricingRoute
   '/api/public/media-proxy': typeof ApiPublicMediaProxyRoute
-  '/api/public/paypal-diag': typeof ApiPublicPaypalDiagRoute
   '/api/public/paypal/webhook': typeof ApiPublicPaypalWebhookRoute
 }
 export interface FileRouteTypes {
@@ -99,7 +90,6 @@ export interface FileRouteTypes {
     | '/montage'
     | '/pricing'
     | '/api/public/media-proxy'
-    | '/api/public/paypal-diag'
     | '/api/public/paypal/webhook'
   fileRoutesByTo: FileRoutesByTo
   to:
@@ -109,7 +99,6 @@ export interface FileRouteTypes {
     | '/montage'
     | '/pricing'
     | '/api/public/media-proxy'
-    | '/api/public/paypal-diag'
     | '/api/public/paypal/webhook'
   id:
     | '__root__'
@@ -119,7 +108,6 @@ export interface FileRouteTypes {
     | '/montage'
     | '/pricing'
     | '/api/public/media-proxy'
-    | '/api/public/paypal-diag'
     | '/api/public/paypal/webhook'
   fileRoutesById: FileRoutesById
 }
@@ -130,7 +118,6 @@ export interface RootRouteChildren {
   MontageRoute: typeof MontageRoute
   PricingRoute: typeof PricingRoute
   ApiPublicMediaProxyRoute: typeof ApiPublicMediaProxyRoute
-  ApiPublicPaypalDiagRoute: typeof ApiPublicPaypalDiagRoute
   ApiPublicPaypalWebhookRoute: typeof ApiPublicPaypalWebhookRoute
 }
 
@@ -178,13 +165,6 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiPublicMediaProxyRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/api/public/paypal-diag': {
-      id: '/api/public/paypal-diag'
-      path: '/api/public/paypal-diag'
-      fullPath: '/api/public/paypal-diag'
-      preLoaderRoute: typeof ApiPublicPaypalDiagRouteImport
-      parentRoute: typeof rootRouteImport
-    }
     '/api/public/paypal/webhook': {
       id: '/api/public/paypal/webhook'
       path: '/api/public/paypal/webhook'
@@ -202,7 +182,6 @@ const rootRouteChildren: RootRouteChildren = {
   MontageRoute: MontageRoute,
   PricingRoute: PricingRoute,
   ApiPublicMediaProxyRoute: ApiPublicMediaProxyRoute,
-  ApiPublicPaypalDiagRoute: ApiPublicPaypalDiagRoute,
   ApiPublicPaypalWebhookRoute: ApiPublicPaypalWebhookRoute,
 }
 export const routeTree = rootRouteImport
