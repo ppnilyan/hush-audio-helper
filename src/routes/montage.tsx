@@ -912,16 +912,16 @@ function Montage() {
     }
     setRendering(true);
     setError(null);
-    // Débit des crédits avant l'export ; remboursés si la génération échoue.
-    let debit: { fromMonthly: number; fromPurchased: number } | null = null;
+    // Débit des crédits + ouverture d'un job suivi côté serveur.
+    let jobId: string | null = null;
     try {
-      const r = await consume();
+      const r = await startJob();
       if (!r.ok) {
         setError(tr("Plus de crédits : rechargez ou abonnez-vous pour générer cette vidéo."));
         setRendering(false);
         return;
       }
-      debit = { fromMonthly: r.fromMonthly, fromPurchased: r.fromPurchased };
+      jobId = r.jobId;
       void invalidateBilling();
     } catch (e) {
       setError((e as Error).message || tr("La génération a échoué."));
