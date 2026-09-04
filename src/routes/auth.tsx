@@ -76,7 +76,8 @@ function AuthPage() {
       redirect_uri: window.location.origin,
     });
     if (result.error) {
-      setError(tr("Connexion Google impossible."));
+      const detail = result.error instanceof Error ? result.error.message : String(result.error);
+      setError(`${tr("Connexion Google impossible.")} ${detail}`.trim());
       return;
     }
     if (result.redirected) return;
