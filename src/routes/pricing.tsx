@@ -61,12 +61,44 @@ function PricingPage() {
   const invalidate = useInvalidateBilling();
   const subscribe = useServerFn(fakeSubscribe);
   const buyPack = useServerFn(fakeBuyPack);
+  const checkPromo = useServerFn(lookupPromoCode);
   const [busy, setBusy] = useState<string | null>(null);
   const [notice, setNotice] = useState<string | null>(null);
+  const [promoInput, setPromoInput] = useState("");
+  const [promo, setPromo] = useState<{ code: string; percentOff: number } | null>(null);
+  const [promoError, setPromoError] = useState<string | null>(null);
+  const [promoBusy, setPromoBusy] = useState(false);
 
   const isAdmin = !!billing.state?.isAdmin;
   const currentPlan = billing.state?.plan?.id ?? null;
   const subscriber = !!currentPlan;
+
+  /** Prix après application du code promo. */
+  const withPromo = (cents: number) =>
+    promo ? Math.round((cents * (100 - promo.percentOff)) / 100) : cents;
+
+  const applyPromo = async () => {
+    const code = promoInput.trim();
+    if (!code) return;
+    setPromoBusy(true);
+    setPromoError(null);
+    try {
+      const r = await checkPromo({ data: { code } });
+      if (r.ok && r.code && typeof r.percentOff === "number") {
+        setPromo({ code: r.code, percentOff: r.percentOff });
+        setPromoInput(r.code);
+      } else {
+        setPromo(null);
+        setPromoError(tr("Code invalide ou expiré."));
+      }
+    } catch {
+      setPromo(null);
+      setPromoError(tr("Code invalide ou expiré."));
+    } finally {
+      setPromoBusy(false);
+    }
+  };
+
 
   const run = async (key: string, fn: () => Promise<{ ok: boolean; code?: string }>) => {
     setBusy(key);
