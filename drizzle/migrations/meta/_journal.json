@@ -22,6 +22,13 @@
       "when": 1788524550087,
       "tag": "0002_drop_old_fake_fns",
       "breakpoints": true
+    },
+    {
+      "idx": 3,
+      "version": "7",
+      "when": 1788526172192,
+      "tag": "0003_create_faq_questions",
+      "breakpoints": true
     }
   ]
 }
