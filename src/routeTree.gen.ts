@@ -15,7 +15,6 @@ import { Route as AuthRouteImport } from './routes/auth'
 import { Route as MontageRouteImport } from './routes/montage'
 import { Route as PricingRouteImport } from './routes/pricing'
 import { Route as ApiPublicMediaProxyRouteImport } from './routes/api/public/media-proxy'
-import { Route as ApiPublicPaymentsWebhookRouteImport } from './routes/api/public/payments/webhook'
 import { Route as ApiPublicPaypalWebhookRouteImport } from './routes/api/public/paypal/webhook'
 
 const IndexRoute = IndexRouteImport.update({
@@ -48,12 +47,6 @@ const ApiPublicMediaProxyRoute = ApiPublicMediaProxyRouteImport.update({
   path: '/api/public/media-proxy',
   getParentRoute: () => rootRouteImport,
 } as any)
-const ApiPublicPaymentsWebhookRoute =
-  ApiPublicPaymentsWebhookRouteImport.update({
-    id: '/api/public/payments/webhook',
-    path: '/api/public/payments/webhook',
-    getParentRoute: () => rootRouteImport,
-  } as any)
 const ApiPublicPaypalWebhookRoute = ApiPublicPaypalWebhookRouteImport.update({
   id: '/api/public/paypal/webhook',
   path: '/api/public/paypal/webhook',
@@ -67,7 +60,6 @@ export interface FileRoutesByFullPath {
   '/montage': typeof MontageRoute
   '/pricing': typeof PricingRoute
   '/api/public/media-proxy': typeof ApiPublicMediaProxyRoute
-  '/api/public/payments/webhook': typeof ApiPublicPaymentsWebhookRoute
   '/api/public/paypal/webhook': typeof ApiPublicPaypalWebhookRoute
 }
 export interface FileRoutesByTo {
@@ -77,7 +69,6 @@ export interface FileRoutesByTo {
   '/montage': typeof MontageRoute
   '/pricing': typeof PricingRoute
   '/api/public/media-proxy': typeof ApiPublicMediaProxyRoute
-  '/api/public/payments/webhook': typeof ApiPublicPaymentsWebhookRoute
   '/api/public/paypal/webhook': typeof ApiPublicPaypalWebhookRoute
 }
 export interface FileRoutesById {
@@ -88,7 +79,6 @@ export interface FileRoutesById {
   '/montage': typeof MontageRoute
   '/pricing': typeof PricingRoute
   '/api/public/media-proxy': typeof ApiPublicMediaProxyRoute
-  '/api/public/payments/webhook': typeof ApiPublicPaymentsWebhookRoute
   '/api/public/paypal/webhook': typeof ApiPublicPaypalWebhookRoute
 }
 export interface FileRouteTypes {
@@ -100,7 +90,6 @@ export interface FileRouteTypes {
     | '/montage'
     | '/pricing'
     | '/api/public/media-proxy'
-    | '/api/public/payments/webhook'
     | '/api/public/paypal/webhook'
   fileRoutesByTo: FileRoutesByTo
   to:
@@ -110,7 +99,6 @@ export interface FileRouteTypes {
     | '/montage'
     | '/pricing'
     | '/api/public/media-proxy'
-    | '/api/public/payments/webhook'
     | '/api/public/paypal/webhook'
   id:
     | '__root__'
@@ -120,7 +108,6 @@ export interface FileRouteTypes {
     | '/montage'
     | '/pricing'
     | '/api/public/media-proxy'
-    | '/api/public/payments/webhook'
     | '/api/public/paypal/webhook'
   fileRoutesById: FileRoutesById
 }
@@ -131,7 +118,6 @@ export interface RootRouteChildren {
   MontageRoute: typeof MontageRoute
   PricingRoute: typeof PricingRoute
   ApiPublicMediaProxyRoute: typeof ApiPublicMediaProxyRoute
-  ApiPublicPaymentsWebhookRoute: typeof ApiPublicPaymentsWebhookRoute
   ApiPublicPaypalWebhookRoute: typeof ApiPublicPaypalWebhookRoute
 }
 
@@ -179,13 +165,6 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiPublicMediaProxyRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/api/public/payments/webhook': {
-      id: '/api/public/payments/webhook'
-      path: '/api/public/payments/webhook'
-      fullPath: '/api/public/payments/webhook'
-      preLoaderRoute: typeof ApiPublicPaymentsWebhookRouteImport
-      parentRoute: typeof rootRouteImport
-    }
     '/api/public/paypal/webhook': {
       id: '/api/public/paypal/webhook'
       path: '/api/public/paypal/webhook'
@@ -203,7 +182,6 @@ const rootRouteChildren: RootRouteChildren = {
   MontageRoute: MontageRoute,
   PricingRoute: PricingRoute,
   ApiPublicMediaProxyRoute: ApiPublicMediaProxyRoute,
-  ApiPublicPaymentsWebhookRoute: ApiPublicPaymentsWebhookRoute,
   ApiPublicPaypalWebhookRoute: ApiPublicPaypalWebhookRoute,
 }
 export const routeTree = rootRouteImport
