@@ -253,10 +253,8 @@ function PricingPage() {
       <section className="grid gap-5 md:grid-cols-3">
         {PLANS.map((p) => (
           <article
-
-
             key={p.id}
-            className={`relative flex flex-col rounded-3xl border p-6 ${
+            className={`card-hover relative flex flex-col rounded-3xl border p-6 ${
               p.highlight ? "panel-glow border-primary/60" : "border-border bg-secondary/30"
             }`}
           >
