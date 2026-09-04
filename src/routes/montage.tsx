@@ -53,6 +53,14 @@ import {
 import { useLocale, useTr } from "@/lib/prefs";
 import { CREDITS_PER_VIDEO, useBilling, useInvalidateBilling } from "@/lib/billing";
 import { consumeCredits, refundCredits } from "@/lib/billing.functions";
+import { getClipsSnapshot, setClipsSnapshot } from "@/lib/clips-store";
+import {
+  finishGenerationJob,
+  listFailedGenerations,
+  reconcileGenerationJobs,
+  startGenerationJob,
+  type GenerationJob,
+} from "@/lib/generation-jobs.functions";
 import { useServerFn } from "@tanstack/react-start";
 import { Lock } from "lucide-react";
 
