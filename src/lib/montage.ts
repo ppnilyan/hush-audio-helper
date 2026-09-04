@@ -308,6 +308,8 @@ export function drawFrame(
   video: HTMLVideoElement,
   fx: Effects,
   dyn: FrameFx = neutralFrameFx,
+  /** Prévisualisation uniquement : le MP4 exporté n'a jamais de filigrane. */
+  watermark = false,
 ) {
   const W = ctx.canvas.width;
   const H = ctx.canvas.height;
@@ -338,7 +340,7 @@ export function drawFrame(
     if (bottom > 0) drawBlurredBand(ctx, video, fx, dyn, dx, dy, dw, dh, H - bottom, bottom);
   }
 
-  drawWatermarks(ctx, top, bottom);
+  if (watermark) drawWatermarks(ctx, top, bottom);
 }
 
 /**
