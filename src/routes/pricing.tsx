@@ -157,29 +157,57 @@ function PricingPage() {
         </Button>
       );
     }
-    if (!isAdmin) {
-      return (
-        <Button size="lg" className="w-full" variant="secondary" disabled>
-          {tr("Bientôt disponible")}
-        </Button>
-      );
-    }
     return (
-      <Button
-        size="lg"
-        className="w-full"
-        variant={p.highlight ? "default" : "secondary"}
-        disabled={busy !== null}
-        onClick={() =>
-          void run(p.id, () =>
-            subscribe({ data: { planId: p.id, promoCode: promo?.code ?? null } }),
-          )
-        }
-
-      >
-        {busy === p.id ? "…" : currentPlan ? tr("Changer pour cette formule") : tr("S'abonner")}
-      </Button>
+      <div className="space-y-2">
+        <Button
+          size="lg"
+          className="w-full"
+          variant={p.highlight ? "default" : "secondary"}
+          disabled={!stripeReady}
+          onClick={() => {
+            setNotice(null);
+            setCheckoutPriceId(`${p.id}_monthly`);
+          }}
+        >
+          <CreditCard className="size-4" />
+          {currentPlan ? tr("Changer pour cette formule") : tr("S'abonner")}
+        </Button>
+        {isAdmin && (
+          <Button
+            size="sm"
+            variant="ghost"
+            className="w-full text-xs"
+            disabled={busy !== null}
+            onClick={() =>
+              void run(p.id, () =>
+                subscribe({ data: { planId: p.id, promoCode: promo?.code ?? null } }),
+              )
+            }
+          >
+            {busy === p.id ? "…" : tr("Activer sans paiement (admin)")}
+          </Button>
+        )}
+      </div>
     );
+  };
+
+  const portal = async () => {
+    setNotice(null);
+    try {
+      const r = await openPortal({
+        data: {
+          environment: getStripeEnvironment(),
+          returnUrl: `${window.location.origin}/pricing`,
+        },
+      });
+      if ("error" in r) {
+        setNotice(r.error);
+        return;
+      }
+      window.open(r.url, "_blank");
+    } catch (e) {
+      setNotice((e as Error).message);
+    }
   };
 
   return (
