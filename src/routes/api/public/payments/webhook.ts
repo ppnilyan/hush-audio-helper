@@ -151,7 +151,14 @@ export const Route = createFileRoute("/api/public/payments/webhook")({
         try {
           await handleEvent(event, env, stripe);
         } catch (error) {
-          console.error("stripe webhook", error);
+          console.error("stripe webhook", event.type, error);
+          // On libère le verrou d'idempotence pour que Stripe puisse réessayer.
+          try {
+            const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+            await supabaseAdmin.from("stripe_events").delete().eq("id", event.id);
+          } catch (cleanupError) {
+            console.error("stripe webhook cleanup", cleanupError);
+          }
           return new Response("error", { status: 500 });
         }
         return new Response("ok");
