@@ -186,6 +186,7 @@ function Montage() {
   const session = useSession();
   const userId = session?.user.id ?? null;
   const search = Route.useSearch();
+  const navigate = useNavigate();
 
   const [clips, setClips] = useState<ClipInfo[]>([]);
   const [rows, setRows] = useState<LinkRow[]>(() => [newRow()]);
