@@ -1,4 +1,4 @@
-import { createFileRoute, Link } from "@tanstack/react-router";
+import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -73,6 +73,9 @@ import {
   subscribeMusic,
   type MusicTrack,
 } from "@/lib/music-store";
+
+/** Nombre minimal de clips (liens ou fichiers) pour lancer un montage. */
+const MIN_CLIPS = 2;
 
 type UIEntry = {
   id: string;
@@ -186,6 +189,7 @@ function Montage() {
   const session = useSession();
   const userId = session?.user.id ?? null;
   const search = Route.useSearch();
+  const navigate = useNavigate();
 
   const [clips, setClips] = useState<ClipInfo[]>([]);
   const [rows, setRows] = useState<LinkRow[]>(() => [newRow()]);
@@ -1002,7 +1006,7 @@ function Montage() {
   const busy = loading || rendering;
   // L'étape musique est facultative ; les clips et la voix off restent requis.
   const canNext =
-    step === 0 ? clips.length > 0 : step === 3 ? !!voice && !measuring : !isLastStep;
+    step === 0 ? clips.length >= MIN_CLIPS : step === 3 ? !!voice && !measuring : !isLastStep;
 
 
   return (
@@ -1273,6 +1277,11 @@ function Montage() {
                 ))}
                 {clips.length === 0 && (
                   <li className="text-sm text-muted-foreground">{tr("Aucun clip pour l'instant.")}</li>
+                )}
+                {clips.length > 0 && clips.length < MIN_CLIPS && (
+                  <li className="text-sm text-primary">
+                    {tr("Ajoutez au moins 2 clips pour continuer.")}
+                  </li>
                 )}
               </ul>
             </section>
@@ -1914,7 +1923,16 @@ function Montage() {
             {!isLastStep && (
               <Button
                 size="lg"
-                onClick={() => setStep(visibleSteps[stepPos + 1]!)}
+                onClick={() => {
+                  // Un compte est obligatoire pour continuer au-delà des clips.
+                  if (step === 0 && session !== undefined && !userId) {
+                    setError(tr("Connectez-vous ou créez un compte pour continuer."));
+                    void navigate({ to: "/auth" });
+                    return;
+                  }
+                  setError(null);
+                  setStep(visibleSteps[stepPos + 1]!);
+                }}
                 disabled={!canNext}
               >
                 {tr("Suivant →")}
