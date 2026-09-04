@@ -254,7 +254,7 @@ function PricingPage() {
         {PLANS.map((p) => (
           <article
             key={p.id}
-            className={`card-hover relative flex flex-col rounded-3xl border p-6 ${
+            className={`card-hover-soft relative flex flex-col rounded-3xl border p-6 ${
               p.highlight ? "panel-glow border-primary/60" : "border-border bg-secondary/30"
             }`}
           >
@@ -306,7 +306,7 @@ function PricingPage() {
           {PACKS.map((k) => {
             const price = packPrice(k, subscriber);
             return (
-              <article key={k.id} className="card-hover rounded-2xl border border-border bg-secondary/30 p-5">
+              <article key={k.id} className="card-hover-soft rounded-2xl border border-border bg-secondary/30 p-5">
                 <p className="text-lg font-semibold">
                   {k.credits} {tr("crédits")}
                 </p>

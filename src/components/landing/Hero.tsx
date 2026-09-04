@@ -53,7 +53,7 @@ export function Hero() {
           {tr("Colle tes liens, récupère un TikTok monétisable en quelques minutes.")}
         </p>
 
-        <div className="card-hover panel-glow mx-auto mt-8 max-w-xl p-6 text-left">
+        <div className="card-hover-soft panel-glow mx-auto mt-8 max-w-xl p-6 text-left">
           <h2 className="font-display text-lg font-semibold">{tr("Teste maintenant")}</h2>
           <div className="mt-4 space-y-3">
             {links.map((value, i) => {

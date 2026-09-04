@@ -41,7 +41,7 @@ export function SolutionSteps() {
           />
           <div className="grid gap-6 md:grid-cols-3">
             {STEPS.map((s) => (
-              <div key={s.n} className="card-hover panel relative p-6">
+              <div key={s.n} className="card-hover-soft panel relative p-6">
                 <span className="gradient-brand font-display relative z-10 flex size-16 items-center justify-center rounded-full text-lg font-bold text-primary-foreground">
                   {s.n}
                 </span>
