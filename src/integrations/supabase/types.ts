@@ -436,6 +436,10 @@ export type Database = {
       promo_create: { Args: { _code: string; _percent: number }; Returns: Json }
       promo_delete: { Args: { _code: string }; Returns: undefined }
       promo_lookup: { Args: { _code: string }; Returns: Json }
+      promo_set_active: {
+        Args: { _active: boolean; _code: string }
+        Returns: undefined
+      }
       refund_credits: {
         Args: { _from_monthly: number; _from_purchased: number }
         Returns: undefined
