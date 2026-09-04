@@ -318,7 +318,16 @@ function Montage() {
     }));
   }, []);
 
+  /** Montage & historique : fond de page sombre neutre, boutons en dégradé du thème. */
+  useEffect(() => {
+    document.documentElement.dataset["surface"] = "dark";
+    return () => {
+      delete document.documentElement.dataset["surface"];
+    };
+  }, []);
+
   /** Mode simple : réglages figés sur les valeurs recommandées. */
+
   useEffect(() => {
     if (advanced) return;
     setStep((s) => (s === 1 ? 2 : s));
