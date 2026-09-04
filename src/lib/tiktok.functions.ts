@@ -47,8 +47,8 @@ type TikwmResponse = {
 const ENDPOINTS: Array<(url: string) => string> = [
   (u) => `https://www.tikwm.com/api/?url=${encodeURIComponent(u)}&hd=1`,
   (u) => `https://tikwm.com/api/?url=${encodeURIComponent(u)}&hd=1`,
-  (u) => `https://www.tikwm.com/api/feed/search?url=${encodeURIComponent(u)}&hd=1`,
   (u) => `https://www.tikwm.com/api/?url=${encodeURIComponent(u)}`,
+  (u) => `https://tikwm.com/api/?url=${encodeURIComponent(u)}`,
 ];
 
 export const resolveTikTok = createServerFn({ method: "POST" })
