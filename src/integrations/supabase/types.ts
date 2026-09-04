@@ -293,6 +293,24 @@ export type Database = {
         }
         Relationships: []
       }
+      stripe_events: {
+        Row: {
+          created_at: string
+          id: string
+          type: string
+        }
+        Insert: {
+          created_at?: string
+          id: string
+          type: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          type?: string
+        }
+        Relationships: []
+      }
       user_roles: {
         Row: {
           created_at: string
@@ -337,6 +355,7 @@ export type Database = {
       }
       user_subscriptions: {
         Row: {
+          cancel_at_period_end: boolean
           created_at: string
           current_period_start: string
           mode: string
@@ -344,10 +363,14 @@ export type Database = {
           plan_id: string
           renews_at: string
           status: string
+          stripe_customer_id: string | null
+          stripe_price_id: string | null
+          stripe_subscription_id: string | null
           updated_at: string
           user_id: string
         }
         Insert: {
+          cancel_at_period_end?: boolean
           created_at?: string
           current_period_start?: string
           mode?: string
@@ -355,10 +378,14 @@ export type Database = {
           plan_id: string
           renews_at?: string
           status?: string
+          stripe_customer_id?: string | null
+          stripe_price_id?: string | null
+          stripe_subscription_id?: string | null
           updated_at?: string
           user_id: string
         }
         Update: {
+          cancel_at_period_end?: boolean
           created_at?: string
           current_period_start?: string
           mode?: string
@@ -366,6 +393,9 @@ export type Database = {
           plan_id?: string
           renews_at?: string
           status?: string
+          stripe_customer_id?: string | null
+          stripe_price_id?: string | null
+          stripe_subscription_id?: string | null
           updated_at?: string
           user_id?: string
         }
@@ -408,6 +438,38 @@ export type Database = {
       promo_lookup: { Args: { _code: string }; Returns: Json }
       refund_credits: {
         Args: { _from_monthly: number; _from_purchased: number }
+        Returns: undefined
+      }
+      stripe_apply_pack: {
+        Args: {
+          _amount_cents: number
+          _mode: string
+          _pack_id: string
+          _user_id: string
+        }
+        Returns: undefined
+      }
+      stripe_apply_subscription: {
+        Args: {
+          _amount_cents: number
+          _cancel_at_period_end: boolean
+          _mode: string
+          _period_start: string
+          _plan_id: string
+          _renews_at: string
+          _stripe_customer_id: string
+          _stripe_price_id: string
+          _stripe_subscription_id: string
+          _user_id: string
+        }
+        Returns: undefined
+      }
+      stripe_end_subscription: {
+        Args: { _stripe_subscription_id: string }
+        Returns: undefined
+      }
+      stripe_mark_cancel_at_period_end: {
+        Args: { _cancel: boolean; _stripe_subscription_id: string }
         Returns: undefined
       }
     }
