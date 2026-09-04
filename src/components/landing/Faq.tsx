@@ -4,6 +4,7 @@ import {
   AccordionItem,
   AccordionTrigger,
 } from "@/components/ui/accordion";
+import { FaqAsk } from "@/components/landing/FaqAsk";
 import { useTr } from "@/lib/prefs";
 
 const QUESTIONS = [
@@ -56,6 +57,8 @@ export function Faq() {
             </AccordionItem>
           ))}
         </Accordion>
+
+        <FaqAsk />
       </div>
     </section>
   );

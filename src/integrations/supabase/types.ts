@@ -95,6 +95,42 @@ export type Database = {
         }
         Relationships: []
       }
+      faq_questions: {
+        Row: {
+          answer: string | null
+          created_at: string
+          expires_at: string | null
+          id: string
+          initials: string
+          published_at: string | null
+          question: string
+          status: string
+          user_id: string
+        }
+        Insert: {
+          answer?: string | null
+          created_at?: string
+          expires_at?: string | null
+          id?: string
+          initials?: string
+          published_at?: string | null
+          question: string
+          status?: string
+          user_id: string
+        }
+        Update: {
+          answer?: string | null
+          created_at?: string
+          expires_at?: string | null
+          id?: string
+          initials?: string
+          published_at?: string | null
+          question?: string
+          status?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       generation_jobs: {
         Row: {
           created_at: string
