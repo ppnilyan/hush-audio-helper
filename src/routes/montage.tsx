@@ -1275,6 +1275,11 @@ function Montage() {
                 {clips.length === 0 && (
                   <li className="text-sm text-muted-foreground">{tr("Aucun clip pour l'instant.")}</li>
                 )}
+                {clips.length > 0 && clips.length < MIN_CLIPS && (
+                  <li className="text-sm text-primary">
+                    {tr("Ajoutez au moins 2 clips pour continuer.")}
+                  </li>
+                )}
               </ul>
             </section>
           )}
