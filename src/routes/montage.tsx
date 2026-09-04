@@ -668,7 +668,10 @@ function Montage() {
     setHdStatus((s) => ({ ...s, [clip.id]: { busy: true } }));
     try {
       const info = await resolveTikTok({ data: { url: clip.sourceUrl, hdOnly: true } });
-      const res = await fetch(`/api/public/media-proxy?url=${encodeURIComponent(info.playUrl)}`);
+      const res = await fetch(
+        `/api/public/media-proxy?url=${encodeURIComponent(info.playUrl)}${info.srcUrl ? `&src=${encodeURIComponent(info.srcUrl)}` : ""}`,
+      );
+
       if (!res.ok) throw new Error(tr("Téléchargement HD impossible"));
       const blob = await res.blob();
       const url = URL.createObjectURL(blob);
