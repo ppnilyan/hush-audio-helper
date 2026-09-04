@@ -8,10 +8,17 @@ import { getStripe, getStripeEnvironment } from "@/lib/stripe";
 type Props = {
   priceId: string;
   promoCode?: string | null;
+  /** Montant affiché au client (centimes), vérifié avant l'affichage du paiement. */
+  expectedAmountCents?: number;
   returnUrl?: string;
 };
 
-export function StripeEmbeddedCheckout({ priceId, promoCode, returnUrl }: Props) {
+export function StripeEmbeddedCheckout({
+  priceId,
+  promoCode,
+  expectedAmountCents,
+  returnUrl,
+}: Props) {
   const createSession = useServerFn(createCheckoutSession);
 
   const checkoutOptions = useMemo(
@@ -21,6 +28,7 @@ export function StripeEmbeddedCheckout({ priceId, promoCode, returnUrl }: Props)
           data: {
             priceId,
             ...(promoCode ? { promoCode } : {}),
+            ...(expectedAmountCents ? { expectedAmountCents } : {}),
             returnUrl: returnUrl ?? `${window.location.origin}/pricing?checkout=done`,
             environment: getStripeEnvironment(),
           },
@@ -32,7 +40,7 @@ export function StripeEmbeddedCheckout({ priceId, promoCode, returnUrl }: Props)
     }),
     // Une seule session par montage : la clé ne doit pas changer.
     // eslint-disable-next-line react-hooks/exhaustive-deps
-    [priceId, promoCode, returnUrl],
+    [priceId, promoCode, expectedAmountCents, returnUrl],
   );
 
   return (

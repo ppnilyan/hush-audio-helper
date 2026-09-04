@@ -100,7 +100,14 @@ async function resolveOrCreateCustomer(
 export const createCheckoutSession = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator(
-    (data: { priceId: string; returnUrl: string; environment: StripeEnv; promoCode?: string }) => {
+    (data: {
+      priceId: string;
+      returnUrl: string;
+      environment: StripeEnv;
+      promoCode?: string;
+      /** Montant affiché au client (centimes) : sert de contrôle avant paiement. */
+      expectedAmountCents?: number;
+    }) => {
       if (!/^[a-zA-Z0-9_-]+$/.test(data.priceId)) throw new Error("Invalid priceId");
       if (!PRICE_TO_PLAN[data.priceId] && !PRICE_TO_PACK[data.priceId]) {
         throw new Error("Unknown priceId");
@@ -187,6 +194,22 @@ export const createCheckoutSession = createServerFn({ method: "POST" })
           metadata: { ...metadata, managed_payments: "false" },
           automatic_tax: { enabled: true },
         } as Stripe.Checkout.SessionCreateParams);
+      }
+
+      // Contrôle : le montant affiché doit correspondre au montant que Stripe va débiter.
+      if (typeof data.expectedAmountCents === "number" && data.expectedAmountCents > 0) {
+        const unit = stripePrice.unit_amount ?? 0;
+        const expectedServer = promoPercent
+          ? Math.round((unit * (100 - promoPercent)) / 100)
+          : unit;
+        const billed = session.amount_total ?? expectedServer;
+        const shown = Math.round(data.expectedAmountCents);
+        if (Math.abs(expectedServer - shown) > 1 || Math.abs(billed - shown) > 1) {
+          await stripe.checkout.sessions.expire(session.id).catch(() => null);
+          return {
+            error: `Le montant affiché (${(shown / 100).toFixed(2)} €) ne correspond pas au montant à débiter (${(billed / 100).toFixed(2)} €). Réapplique ton code de promotion puis réessaie.`,
+          };
+        }
       }
 
       return { clientSecret: session.client_secret ?? "" };
