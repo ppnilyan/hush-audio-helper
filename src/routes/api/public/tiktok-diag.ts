@@ -1,60 +1,49 @@
 import { createFileRoute } from "@tanstack/react-router";
 
-// Route de diagnostic temporaire : teste quels fournisseurs répondent depuis le serveur.
+// Route de diagnostic temporaire : vérifie la récupération directe + le proxy média.
 export const Route = createFileRoute("/api/public/tiktok-diag")({
   server: {
     handlers: {
       GET: async ({ request }) => {
-        const u = new URL(request.url).searchParams.get("url");
+        const reqUrl = new URL(request.url);
+        const u = reqUrl.searchParams.get("url");
         if (!u) return new Response("Missing url", { status: 400 });
-        const id = /(\d{15,})/.exec(u)?.[1] ?? "";
-        const enc = encodeURIComponent(u);
-        const targets: Array<[string, string, RequestInit?]> = [
-          ["page", u, {}],
-          [
-            "aweme-useast",
-            `https://api16-normal-c-useast1a.tiktokv.com/aweme/v1/feed/?aweme_id=${id}&version_code=262&app_name=musical_ly&channel=App&device_platform=android&device_type=SM-G981B&os_version=10&aid=1180`,
-            {},
-          ],
-          [
-            "aweme-alisg",
-            `https://api22-normal-c-alisg.tiktokv.com/aweme/v1/feed/?aweme_id=${id}&version_code=262&app_name=musical_ly&channel=App&device_platform=android&device_type=SM-G981B&os_version=10&aid=1180`,
-            {},
-          ],
-          ["oembed", `https://www.tiktok.com/oembed?url=${enc}`, {}],
-        ];
-        const out: Record<string, string> = {};
-        await Promise.all(
-          targets.map(async ([name, url, init]) => {
-            try {
-              const res = await fetch(url, {
-                ...init,
-                headers: {
-                  "User-Agent":
-                    name === "page"
-                      ? "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0 Safari/537.36"
-                      : "com.ss.android.ugc.trill/2613 (Linux; U; Android 10; en; SM-G981B; Build/QP1A.190711.020)",
-                  Accept: "*/*",
-                },
-              });
-              const text = await res.text();
-              if (name === "page") {
-                const m = /"playAddr":"(.*?)"/.exec(text);
-                out[name] = `${res.status} len=${text.length} play=${m ? m[1]!.slice(0, 120) : "none"}`;
-              } else if (name.startsWith("aweme")) {
-                const m = /"url_list":\["(.*?)"/.exec(text);
-                out[name] = `${res.status} len=${text.length} first=${m ? m[1]!.slice(0, 120) : "none"}`;
-              } else {
-                out[name] = `${res.status} ${text.slice(0, 120)}`;
-              }
-            } catch (e) {
-              out[name] = `ERR ${(e as Error).message}`;
-            }
-          }),
-        );
-        return new Response(JSON.stringify(out, null, 2), {
-          headers: { "content-type": "application/json" },
+        const page = await fetch(u, {
+          redirect: "follow",
+          headers: {
+            "User-Agent":
+              "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0 Safari/537.36",
+            "Accept-Language": "en-US,en;q=0.9",
+          },
         });
+        const html = await page.text();
+        const marker = 'id="__UNIVERSAL_DATA_FOR_REHYDRATION__" type="application/json">';
+        const start = html.indexOf(marker);
+        const end = start === -1 ? -1 : html.indexOf("</script>", start);
+        let playUrl = "";
+        if (start !== -1 && end !== -1) {
+          try {
+            const parsed = JSON.parse(html.slice(start + marker.length, end)) as any;
+            const item = parsed?.__DEFAULT_SCOPE__?.["webapp.video-detail"]?.itemInfo?.itemStruct;
+            const list = item?.video?.bitrateInfo ?? [];
+            playUrl =
+              [...list].sort((a: any, b: any) => (b.Bitrate ?? 0) - (a.Bitrate ?? 0))[0]?.PlayAddr
+                ?.UrlList?.[0] ??
+              item?.video?.playAddr ??
+              "";
+          } catch {
+            playUrl = "";
+          }
+        }
+        let proxy = "skipped";
+        if (playUrl) {
+          const p = await fetch(
+            `${reqUrl.origin}/api/public/media-proxy?url=${encodeURIComponent(playUrl)}`,
+            { headers: { Range: "bytes=0-1000" } },
+          );
+          proxy = `${p.status} ${p.headers.get("content-type")} len=${(await p.arrayBuffer()).byteLength}`;
+        }
+        return Response.json({ pageStatus: page.status, playUrl: playUrl.slice(0, 90), proxy });
       },
     },
   },
