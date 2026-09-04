@@ -224,13 +224,16 @@ function Montage() {
   const [rendering, setRendering] = useState(false);
   const [progress, setProgress] = useState(0);
   const [history, setHistory] = useState<UIEntry[]>([]);
+  const [failed, setFailed] = useState<GenerationJob[]>([]);
   const [tab, setTab] = useState<"editor" | "history">(search.tab);
   const [step, setStep] = useState(0);
   const { advanced, setAdvanced } = useAdvanced();
   const billing = useBilling();
   const invalidateBilling = useInvalidateBilling();
-  const consume = useServerFn(consumeCredits);
-  const refund = useServerFn(refundCredits);
+  const startJob = useServerFn(startGenerationJob);
+  const finishJob = useServerFn(finishGenerationJob);
+  const reconcileJobs = useServerFn(reconcileGenerationJobs);
+  const fetchFailed = useServerFn(listFailedGenerations);
   const noCredits = billing.signedIn && !billing.loading && billing.totalCredits < CREDITS_PER_VIDEO;
 
   /** Étapes visibles : « Durées & effets » n'apparaît qu'en mode avancé. */
