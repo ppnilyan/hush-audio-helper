@@ -53,7 +53,7 @@ import {
 import { useLocale, useTr } from "@/lib/prefs";
 import { CREDITS_PER_VIDEO, useBilling, useInvalidateBilling } from "@/lib/billing";
 
-import { getClipsSnapshot, setClipsSnapshot } from "@/lib/clips-store";
+import { getClipsSnapshot, setClipsSnapshot, takePendingLinks } from "@/lib/clips-store";
 import {
   finishGenerationJob,
   listFailedGenerations,
