@@ -52,7 +52,7 @@ import {
 } from "@/lib/advanced-mode";
 import { useLocale, useTr } from "@/lib/prefs";
 import { CREDITS_PER_VIDEO, useBilling, useInvalidateBilling } from "@/lib/billing";
-import { consumeCredits, refundCredits } from "@/lib/billing.functions";
+
 import { getClipsSnapshot, setClipsSnapshot } from "@/lib/clips-store";
 import {
   finishGenerationJob,
