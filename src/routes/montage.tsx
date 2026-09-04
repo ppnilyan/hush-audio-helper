@@ -765,6 +765,8 @@ function Montage() {
       onDone?: () => void,
       onReady?: () => void | Promise<void>,
       audioEl?: HTMLAudioElement | null,
+      /** Filigrane visible seulement en prévisualisation. */
+      watermark = false,
     ) => {
       const ctx = canvasRef.current?.getContext("2d");
       if (!ctx || timeline.length === 0) return;
@@ -849,7 +851,7 @@ function Montage() {
         // Effet de coupure (hook ou effet mélangé) calculé pendant le rendu :
         // il est donc présent aussi bien en prévisualisation que dans le MP4.
         const effect = effectForSegment(i, hookRef.current);
-        drawFrame(ctx, v, fxRef.current, frameFxAt(effect, 0));
+        drawFrame(ctx, v, fxRef.current, frameFxAt(effect, 0), watermark);
         await v.play().catch(() => {});
 
         await new Promise<void>((res) => {
@@ -857,7 +859,7 @@ function Montage() {
           const tick = () => {
             if (abortRef.current || voiceOver()) return res();
             const local = (performance.now() - started) / 1000;
-            drawFrame(ctx, v, fxRef.current, frameFxAt(effect, local));
+            drawFrame(ctx, v, fxRef.current, frameFxAt(effect, local), watermark);
             const t = (performance.now() - started) / 1000;
             setProgress(Math.min(1, (elapsed + t) / Math.max(0.1, totalDuration)));
             if (t >= seg.duration) return res();
@@ -962,6 +964,7 @@ function Montage() {
         );
       },
       audioRef.current,
+      true,
     );
   };
 
