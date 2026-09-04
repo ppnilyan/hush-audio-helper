@@ -30,17 +30,16 @@ export function AdminFaqSection() {
 
   const draft = (id: string) => drafts[id] ?? { answer: "", days: "7" };
 
-  const publish = async (id: string) => {
-    const d = draft(id);
-    const days = Number(d.days);
-    if (d.answer.trim().length < 2) return;
+  const publish = async (id: string, answerText: string, daysText: string) => {
+    const days = Number(daysText);
+    if (answerText.trim().length < 2) return;
     if (!Number.isFinite(days) || days < 1 || days > 365) {
       toast.error(fr ? "Durée entre 1 et 365 jours." : "Duration must be 1-365 days.");
       return;
     }
     setBusy(id);
     try {
-      const r = await answer({ data: { id, answer: d.answer.trim(), days } });
+      const r = await answer({ data: { id, answer: answerText.trim(), days } });
       if (!r.ok) toast.error(fr ? "Réponse trop courte." : "Answer too short.");
       else {
         toast.success(fr ? "Question publiée." : "Question published.");
@@ -135,12 +134,7 @@ export function AdminFaqSection() {
                 <Button
                   size="sm"
                   disabled={busy === q.id}
-                  onClick={() => {
-                    if (!drafts[q.id] && q.answer) {
-                      setDrafts((s) => ({ ...s, [q.id]: { answer: q.answer!, days: d.days } }));
-                    }
-                    void publish(q.id);
-                  }}
+                  onClick={() => void publish(q.id, d.answer || q.answer || "", d.days)}
                 >
                   {fr ? "Approuver & publier" : "Approve & publish"}
                 </Button>
