@@ -245,6 +245,16 @@ function PricingPage() {
             {tr("Votre solde")}&nbsp;: <strong>{billing.totalCredits}</strong> {tr("crédits")}
           </p>
         )}
+        {subscriber && billing.state?.plan?.mode !== "test" && (
+          <div className="mt-4">
+            <Button variant="secondary" onClick={() => void portal()}>
+              <CreditCard className="size-4" /> {tr("Gérer mon abonnement")}
+            </Button>
+            <p className="mt-2 text-xs text-muted-foreground">
+              {tr("Résiliation possible à tout moment : l'accès et les crédits restent actifs jusqu'à la fin de la période déjà payée.")}
+            </p>
+          </div>
+        )}
       </header>
 
       {isAdmin && billing.state && (
