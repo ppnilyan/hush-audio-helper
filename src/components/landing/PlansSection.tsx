@@ -39,7 +39,7 @@ export function PlansSection() {
           {PLANS.map((plan) => (
             <div
               key={plan.id}
-              className={`${plan.highlight ? "panel-glow" : "panel"} card-hover flex flex-col p-6`}
+              className={`${plan.highlight ? "panel-glow" : "panel"} card-hover-soft flex flex-col p-6`}
             >
 
               {plan.highlight && (

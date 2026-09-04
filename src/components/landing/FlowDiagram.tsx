@@ -34,7 +34,7 @@ export function FlowDiagram() {
         </p>
 
         <div className="mt-10 grid gap-6 md:grid-cols-2">
-          <div className="card-hover panel p-6">
+          <div className="card-hover-soft panel p-6">
             <h3 className="font-display text-lg font-semibold text-muted-foreground">
               {tr("Avant")}
             </h3>
@@ -48,7 +48,7 @@ export function FlowDiagram() {
             </ul>
           </div>
 
-          <div className="card-hover panel-glow p-6">
+          <div className="card-hover-soft panel-glow p-6">
             <h3 className="font-display gradient-text text-lg font-semibold">{tr("Après")}</h3>
             <ul className="mt-4 space-y-3 text-sm">
               {AFTER.map((item) => (
@@ -63,7 +63,7 @@ export function FlowDiagram() {
 
         <div className="mt-6 grid gap-4 sm:grid-cols-3">
           {STATS.map(({ icon: Icon, value, label }) => (
-            <div key={label} className="card-hover panel flex items-center gap-3 p-5">
+            <div key={label} className="card-hover-soft panel flex items-center gap-3 p-5">
               <span
                 className="gradient-brand flex size-10 shrink-0 items-center justify-center rounded-full"
                 style={{ boxShadow: "var(--shadow-glow)" }}
