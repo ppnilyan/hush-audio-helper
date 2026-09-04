@@ -229,6 +229,35 @@
   }
 }
 
+@utility card-hover {
+  position: relative;
+  transition:
+    transform 0.28s cubic-bezier(0.2, 0.7, 0.3, 1),
+    box-shadow 0.28s ease;
+  will-change: transform;
+  &::after {
+    content: "";
+    position: absolute;
+    inset: -12px;
+    z-index: -1;
+    border-radius: inherit;
+    background-image: var(--gradient-brand);
+    filter: blur(26px);
+    opacity: 0;
+    transition: opacity 0.3s ease;
+    pointer-events: none;
+  }
+  &:hover {
+    transform: translateY(-4px) scale(1.025);
+    box-shadow: var(--shadow-glow);
+  }
+  &:hover::after {
+    opacity: 0.45;
+  }
+}
+
+
+
 /* ---------------- Thèmes de l'application ---------------- */
 
 [data-theme="ocean"] {
