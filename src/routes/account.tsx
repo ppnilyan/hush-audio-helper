@@ -117,7 +117,7 @@ function AccountPage() {
         <Button asChild>
           <Link to="/pricing">{plan ? tr("Changer de formule / recharger") : tr("Voir les formules")}</Link>
         </Button>
-        {plan && s.isAdmin && (
+        {plan && s.isAdmin && !plan.cancelAtPeriodEnd && (
           <Button
             variant="secondary"
             disabled={busy}
