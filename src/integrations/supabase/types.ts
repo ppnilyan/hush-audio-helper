@@ -95,6 +95,42 @@ export type Database = {
         }
         Relationships: []
       }
+      generation_jobs: {
+        Row: {
+          created_at: string
+          credits: number
+          from_monthly: number
+          from_purchased: number
+          history_count_before: number
+          id: string
+          settled_at: string | null
+          status: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          credits?: number
+          from_monthly?: number
+          from_purchased?: number
+          history_count_before?: number
+          id?: string
+          settled_at?: string | null
+          status?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          credits?: number
+          from_monthly?: number
+          from_purchased?: number
+          history_count_before?: number
+          id?: string
+          settled_at?: string | null
+          status?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       montage_history: {
         Row: {
           created_at: string
