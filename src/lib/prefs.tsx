@@ -411,6 +411,7 @@ export const FR_EN: Record<string, string> = {
   "Colle le lien de ta première vidéo": "Paste the link of your first video",
   "Colle un deuxième lien": "Paste a second link",
   "Commencer gratuitement": "Start for free",
+  "Passer au montage": "Open editor",
   "10 crédits offerts à l'inscription, soit une vidéo d'essai. Aucune carte bancaire demandée.":
     "10 free credits on sign-up — one trial video. No card required.",
   "Tes clips": "Your clips",
@@ -501,6 +502,7 @@ export const FR_ES: Record<string, string> = {
   "Colle le lien de ta première vidéo": "Pega el enlace de tu primer vídeo",
   "Colle un deuxième lien": "Pega un segundo enlace",
   "Commencer gratuitement": "Empezar gratis",
+  "Passer au montage": "Abrir editor",
   "10 crédits offerts à l'inscription, soit une vidéo d'essai. Aucune carte bancaire demandée.":
     "10 créditos de regalo al registrarte, un vídeo de prueba. Sin tarjeta bancaria.",
   "Tes clips": "Tus clips",
@@ -595,6 +597,7 @@ export const FR_DE: Record<string, string> = {
   "Colle le lien de ta première vidéo": "Füge den Link deines ersten Videos ein",
   "Colle un deuxième lien": "Füge einen zweiten Link ein",
   "Commencer gratuitement": "Kostenlos starten",
+  "Passer au montage": "Editor öffnen",
   "10 crédits offerts à l'inscription, soit une vidéo d'essai. Aucune carte bancaire demandée.":
     "10 Gratis-Credits bei der Anmeldung – ein Testvideo. Keine Kreditkarte nötig.",
   "Tes clips": "Deine Clips",

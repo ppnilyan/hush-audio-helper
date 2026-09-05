@@ -1,5 +1,4 @@
-import { createFileRoute, useNavigate } from "@tanstack/react-router";
-import { useEffect } from "react";
+import { createFileRoute } from "@tanstack/react-router";
 
 import { Faq } from "@/components/landing/Faq";
 import { FlowDiagram } from "@/components/landing/FlowDiagram";
@@ -8,7 +7,6 @@ import { LandingFooter } from "@/components/landing/LandingFooter";
 import { LandingNav } from "@/components/landing/LandingNav";
 import { PlansSection } from "@/components/landing/PlansSection";
 import { SolutionSteps } from "@/components/landing/SolutionSteps";
-import { useSession } from "@/lib/account";
 
 export const Route = createFileRoute("/")({
   head: () => ({
@@ -35,13 +33,6 @@ export const Route = createFileRoute("/")({
 });
 
 function Landing() {
-  const session = useSession();
-  const navigate = useNavigate();
-
-  useEffect(() => {
-    if (session) void navigate({ to: "/montage", search: { tab: "editor" }, replace: true });
-  }, [session, navigate]);
-
   return (
     <div>
       <LandingNav />

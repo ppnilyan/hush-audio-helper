@@ -4,6 +4,7 @@ import { useMemo, useState } from "react";
 
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { useSession } from "@/lib/account";
 import { setPendingLinks } from "@/lib/clips-store";
 import { useTr } from "@/lib/prefs";
 
@@ -21,6 +22,7 @@ function looksLikeTikTokUrl(value: string) {
 export function Hero() {
   const tr = useTr();
   const navigate = useNavigate();
+  const session = useSession();
   const [links, setLinks] = useState(["", ""]);
   const [error, setError] = useState<string | null>(null);
 
@@ -30,6 +32,7 @@ export function Hero() {
   );
 
   const hasValidLink = statuses.some((s) => s.valid);
+  const isSignedIn = Boolean(session);
 
   function start() {
     const validLinks = links
@@ -40,7 +43,7 @@ export function Hero() {
       return;
     }
     setPendingLinks(validLinks);
-    void navigate({ to: "/auth" });
+    void navigate({ to: isSignedIn ? "/montage" : "/auth", search: { tab: "editor" } });
   }
 
   return (
@@ -100,7 +103,8 @@ export function Hero() {
             onClick={start}
             disabled={!hasValidLink}
           >
-            {tr("Commencer gratuitement")} <ArrowRight className="size-4" />
+            {tr(isSignedIn ? "Passer au montage" : "Commencer gratuitement")}{" "}
+            <ArrowRight className="size-4" />
           </Button>
           {error && <p className="mt-3 text-sm text-destructive">{error}</p>}
         </div>
