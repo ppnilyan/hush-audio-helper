@@ -20,6 +20,7 @@ import {
   type EasingName,
   type HookSettings,
   type MixedEffectName,
+  isIosDevice,
 } from "@/lib/montage";
 import { detectSilences, encodeWav, formatTime, trimToTarget } from "@/lib/audio-silence";
 import {
@@ -263,6 +264,12 @@ function Montage() {
 
   // Étape 3 — voix off
   const [audioBusy, setAudioBusy] = useState(false);
+  // Sur iPhone, filtrer par type MIME grise les MP3 (ElevenLabs) dans Fichiers :
+  // on laisse tout sélectionnable et on valide côté code.
+  const [isIos, setIsIos] = useState(false);
+  useEffect(() => setIsIos(isIosDevice()), []);
+  const audioAccept = isIos ? undefined : "audio/*,video/*";
+  const musicAccept = isIos ? undefined : "audio/*";
   const [audioInfo, setAudioInfo] = useState<string | null>(null);
   const [trimBlanks, setTrimBlanks] = useState(false);
   const [targetMin, setTargetMin] = useState(1);
@@ -816,15 +823,20 @@ function Montage() {
       };
 
       let elapsed = 0;
+      // iOS n'autorise que très peu de décodeurs vidéo simultanés : au-delà, les
+      // clips arrivent en retard et le montage exporté part en morceaux.
+      const ios = isIosDevice();
+      const slots = ios ? 2 : 3;
+      const lookahead = ios ? 1 : 2;
       const prepared = new Map<number, Promise<HTMLVideoElement | null>>();
       const queuePrepare = (index: number) => {
         if (index >= timeline.length) return;
-        if (!prepared.has(index)) prepared.set(index, prepare(index, index % 3));
+        if (!prepared.has(index)) prepared.set(index, prepare(index, index % slots));
       };
 
-      // Decode the first three cuts before starting the voice-over. Short intro
+      // Decode the first cuts before starting the voice-over. Short intro
       // segments can then switch instantly even on slower devices.
-      for (let i = 0; i < Math.min(3, timeline.length); i++) queuePrepare(i);
+      for (let i = 0; i < Math.min(slots, timeline.length); i++) queuePrepare(i);
       await Promise.all(prepared.values());
       onReady && (await onReady());
 
@@ -844,9 +856,7 @@ function Montage() {
       for (let i = 0; i < timeline.length; i++) {
         if (abortRef.current || voiceOver()) break;
         const seg = timeline[i]!;
-        queuePrepare(i);
-        queuePrepare(i + 1);
-        queuePrepare(i + 2);
+        for (let k = 0; k <= lookahead; k++) queuePrepare(i + k);
         const v = await prepared.get(i);
         if (!v) {
           elapsed += seg.duration;
@@ -1000,10 +1010,15 @@ function Montage() {
       return;
     }
     try {
-      const stream = canvas.captureStream(30);
+      const ios = isIosDevice();
+      const stream = canvas.captureStream(ios ? 25 : 30);
       const audio = new Audio(voice.url);
       audio.crossOrigin = "anonymous";
+      audio.preload = "auto";
       const actx = new AudioContext();
+      // Sur iPhone le contexte audio démarre suspendu : sans reprise explicite,
+      // la voix enregistrée se retrouve hachée.
+      if (actx.state !== "running") await actx.resume().catch(() => {});
       const src = actx.createMediaElementSource(audio);
       const dest = actx.createMediaStreamDestination();
       src.connect(dest);
@@ -1024,14 +1039,20 @@ function Montage() {
       dest.stream.getAudioTracks().forEach((t) => stream.addTrack(t));
 
       const { mime, ext } = pickRecordingType();
-      const rec = new MediaRecorder(stream, { mimeType: mime, videoBitsPerSecond: 6_000_000 });
+      const rec = new MediaRecorder(stream, {
+        mimeType: mime,
+        videoBitsPerSecond: ios ? 4_000_000 : 6_000_000,
+      });
       const chunks: BlobPart[] = [];
       rec.ondataavailable = (e) => e.data.size && chunks.push(e.data);
       const done = new Promise<Blob>((res) => {
         rec.onstop = () => res(new Blob(chunks, { type: ext === "mp4" ? "video/mp4" : "video/webm" }));
       });
 
-      rec.start(200);
+      // iOS produit des fragments MP4 mal recollés quand on découpe en morceaux :
+      // on enregistre d'un seul bloc pour garder la voix et les coupes en place.
+      if (ios) rec.start();
+      else rec.start(200);
       let stopMusic = () => {};
       await runTimeline(
         undefined,
@@ -1786,7 +1807,7 @@ function Montage() {
               <input
                 ref={audioFileRef}
                 type="file"
-                accept="audio/*,video/*"
+                accept={audioAccept}
                 className="hidden"
                 onChange={(e) => {
                   const f = e.target.files?.[0];
@@ -1891,7 +1912,7 @@ function Montage() {
               <input
                 ref={musicFileRef}
                 type="file"
-                accept="audio/*"
+                accept={musicAccept}
                 className="hidden"
                 onChange={(e) => {
                   const f = e.target.files?.[0];
