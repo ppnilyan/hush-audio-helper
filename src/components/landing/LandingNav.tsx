@@ -33,15 +33,25 @@ export function LandingNav() {
         </a>
 
         <div className="ml-2 hidden items-center gap-1 md:flex">
-          {SECTIONS.map((s) => (
-            <a
-              key={s.hash}
-              href={`#${s.hash}`}
-              className="rounded-md px-3 py-1.5 text-sm text-muted-foreground transition-colors hover:bg-accent/10 hover:text-foreground"
-            >
-              {s.label === "FAQ" ? "FAQ" : tr(s.label)}
-            </a>
-          ))}
+          {SECTIONS.map((s) =>
+            "to" in s ? (
+              <Link
+                key={s.hash}
+                to={s.to}
+                className="rounded-md px-3 py-1.5 text-sm text-muted-foreground transition-colors hover:bg-accent/10 hover:text-foreground"
+              >
+                {tr(s.label)}
+              </Link>
+            ) : (
+              <a
+                key={s.hash}
+                href={`#${s.hash}`}
+                className="rounded-md px-3 py-1.5 text-sm text-muted-foreground transition-colors hover:bg-accent/10 hover:text-foreground"
+              >
+                {s.label === "FAQ" ? "FAQ" : tr(s.label)}
+              </a>
+            )
+          )}
         </div>
 
         <div className="ml-auto flex items-center gap-2">
