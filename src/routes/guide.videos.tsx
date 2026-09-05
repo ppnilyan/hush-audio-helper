@@ -166,7 +166,14 @@ function UploadCard({ onUploaded }: { onUploaded: () => void }) {
       pickFile();
       return;
     }
+    if ((await detectUnsupportedCodec(file)) === "av1") {
+      toast.error(
+        "Cette vidéo est encodée en AV1 : les iPhone ne peuvent pas la lire. Réexporte-la en MP4 H.264 puis republie-la.",
+      );
+      return;
+    }
     setBusy(true);
+
     try {
       await uploadGuideVideo({ file, title, description, category });
       toast.success("Vidéo publiée sur le site");
