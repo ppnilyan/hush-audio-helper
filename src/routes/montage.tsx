@@ -20,6 +20,7 @@ import {
   type EasingName,
   type HookSettings,
   type MixedEffectName,
+  isIosDevice,
 } from "@/lib/montage";
 import { detectSilences, encodeWav, formatTime, trimToTarget } from "@/lib/audio-silence";
 import {
