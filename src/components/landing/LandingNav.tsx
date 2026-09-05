@@ -8,6 +8,7 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import { useSession } from "@/lib/account";
 import { LANGS, LANG_META, usePrefs, useTr } from "@/lib/prefs";
 
 const SECTIONS = [
@@ -21,6 +22,8 @@ const SECTIONS = [
 export function LandingNav() {
   const tr = useTr();
   const { lang, setLang } = usePrefs();
+  const session = useSession();
+  const isSignedIn = Boolean(session);
 
   return (
     <header className="sticky top-0 z-50 border-b border-border/60 bg-background/80 backdrop-blur">
@@ -33,6 +36,15 @@ export function LandingNav() {
         </a>
 
         <div className="ml-2 hidden items-center gap-1 md:flex">
+          {isSignedIn && (
+            <Link
+              to="/montage"
+              search={{ tab: "editor" }}
+              className="rounded-md px-3 py-1.5 text-sm text-muted-foreground transition-colors hover:bg-accent/10 hover:text-foreground"
+            >
+              {tr("Montage")}
+            </Link>
+          )}
           {SECTIONS.map((s) =>
             "to" in s ? (
               <Link
@@ -55,12 +67,23 @@ export function LandingNav() {
         </div>
 
         <div className="ml-auto flex items-center gap-2">
-          <Button asChild variant="ghost" size="sm" className="hidden sm:inline-flex">
-            <Link to="/auth">{tr("Connexion")}</Link>
-          </Button>
-          <Button asChild size="sm" className="rounded-full">
-            <Link to="/auth">{tr("Inscription")}</Link>
-          </Button>
+          {!isSignedIn && (
+            <>
+              <Button asChild variant="ghost" size="sm" className="hidden sm:inline-flex">
+                <Link to="/auth">{tr("Connexion")}</Link>
+              </Button>
+              <Button asChild size="sm" className="rounded-full">
+                <Link to="/auth">{tr("Inscription")}</Link>
+              </Button>
+            </>
+          )}
+          {isSignedIn && (
+            <Button asChild size="sm" className="rounded-full hidden sm:inline-flex">
+              <Link to="/montage" search={{ tab: "editor" }}>
+                {tr("Passer au montage")}
+              </Link>
+            </Button>
+          )}
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
               <Button variant="secondary" size="sm" className="rounded-full">
