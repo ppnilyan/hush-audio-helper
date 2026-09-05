@@ -10,6 +10,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { useSession } from "@/lib/account";
 import {
   deleteGuideVideo,
+  detectUnsupportedCodec,
   isAdminAccount,
   listGuideVideos,
   uploadGuideVideo,
