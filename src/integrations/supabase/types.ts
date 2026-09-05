@@ -167,6 +167,36 @@ export type Database = {
         }
         Relationships: []
       }
+      guide_videos: {
+        Row: {
+          category: string
+          created_at: string
+          created_by: string | null
+          description: string | null
+          id: string
+          storage_path: string
+          title: string
+        }
+        Insert: {
+          category?: string
+          created_at?: string
+          created_by?: string | null
+          description?: string | null
+          id?: string
+          storage_path: string
+          title: string
+        }
+        Update: {
+          category?: string
+          created_at?: string
+          created_by?: string | null
+          description?: string | null
+          id?: string
+          storage_path?: string
+          title?: string
+        }
+        Relationships: []
+      }
       montage_history: {
         Row: {
           created_at: string
