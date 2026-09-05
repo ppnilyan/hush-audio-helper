@@ -2,24 +2,45 @@
  * Conversion vidéo dans le navigateur (ffmpeg.wasm) vers du MP4 H.264/AAC,
  * le seul format lisible partout, y compris sur iPhone.
  */
-const CORE_BASE = "https://unpkg.com/@ffmpeg/core@0.12.10/dist/umd";
+const CORE_BASES = [
+  "https://unpkg.com/@ffmpeg/core@0.12.10/dist/umd",
+  "https://cdn.jsdelivr.net/npm/@ffmpeg/core@0.12.10/dist/umd",
+];
 
 let ffmpegPromise: Promise<import("@ffmpeg/ffmpeg").FFmpeg> | null = null;
+
+async function loadFrom(base: string) {
+  const [{ FFmpeg }, { toBlobURL }] = await Promise.all([
+    import("@ffmpeg/ffmpeg"),
+    import("@ffmpeg/util"),
+  ]);
+  const ffmpeg = new FFmpeg();
+  ffmpeg.on("log", ({ message }) => console.debug("[ffmpeg]", message));
+  await ffmpeg.load({
+    coreURL: await toBlobURL(`${base}/ffmpeg-core.js`, "text/javascript"),
+    wasmURL: await toBlobURL(`${base}/ffmpeg-core.wasm`, "application/wasm"),
+  });
+  return ffmpeg;
+}
 
 async function getFfmpeg() {
   if (!ffmpegPromise) {
     ffmpegPromise = (async () => {
-      const [{ FFmpeg }, { toBlobURL }] = await Promise.all([
-        import("@ffmpeg/ffmpeg"),
-        import("@ffmpeg/util"),
-      ]);
-      const ffmpeg = new FFmpeg();
-      await ffmpeg.load({
-        coreURL: await toBlobURL(`${CORE_BASE}/ffmpeg-core.js`, "text/javascript"),
-        wasmURL: await toBlobURL(`${CORE_BASE}/ffmpeg-core.wasm`, "application/wasm"),
-      });
-      return ffmpeg;
+      let lastError: unknown = null;
+      for (const base of CORE_BASES) {
+        try {
+          return await loadFrom(base);
+        } catch (e) {
+          lastError = e;
+        }
+      }
+      throw new Error(
+        `moteur de conversion indisponible : ${lastError instanceof Error ? lastError.message : "erreur réseau"}`,
+      );
     })();
+    ffmpegPromise.catch(() => {
+      ffmpegPromise = null;
+    });
   }
   return ffmpegPromise;
 }
@@ -41,7 +62,7 @@ export async function transcodeToH264(
   const output = `out-${Date.now()}.mp4`;
   try {
     await ffmpeg.writeFile(input, await fetchFile(file));
-    await ffmpeg.exec([
+    const code = await ffmpeg.exec([
       "-i",
       input,
       "-c:v",
@@ -62,7 +83,9 @@ export async function transcodeToH264(
       "128k",
       output,
     ]);
+    if (code !== 0) throw new Error(`conversion interrompue (code ${code})`);
     const data = (await ffmpeg.readFile(output)) as Uint8Array;
+    if (!data || data.length === 0) throw new Error("fichier converti vide");
     const name = file.name.replace(/\.[^.]+$/, "") + "-h264.mp4";
     return new File([new Uint8Array(data).buffer as ArrayBuffer], name, { type: "video/mp4" });
   } finally {
