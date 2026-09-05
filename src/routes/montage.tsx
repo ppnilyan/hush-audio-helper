@@ -817,15 +817,20 @@ function Montage() {
       };
 
       let elapsed = 0;
+      // iOS n'autorise que très peu de décodeurs vidéo simultanés : au-delà, les
+      // clips arrivent en retard et le montage exporté part en morceaux.
+      const ios = isIosDevice();
+      const slots = ios ? 2 : 3;
+      const lookahead = ios ? 1 : 2;
       const prepared = new Map<number, Promise<HTMLVideoElement | null>>();
       const queuePrepare = (index: number) => {
         if (index >= timeline.length) return;
-        if (!prepared.has(index)) prepared.set(index, prepare(index, index % 3));
+        if (!prepared.has(index)) prepared.set(index, prepare(index, index % slots));
       };
 
-      // Decode the first three cuts before starting the voice-over. Short intro
+      // Decode the first cuts before starting the voice-over. Short intro
       // segments can then switch instantly even on slower devices.
-      for (let i = 0; i < Math.min(3, timeline.length); i++) queuePrepare(i);
+      for (let i = 0; i < Math.min(slots, timeline.length); i++) queuePrepare(i);
       await Promise.all(prepared.values());
       onReady && (await onReady());
 
