@@ -850,9 +850,7 @@ function Montage() {
       for (let i = 0; i < timeline.length; i++) {
         if (abortRef.current || voiceOver()) break;
         const seg = timeline[i]!;
-        queuePrepare(i);
-        queuePrepare(i + 1);
-        queuePrepare(i + 2);
+        for (let k = 0; k <= lookahead; k++) queuePrepare(i + k);
         const v = await prepared.get(i);
         if (!v) {
           elapsed += seg.duration;
