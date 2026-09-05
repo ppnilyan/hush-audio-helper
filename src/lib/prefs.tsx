@@ -400,6 +400,7 @@ export const FR_EN: Record<string, string> = {
   "Notre solution": "How it works",
   "Résultats": "Results",
   "Nos offres": "Plans",
+  "Guide du montage TikTok": "TikTok editing guide",
   "Connexion": "Log in",
   "Inscription": "Sign up",
   "Crée des montages qui": "Create edits that",
