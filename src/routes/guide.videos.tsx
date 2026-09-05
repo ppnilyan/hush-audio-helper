@@ -11,12 +11,15 @@ import { useSession } from "@/lib/account";
 import {
   deleteGuideVideo,
   detectUnsupportedCodec,
+  downloadGuideVideoFile,
+  replaceGuideVideoFile,
   isAdminAccount,
   listGuideVideos,
   uploadGuideVideo,
   type GuideCategory,
   type GuideVideo,
 } from "@/lib/guide-videos";
+import { transcodeToH264 } from "@/lib/video-transcode";
 
 const URL_CANONICAL = "https://silencecut.app/guide/videos";
 const TITLE = "Guide vidéo — montages TikTok avec SilenceCut";
@@ -134,6 +137,17 @@ function VideoCard({ video, isAdmin, onDeleted }: { video: GuideVideo; isAdmin: 
           <p className="mt-1 text-sm text-muted-foreground">{video.description}</p>
         )}
       </figcaption>
+      {isAdmin && !failed && (
+        <Button
+          variant="ghost"
+          size="sm"
+          className="mt-2"
+          disabled={converting}
+          onClick={convert}
+        >
+          {converting ? `Conversion… ${progress}%` : "Convertir en MP4 H.264"}
+        </Button>
+      )}
       {isAdmin && (
         <Button
           variant="ghost"
@@ -186,6 +200,7 @@ function UploadCard({ onUploaded }: { onUploaded: () => void }) {
   const [description, setDescription] = useState("");
   const [busy, setBusy] = useState(false);
   const [fileName, setFileName] = useState<string | null>(null);
+  const [progress, setProgress] = useState(0);
   const inputRef = useRef<HTMLInputElement>(null);
 
   const pickFile = () => inputRef.current?.click();
@@ -197,16 +212,16 @@ function UploadCard({ onUploaded }: { onUploaded: () => void }) {
       pickFile();
       return;
     }
-    if ((await detectUnsupportedCodec(file)) === "av1") {
-      toast.error(
-        "Cette vidéo est encodée en AV1 : les iPhone ne peuvent pas la lire. Réexporte-la en MP4 H.264 puis republie-la.",
-      );
-      return;
-    }
     setBusy(true);
 
     try {
-      await uploadGuideVideo({ file, title, description, category });
+      let toUpload = file;
+      if ((await detectUnsupportedCodec(file)) === "av1") {
+        toast.info("Format non lisible sur iPhone : conversion en MP4 H.264 en cours…");
+        toUpload = await transcodeToH264(file, (r) => setProgress(Math.round(r * 100)));
+        setProgress(0);
+      }
+      await uploadGuideVideo({ file: toUpload, title, description, category });
       toast.success("Vidéo publiée sur le site");
       setTitle("");
       setDescription("");
@@ -276,7 +291,7 @@ function UploadCard({ onUploaded }: { onUploaded: () => void }) {
 
         <Button onClick={submit} disabled={busy} className="rounded-full sm:w-fit">
           {busy ? <Loader2 className="size-4 animate-spin" /> : <Upload className="size-4" />}
-          Publier la vidéo
+          {busy && progress > 0 ? `Conversion… ${progress}%` : "Publier la vidéo"}
         </Button>
       </div>
     </section>
