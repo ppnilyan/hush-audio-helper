@@ -103,3 +103,35 @@ export async function detectUnsupportedCodec(file: File): Promise<"av1" | null> 
     return null;
   }
 }
+
+/** Remplace le fichier d'une vidéo déjà publiée (même fiche, nouveau fichier). */
+export async function replaceGuideVideoFile(
+  video: { id: string; storagePath: string },
+  file: File,
+) {
+  const category = video.storagePath.split("/")[0] || "tutorial";
+  const ext = file.name.split(".").pop()?.toLowerCase() || "mp4";
+  const path = `${category}/${Date.now()}-${crypto.randomUUID()}.${ext}`;
+  const up = await supabase.storage
+    .from(BUCKET)
+    .upload(path, file, { contentType: file.type || "video/mp4", upsert: false });
+  if (up.error) throw up.error;
+
+  const { error } = await supabase
+    .from("guide_videos")
+    .update({ storage_path: path })
+    .eq("id", video.id);
+  if (error) {
+    await supabase.storage.from(BUCKET).remove([path]);
+    throw error;
+  }
+  await supabase.storage.from(BUCKET).remove([video.storagePath]);
+}
+
+/** Télécharge une vidéo publiée pour la retraiter côté navigateur. */
+export async function downloadGuideVideoFile(video: GuideVideo): Promise<File> {
+  const res = await fetch(video.url);
+  if (!res.ok) throw new Error("download_failed");
+  const blob = await res.blob();
+  return new File([blob], `${video.id}.mp4`, { type: blob.type || "video/mp4" });
+}
