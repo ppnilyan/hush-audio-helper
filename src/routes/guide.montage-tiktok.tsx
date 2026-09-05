@@ -130,6 +130,18 @@ function GuidePage() {
       </header>
 
       <main className="mx-auto max-w-4xl px-4 py-12">
+        <div className="mb-8 flex flex-wrap gap-2">
+          <span className="gradient-brand rounded-full border border-transparent px-4 py-1.5 text-sm font-medium text-primary-foreground">
+            Guide
+          </span>
+          <Link
+            to="/guide/videos"
+            className="rounded-full border border-border/60 px-4 py-1.5 text-sm font-medium text-muted-foreground transition-colors hover:text-foreground"
+          >
+            Guide vidéo
+          </Link>
+        </div>
+
         <article>
           <p className="text-sm text-muted-foreground">Guide</p>
           <h1 className="font-display mt-2 text-3xl font-bold tracking-tight sm:text-4xl">

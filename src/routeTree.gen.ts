@@ -16,6 +16,7 @@ import { Route as MontageRouteImport } from './routes/montage'
 import { Route as PricingRouteImport } from './routes/pricing'
 import { Route as TiktokRouteImport } from './routes/tiktok'
 import { Route as GuideMontageTiktokRouteImport } from './routes/guide.montage-tiktok'
+import { Route as GuideVideosRouteImport } from './routes/guide.videos'
 import { Route as ApiPublicMediaProxyRouteImport } from './routes/api/public/media-proxy'
 import { Route as ApiPublicPaypalWebhookRouteImport } from './routes/api/public/paypal/webhook'
 
@@ -54,6 +55,11 @@ const GuideMontageTiktokRoute = GuideMontageTiktokRouteImport.update({
   path: '/guide/montage-tiktok',
   getParentRoute: () => rootRouteImport,
 } as any)
+const GuideVideosRoute = GuideVideosRouteImport.update({
+  id: '/guide/videos',
+  path: '/guide/videos',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ApiPublicMediaProxyRoute = ApiPublicMediaProxyRouteImport.update({
   id: '/api/public/media-proxy',
   path: '/api/public/media-proxy',
@@ -73,6 +79,7 @@ export interface FileRoutesByFullPath {
   '/pricing': typeof PricingRoute
   '/tiktok': typeof TiktokRoute
   '/guide/montage-tiktok': typeof GuideMontageTiktokRoute
+  '/guide/videos': typeof GuideVideosRoute
   '/api/public/media-proxy': typeof ApiPublicMediaProxyRoute
   '/api/public/paypal/webhook': typeof ApiPublicPaypalWebhookRoute
 }
@@ -84,6 +91,7 @@ export interface FileRoutesByTo {
   '/pricing': typeof PricingRoute
   '/tiktok': typeof TiktokRoute
   '/guide/montage-tiktok': typeof GuideMontageTiktokRoute
+  '/guide/videos': typeof GuideVideosRoute
   '/api/public/media-proxy': typeof ApiPublicMediaProxyRoute
   '/api/public/paypal/webhook': typeof ApiPublicPaypalWebhookRoute
 }
@@ -96,6 +104,7 @@ export interface FileRoutesById {
   '/pricing': typeof PricingRoute
   '/tiktok': typeof TiktokRoute
   '/guide/montage-tiktok': typeof GuideMontageTiktokRoute
+  '/guide/videos': typeof GuideVideosRoute
   '/api/public/media-proxy': typeof ApiPublicMediaProxyRoute
   '/api/public/paypal/webhook': typeof ApiPublicPaypalWebhookRoute
 }
@@ -109,6 +118,7 @@ export interface FileRouteTypes {
     | '/pricing'
     | '/tiktok'
     | '/guide/montage-tiktok'
+    | '/guide/videos'
     | '/api/public/media-proxy'
     | '/api/public/paypal/webhook'
   fileRoutesByTo: FileRoutesByTo
@@ -120,6 +130,7 @@ export interface FileRouteTypes {
     | '/pricing'
     | '/tiktok'
     | '/guide/montage-tiktok'
+    | '/guide/videos'
     | '/api/public/media-proxy'
     | '/api/public/paypal/webhook'
   id:
@@ -131,6 +142,7 @@ export interface FileRouteTypes {
     | '/pricing'
     | '/tiktok'
     | '/guide/montage-tiktok'
+    | '/guide/videos'
     | '/api/public/media-proxy'
     | '/api/public/paypal/webhook'
   fileRoutesById: FileRoutesById
@@ -143,6 +155,7 @@ export interface RootRouteChildren {
   PricingRoute: typeof PricingRoute
   TiktokRoute: typeof TiktokRoute
   GuideMontageTiktokRoute: typeof GuideMontageTiktokRoute
+  GuideVideosRoute: typeof GuideVideosRoute
   ApiPublicMediaProxyRoute: typeof ApiPublicMediaProxyRoute
   ApiPublicPaypalWebhookRoute: typeof ApiPublicPaypalWebhookRoute
 }
@@ -198,6 +211,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof GuideMontageTiktokRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/guide/videos': {
+      id: '/guide/videos'
+      path: '/guide/videos'
+      fullPath: '/guide/videos'
+      preLoaderRoute: typeof GuideVideosRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/public/media-proxy': {
       id: '/api/public/media-proxy'
       path: '/api/public/media-proxy'
@@ -223,6 +243,7 @@ const rootRouteChildren: RootRouteChildren = {
   PricingRoute: PricingRoute,
   TiktokRoute: TiktokRoute,
   GuideMontageTiktokRoute: GuideMontageTiktokRoute,
+  GuideVideosRoute: GuideVideosRoute,
   ApiPublicMediaProxyRoute: ApiPublicMediaProxyRoute,
   ApiPublicPaypalWebhookRoute: ApiPublicPaypalWebhookRoute,
 }

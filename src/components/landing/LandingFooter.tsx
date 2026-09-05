@@ -22,6 +22,9 @@ export function LandingFooter() {
           <Link to="/guide/montage-tiktok" className="hover:text-foreground">
             {tr("Guide du montage TikTok")}
           </Link>
+          <Link to="/guide/videos" className="hover:text-foreground">
+            {tr("Guide vidéo")}
+          </Link>
           <Link to="/auth" className="hover:text-foreground">
             {tr("Connexion")}
           </Link>
