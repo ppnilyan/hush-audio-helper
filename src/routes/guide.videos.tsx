@@ -216,20 +216,36 @@ function UploadCard({ onUploaded }: { onUploaded: () => void }) {
 
     try {
       let toUpload = file;
+      let converted = true;
       if ((await detectUnsupportedCodec(file)) === "av1") {
         toast.info("Format non lisible sur iPhone : conversion en MP4 H.264 en cours…");
-        toUpload = await transcodeToH264(file, (r) => setProgress(Math.round(r * 100)));
+        try {
+          toUpload = await transcodeToH264(file, (r) => setProgress(Math.round(r * 100)));
+        } catch (err) {
+          converted = false;
+          console.error("[transcode]", err);
+          toast.warning(
+            `Conversion impossible sur cet appareil (${err instanceof Error ? err.message : "erreur"}). La vidéo est publiée telle quelle : convertis-la depuis un ordinateur.`,
+          );
+        }
         setProgress(0);
       }
       await uploadGuideVideo({ file: toUpload, title, description, category });
-      toast.success("Vidéo publiée sur le site");
+      toast.success(converted ? "Vidéo publiée sur le site" : "Vidéo publiée (format d'origine)");
       setTitle("");
       setDescription("");
       setFileName(null);
       if (inputRef.current) inputRef.current.value = "";
       onUploaded();
     } catch (e) {
-      toast.error(`Envoi impossible : ${e instanceof Error ? e.message : "erreur"}`);
+      console.error("[upload guide video]", e);
+      const msg =
+        e instanceof Error
+          ? e.message
+          : typeof e === "object" && e && "message" in e
+            ? String((e as { message: unknown }).message)
+            : "erreur inconnue";
+      toast.error(`Envoi impossible : ${msg}`);
     } finally {
       setBusy(false);
     }
