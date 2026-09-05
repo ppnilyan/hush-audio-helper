@@ -127,12 +127,16 @@ function UploadCard({ onUploaded }: { onUploaded: () => void }) {
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
   const [busy, setBusy] = useState(false);
+  const [fileName, setFileName] = useState<string | null>(null);
   const inputRef = useRef<HTMLInputElement>(null);
+
+  const pickFile = () => inputRef.current?.click();
 
   const submit = async () => {
     const file = inputRef.current?.files?.[0];
     if (!file) {
       toast.error("Choisis un fichier vidéo");
+      pickFile();
       return;
     }
     setBusy(true);
@@ -141,6 +145,7 @@ function UploadCard({ onUploaded }: { onUploaded: () => void }) {
       toast.success("Vidéo publiée sur le site");
       setTitle("");
       setDescription("");
+      setFileName(null);
       if (inputRef.current) inputRef.current.value = "";
       onUploaded();
     } catch (e) {
@@ -149,6 +154,7 @@ function UploadCard({ onUploaded }: { onUploaded: () => void }) {
       setBusy(false);
     }
   };
+
 
   return (
     <section className="panel mt-8 p-6">
