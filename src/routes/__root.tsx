@@ -124,7 +124,7 @@ function RootShell({ children }: { children: ReactNode }) {
   );
 }
 
-function HeaderNav({ t }: { t: (key: keyof typeof import("@/lib/prefs").fr) => string }) {
+function HeaderNav({ t }: { t: (key: string) => string }) {
   return (
     <nav className="mx-auto flex max-w-5xl items-center gap-2 px-4 py-3">
       <Link to="/" className="mr-3 font-semibold tracking-tight text-foreground">SilenceCut</Link>
