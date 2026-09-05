@@ -128,7 +128,7 @@ function HeaderNav() {
   const { t } = usePrefs();
   return (
     <nav className="mx-auto flex max-w-5xl items-center gap-2 px-4 py-3">
-      <span className="mr-3 font-semibold tracking-tight text-foreground">SilenceCut</span>
+      <Link to="/" className="mr-3 font-semibold tracking-tight text-foreground">SilenceCut</Link>
       <Link
         to="/montage"
         search={{ tab: "editor" }}
