@@ -70,6 +70,25 @@ function GuideTabs({ active }: { active: "text" | "video" }) {
 
 function VideoCard({ video, isAdmin, onDeleted }: { video: GuideVideo; isAdmin: boolean; onDeleted: () => void }) {
   const [failed, setFailed] = useState(false);
+  const [converting, setConverting] = useState(false);
+  const [progress, setProgress] = useState(0);
+
+  const convert = async () => {
+    setConverting(true);
+    setProgress(0);
+    try {
+      const original = await downloadGuideVideoFile(video);
+      const converted = await transcodeToH264(original, (r) => setProgress(Math.round(r * 100)));
+      await replaceGuideVideoFile({ id: video.id, storagePath: video.storagePath }, converted);
+      toast.success("Vidéo convertie en MP4 H.264");
+      onDeleted();
+    } catch {
+      toast.error("Conversion impossible");
+    } finally {
+      setConverting(false);
+    }
+  };
+
   return (
     <figure className="card-hover-soft panel overflow-hidden p-3">
       {failed ? (
@@ -77,7 +96,7 @@ function VideoCard({ video, isAdmin, onDeleted }: { video: GuideVideo; isAdmin: 
           <p className="text-sm font-medium">Lecture impossible sur cet appareil</p>
           <p className="text-xs text-muted-foreground">
             Cette vidéo utilise un format que ton téléphone ne sait pas lire. Ouvre-la depuis un
-            ordinateur, ou republie-la en MP4 H.264.
+            ordinateur, ou convertis-la en MP4 H.264.
           </p>
           <a
             href={video.url}
@@ -87,6 +106,17 @@ function VideoCard({ video, isAdmin, onDeleted }: { video: GuideVideo; isAdmin: 
           >
             Ouvrir la vidéo
           </a>
+          {isAdmin && (
+            <Button
+              size="sm"
+              className="mt-1 rounded-full"
+              disabled={converting}
+              onClick={convert}
+            >
+              {converting ? <Loader2 className="size-4 animate-spin" /> : null}
+              {converting ? `Conversion… ${progress}%` : "Convertir en MP4 H.264"}
+            </Button>
+          )}
         </div>
       ) : (
         <video
