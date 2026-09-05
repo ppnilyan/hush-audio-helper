@@ -19,9 +19,13 @@ export function LandingFooter() {
           </p>
         </div>
         <div className="flex flex-wrap gap-4 text-sm text-muted-foreground">
+          <Link to="/guide/montage-tiktok" className="hover:text-foreground">
+            {tr("Guide du montage TikTok")}
+          </Link>
           <Link to="/auth" className="hover:text-foreground">
             {tr("Connexion")}
           </Link>
+
           <a href="#offres" className="hover:text-foreground">
             {tr("Nos offres")}
           </a>
