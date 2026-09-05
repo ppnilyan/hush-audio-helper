@@ -157,14 +157,18 @@ function RootComponent() {
   return (
     <QueryClientProvider client={queryClient}>
       <PrefsProvider>
-        {!isLanding && (
-          <header className="sticky top-0 z-50 border-b border-border/60 bg-background/80 backdrop-blur">
-            <HeaderNav />
-          </header>
+        {({ t }: { t: (key: string) => string }) => (
+          <>
+            {!isLanding && (
+              <header className="sticky top-0 z-50 border-b border-border/60 bg-background/80 backdrop-blur">
+                <HeaderNav t={t} />
+              </header>
+            )}
+            {/* Required: nested routes render here. Removing <Outlet /> breaks all child routes. */}
+            <Outlet />
+            <Toaster />
+          </>
         )}
-        {/* Required: nested routes render here. Removing <Outlet /> breaks all child routes. */}
-        <Outlet />
-        <Toaster />
       </PrefsProvider>
     </QueryClientProvider>
   );
