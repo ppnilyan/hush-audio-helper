@@ -193,7 +193,22 @@ function UploadCard({ onUploaded }: { onUploaded: () => void }) {
           placeholder="Courte description (optionnelle)"
           rows={2}
         />
-        <input ref={inputRef} type="file" accept="video/*" className="text-sm" />
+        <input
+          ref={inputRef}
+          type="file"
+          accept="video/*,.mp4,.mov,.m4v,.webm"
+          className="sr-only"
+          onChange={(e) => setFileName(e.target.files?.[0]?.name ?? null)}
+        />
+        <div className="flex flex-wrap items-center gap-3">
+          <Button type="button" variant="secondary" className="rounded-full" onClick={pickFile}>
+            Choisir une vidéo
+          </Button>
+          <span className="text-sm text-muted-foreground">
+            {fileName ?? "Aucun fichier sélectionné"}
+          </span>
+        </div>
+
         <Button onClick={submit} disabled={busy} className="rounded-full sm:w-fit">
           {busy ? <Loader2 className="size-4 animate-spin" /> : <Upload className="size-4" />}
           Publier la vidéo
