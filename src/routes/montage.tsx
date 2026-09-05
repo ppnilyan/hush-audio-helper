@@ -1009,7 +1009,6 @@ function Montage() {
       const audio = new Audio(voice.url);
       audio.crossOrigin = "anonymous";
       audio.preload = "auto";
-      audio.playsInline = true;
       const actx = new AudioContext();
       // Sur iPhone le contexte audio démarre suspendu : sans reprise explicite,
       // la voix enregistrée se retrouve hachée.
@@ -1034,14 +1033,20 @@ function Montage() {
       dest.stream.getAudioTracks().forEach((t) => stream.addTrack(t));
 
       const { mime, ext } = pickRecordingType();
-      const rec = new MediaRecorder(stream, { mimeType: mime, videoBitsPerSecond: 6_000_000 });
+      const rec = new MediaRecorder(stream, {
+        mimeType: mime,
+        videoBitsPerSecond: ios ? 4_000_000 : 6_000_000,
+      });
       const chunks: BlobPart[] = [];
       rec.ondataavailable = (e) => e.data.size && chunks.push(e.data);
       const done = new Promise<Blob>((res) => {
         rec.onstop = () => res(new Blob(chunks, { type: ext === "mp4" ? "video/mp4" : "video/webm" }));
       });
 
-      rec.start(200);
+      // iOS produit des fragments MP4 mal recollés quand on découpe en morceaux :
+      // on enregistre d'un seul bloc pour garder la voix et les coupes en place.
+      if (ios) rec.start();
+      else rec.start(200);
       let stopMusic = () => {};
       await runTimeline(
         undefined,
