@@ -1004,10 +1004,16 @@ function Montage() {
       return;
     }
     try {
-      const stream = canvas.captureStream(30);
+      const ios = isIosDevice();
+      const stream = canvas.captureStream(ios ? 25 : 30);
       const audio = new Audio(voice.url);
       audio.crossOrigin = "anonymous";
+      audio.preload = "auto";
+      audio.playsInline = true;
       const actx = new AudioContext();
+      // Sur iPhone le contexte audio démarre suspendu : sans reprise explicite,
+      // la voix enregistrée se retrouve hachée.
+      if (actx.state !== "running") await actx.resume().catch(() => {});
       const src = actx.createMediaElementSource(audio);
       const dest = actx.createMediaStreamDestination();
       src.connect(dest);
