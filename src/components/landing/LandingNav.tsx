@@ -14,6 +14,7 @@ const SECTIONS = [
   { hash: "solution", label: "Notre solution" },
   { hash: "resultats", label: "Résultats" },
   { hash: "offres", label: "Nos offres" },
+  { hash: "guide", label: "Guide du montage TikTok", to: "/guide/montage-tiktok" },
   { hash: "faq", label: "FAQ" },
 ] as const;
 
