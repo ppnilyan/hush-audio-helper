@@ -402,3 +402,16 @@ function drawBlurredBand(
   ctx.restore();
 }
 
+
+/**
+ * iOS/iPadOS (Safari et tous les navigateurs iOS) : décodage vidéo limité et
+ * MediaRecorder capricieux, on adapte l'enregistrement et le choix de fichiers.
+ */
+export function isIosDevice(): boolean {
+  if (typeof navigator === "undefined") return false;
+  const ua = navigator.userAgent;
+  return (
+    /iPad|iPhone|iPod/.test(ua) ||
+    (/Macintosh/.test(ua) && (navigator.maxTouchPoints ?? 0) > 1)
+  );
+}
