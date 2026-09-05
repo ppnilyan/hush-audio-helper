@@ -127,12 +127,16 @@ function UploadCard({ onUploaded }: { onUploaded: () => void }) {
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
   const [busy, setBusy] = useState(false);
+  const [fileName, setFileName] = useState<string | null>(null);
   const inputRef = useRef<HTMLInputElement>(null);
+
+  const pickFile = () => inputRef.current?.click();
 
   const submit = async () => {
     const file = inputRef.current?.files?.[0];
     if (!file) {
       toast.error("Choisis un fichier vidéo");
+      pickFile();
       return;
     }
     setBusy(true);
@@ -141,6 +145,7 @@ function UploadCard({ onUploaded }: { onUploaded: () => void }) {
       toast.success("Vidéo publiée sur le site");
       setTitle("");
       setDescription("");
+      setFileName(null);
       if (inputRef.current) inputRef.current.value = "";
       onUploaded();
     } catch (e) {
@@ -149,6 +154,7 @@ function UploadCard({ onUploaded }: { onUploaded: () => void }) {
       setBusy(false);
     }
   };
+
 
   return (
     <section className="panel mt-8 p-6">
@@ -187,7 +193,22 @@ function UploadCard({ onUploaded }: { onUploaded: () => void }) {
           placeholder="Courte description (optionnelle)"
           rows={2}
         />
-        <input ref={inputRef} type="file" accept="video/*" className="text-sm" />
+        <input
+          ref={inputRef}
+          type="file"
+          accept="video/*,.mp4,.mov,.m4v,.webm"
+          className="sr-only"
+          onChange={(e) => setFileName(e.target.files?.[0]?.name ?? null)}
+        />
+        <div className="flex flex-wrap items-center gap-3">
+          <Button type="button" variant="secondary" className="rounded-full" onClick={pickFile}>
+            Choisir une vidéo
+          </Button>
+          <span className="text-sm text-muted-foreground">
+            {fileName ?? "Aucun fichier sélectionné"}
+          </span>
+        </div>
+
         <Button onClick={submit} disabled={busy} className="rounded-full sm:w-fit">
           {busy ? <Loader2 className="size-4 animate-spin" /> : <Upload className="size-4" />}
           Publier la vidéo
