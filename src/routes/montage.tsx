@@ -264,6 +264,12 @@ function Montage() {
 
   // Étape 3 — voix off
   const [audioBusy, setAudioBusy] = useState(false);
+  // Sur iPhone, filtrer par type MIME grise les MP3 (ElevenLabs) dans Fichiers :
+  // on laisse tout sélectionnable et on valide côté code.
+  const [isIos, setIsIos] = useState(false);
+  useEffect(() => setIsIos(isIosDevice()), []);
+  const audioAccept = isIos ? undefined : "audio/*,video/*";
+  const musicAccept = isIos ? undefined : "audio/*";
   const [audioInfo, setAudioInfo] = useState<string | null>(null);
   const [trimBlanks, setTrimBlanks] = useState(false);
   const [targetMin, setTargetMin] = useState(1);
@@ -1801,7 +1807,7 @@ function Montage() {
               <input
                 ref={audioFileRef}
                 type="file"
-                accept="audio/*,video/*"
+                accept={audioAccept}
                 className="hidden"
                 onChange={(e) => {
                   const f = e.target.files?.[0];
@@ -1906,7 +1912,7 @@ function Montage() {
               <input
                 ref={musicFileRef}
                 type="file"
-                accept="audio/*"
+                accept={musicAccept}
                 className="hidden"
                 onChange={(e) => {
                   const f = e.target.files?.[0];
