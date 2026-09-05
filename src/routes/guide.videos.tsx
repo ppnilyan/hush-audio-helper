@@ -67,6 +67,64 @@ function GuideTabs({ active }: { active: "text" | "video" }) {
   );
 }
 
+function VideoCard({ video, isAdmin, onDeleted }: { video: GuideVideo; isAdmin: boolean; onDeleted: () => void }) {
+  const [failed, setFailed] = useState(false);
+  return (
+    <figure className="card-hover-soft panel overflow-hidden p-3">
+      {failed ? (
+        <div className="flex aspect-[9/16] w-full flex-col items-center justify-center gap-2 rounded-lg bg-muted px-4 text-center">
+          <p className="text-sm font-medium">Lecture impossible sur cet appareil</p>
+          <p className="text-xs text-muted-foreground">
+            Cette vidéo utilise un format que ton téléphone ne sait pas lire. Ouvre-la depuis un
+            ordinateur, ou republie-la en MP4 H.264.
+          </p>
+          <a
+            href={video.url}
+            target="_blank"
+            rel="noreferrer"
+            className="text-xs font-medium underline"
+          >
+            Ouvrir la vidéo
+          </a>
+        </div>
+      ) : (
+        <video
+          src={video.url}
+          controls
+          playsInline
+          preload="metadata"
+          onError={() => setFailed(true)}
+          className="aspect-[9/16] w-full rounded-lg bg-muted object-contain"
+        />
+      )}
+      <figcaption className="mt-3">
+        <p className="font-display text-base font-semibold">{video.title}</p>
+        {video.description && (
+          <p className="mt-1 text-sm text-muted-foreground">{video.description}</p>
+        )}
+      </figcaption>
+      {isAdmin && (
+        <Button
+          variant="ghost"
+          size="sm"
+          className="mt-2 text-destructive"
+          onClick={async () => {
+            try {
+              await deleteGuideVideo({ id: video.id, storagePath: video.storagePath });
+              toast.success("Vidéo supprimée");
+              onDeleted();
+            } catch {
+              toast.error("Suppression impossible");
+            }
+          }}
+        >
+          <Trash2 className="size-4" /> Supprimer
+        </Button>
+      )}
+    </figure>
+  );
+}
+
 function VideoGrid({
   videos,
   isAdmin,
@@ -84,43 +142,12 @@ function VideoGrid({
   return (
     <div className="mt-6 grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
       {videos.map((v) => (
-        <figure key={v.id} className="card-hover-soft panel overflow-hidden p-3">
-          <video
-            src={v.url}
-            controls
-            playsInline
-            preload="metadata"
-            className="aspect-[9/16] w-full rounded-lg bg-muted object-contain"
-          />
-          <figcaption className="mt-3">
-            <p className="font-display text-base font-semibold">{v.title}</p>
-            {v.description && (
-              <p className="mt-1 text-sm text-muted-foreground">{v.description}</p>
-            )}
-          </figcaption>
-          {isAdmin && (
-            <Button
-              variant="ghost"
-              size="sm"
-              className="mt-2 text-destructive"
-              onClick={async () => {
-                try {
-                  await deleteGuideVideo({ id: v.id, storagePath: v.storagePath });
-                  toast.success("Vidéo supprimée");
-                  onDeleted();
-                } catch {
-                  toast.error("Suppression impossible");
-                }
-              }}
-            >
-              <Trash2 className="size-4" /> Supprimer
-            </Button>
-          )}
-        </figure>
+        <VideoCard key={v.id} video={v} isAdmin={isAdmin} onDeleted={onDeleted} />
       ))}
     </div>
   );
 }
+
 
 function UploadCard({ onUploaded }: { onUploaded: () => void }) {
   const [category, setCategory] = useState<GuideCategory>("tutorial");
