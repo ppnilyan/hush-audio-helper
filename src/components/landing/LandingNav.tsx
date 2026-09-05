@@ -66,6 +66,23 @@ export function LandingNav() {
           )}
         </div>
 
+        {/* Version mobile compacte : les deux entrées essentielles seulement. */}
+        <div className="ml-1 flex items-center gap-1 md:hidden">
+          <Link
+            to="/guide/montage-tiktok"
+            className="rounded-md px-2 py-1 text-xs font-medium text-muted-foreground transition-colors hover:text-foreground"
+          >
+            {tr("Guide")}
+          </Link>
+          <a
+            href="#offres"
+            className="rounded-md px-2 py-1 text-xs font-medium text-muted-foreground transition-colors hover:text-foreground"
+          >
+            {tr("Nos offres")}
+          </a>
+        </div>
+
+
         <div className="ml-auto flex items-center gap-2">
           {!isSignedIn && (
             <>

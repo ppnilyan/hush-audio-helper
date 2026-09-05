@@ -89,3 +89,17 @@ export async function deleteGuideVideo(video: { id: string; storagePath: string 
   const { error } = await supabase.from("guide_videos").delete().eq("id", video.id);
   if (error) throw error;
 }
+
+/**
+ * Lit l'en-tête du fichier pour repérer les formats que les iPhone ne lisent pas (AV1).
+ */
+export async function detectUnsupportedCodec(file: File): Promise<"av1" | null> {
+  try {
+    const head = new Uint8Array(await file.slice(0, 4096).arrayBuffer());
+    const text = new TextDecoder("latin1").decode(head);
+    if (text.includes("av01")) return "av1";
+    return null;
+  } catch {
+    return null;
+  }
+}
