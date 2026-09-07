@@ -358,6 +358,7 @@ function Montage() {
 
 
   const canvasRef = useRef<HTMLCanvasElement>(null);
+  const fxPreviewRef = useRef<HTMLCanvasElement>(null);
   const videosRef = useRef<Map<string, HTMLVideoElement>>(new Map());
   const audioRef = useRef<HTMLAudioElement>(null);
   const fxRef = useRef(fx);
