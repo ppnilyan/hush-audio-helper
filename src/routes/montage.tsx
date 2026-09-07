@@ -1105,15 +1105,28 @@ function Montage() {
       await actx.close();
 
 
-      const blob = await done;
+      const recorded = await done;
+      // iOS/Safari écrit un MP4 fragmenté que TikTok n'arrive pas à lire
+      // (audio muet, démarrage saccadé) : on recolle le conteneur avant
+      // l'enregistrement dans l'historique.
+      let blob = recorded;
+      let outExt = ext;
+      if (recorded.type.includes("mp4")) {
+        const fixed = await remuxForCompat(recorded).catch(() => null);
+        if (fixed) {
+          blob = fixed.blob;
+          outExt = fixed.ext;
+        }
+      }
       const now = Date.now();
       if (userId) {
         await uploadMontage(userId, blob, {
           duration: totalDuration,
           mime: blob.type,
-          ext,
+          ext: outExt,
         });
         await refreshHistory();
+
       } else {
         const entry = {
           id: `${now}`,
