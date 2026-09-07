@@ -788,8 +788,9 @@ function Montage() {
 
       /** Seek a clip and wait for its first frame to be decoded, without playing it. */
       const prepare = async (segIndex: number, slot: number) => {
-        const seg = timeline[segIndex];
+        const seg = timeline[segIndex % timeline.length];
         if (!seg) return null;
+
         const clip = orderedClips[seg.clip];
         if (!clip) return null;
         const v = getVideo(clip, slot);
