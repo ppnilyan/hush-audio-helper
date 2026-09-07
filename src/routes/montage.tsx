@@ -1071,7 +1071,7 @@ function Montage() {
       const { mime, ext } = pickRecordingType();
       const rec = new MediaRecorder(stream, {
         mimeType: mime,
-        videoBitsPerSecond: ios ? 6_000_000 : 12_000_000,
+        videoBitsPerSecond: ios ? 9_000_000 : 14_000_000,
       });
       const chunks: BlobPart[] = [];
       rec.ondataavailable = (e) => e.data.size && chunks.push(e.data);
@@ -1286,7 +1286,7 @@ function Montage() {
                       onClick={() => void downloadMontage(h)}
                       className="text-primary underline"
                     >
-                      {tr("Télécharger en HD")} ({h.ext.toUpperCase()})
+                      {tr("Télécharger en HD")} · {isIosDevice() ? "720p" : "1080p"} {h.ext.toUpperCase()}
 
                     </button>
 
