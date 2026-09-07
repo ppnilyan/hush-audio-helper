@@ -831,9 +831,9 @@ function Montage() {
       const lookahead = ios ? 1 : 2;
       const prepared = new Map<number, Promise<HTMLVideoElement | null>>();
       const queuePrepare = (index: number) => {
-        if (index >= timeline.length) return;
         if (!prepared.has(index)) prepared.set(index, prepare(index, index % slots));
       };
+
 
       // Decode the first cuts before starting the voice-over. Short intro
       // segments can then switch instantly even on slower devices.
