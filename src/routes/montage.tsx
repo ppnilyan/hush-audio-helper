@@ -1271,7 +1271,8 @@ function Montage() {
                       onClick={() => void downloadMontage(h)}
                       className="text-primary underline"
                     >
-                      {tr("Télécharger le")} {h.ext.toUpperCase()}
+                      {tr("Télécharger en HD")} ({h.ext.toUpperCase()})
+
                     </button>
 
                     <button
