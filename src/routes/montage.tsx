@@ -530,6 +530,39 @@ function Montage() {
     return v;
   }, []);
 
+  /** Aperçu figé de l'étape « Durées et effets » : redessiné à chaque réglage. */
+  useEffect(() => {
+    if (step !== 1) return;
+    const canvas = fxPreviewRef.current;
+    const clip = orderedClips[0];
+    if (!canvas || !clip) return;
+    const ctx = canvas.getContext("2d");
+    if (!ctx) return;
+    const v = getVideo(clip, 9);
+    let alive = true;
+    const draw = () => {
+      if (alive && v.readyState >= 2) drawFrame(ctx, v, fx);
+    };
+    if (v.readyState >= 2) {
+      draw();
+    } else {
+      v.addEventListener("loadeddata", draw);
+      v.addEventListener("seeked", draw);
+      try {
+        v.currentTime = Math.min(0.4, clip.duration / 2);
+      } catch {
+        /* seek indisponible avant les métadonnées */
+      }
+    }
+    return () => {
+      alive = false;
+      v.removeEventListener("loadeddata", draw);
+      v.removeEventListener("seeked", draw);
+    };
+  }, [step, fx, orderedClips, getVideo]);
+
+
+
   const addFromUrl = useCallback(
     async (url: string, name: string, views?: number, sourceUrl?: string) => {
       const meta = document.createElement("video");
