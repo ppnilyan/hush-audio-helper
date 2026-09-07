@@ -116,14 +116,33 @@ export function buildTimeline(
     pass++;
   }
 
-  // Make the montage match the target duration exactly.
-  const sum = segments.reduce((a, s) => a + s.duration, 0);
+  // Make the montage match the target duration exactly, sans jamais demander à
+  // un clip plus d'images qu'il n'en a (sinon la lecture gèle sur une image).
+  let sum = segments.reduce((a, s) => a + s.duration, 0);
+  let missing = totalDuration - sum;
   const last = segments[segments.length - 1];
-  if (last) {
-    const fixed = last.duration + (totalDuration - sum);
-    last.duration = Math.max(0.05, fixed);
+  if (last && missing > 0) {
+    const clip = clips[last.clip]!;
+    const room = Math.max(0, clip.duration - (last.start + last.duration));
+    const add = Math.min(missing, room);
+    last.duration += add;
+    missing -= add;
+  } else if (last && missing < 0) {
+    last.duration = Math.max(0.05, last.duration + missing);
+    missing = 0;
+  }
+  // Reste à couvrir : on repart du début des clips, à tour de rôle.
+  let k = 0;
+  while (missing > 0.05 && k < 500) {
+    const i = k % clips.length;
+    const clip = clips[i]!;
+    const d = Math.min(missing, Math.max(0.5, clip.duration));
+    segments.push({ clip: i, start: 0, duration: d });
+    missing -= d;
+    k++;
   }
   return segments;
+
 }
 
 
