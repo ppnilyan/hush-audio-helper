@@ -31,6 +31,8 @@ import {
   remainingLabel,
   RETENTION_MS,
 } from "@/lib/montage-history";
+import { remuxForCompat } from "@/lib/video-transcode";
+
 import {
   useSession,
   loadSettings,
@@ -1069,7 +1071,7 @@ function Montage() {
       const { mime, ext } = pickRecordingType();
       const rec = new MediaRecorder(stream, {
         mimeType: mime,
-        videoBitsPerSecond: ios ? 6_000_000 : 12_000_000,
+        videoBitsPerSecond: ios ? 9_000_000 : 14_000_000,
       });
       const chunks: BlobPart[] = [];
       rec.ondataavailable = (e) => e.data.size && chunks.push(e.data);
@@ -1105,15 +1107,28 @@ function Montage() {
       await actx.close();
 
 
-      const blob = await done;
+      const recorded = await done;
+      // iOS/Safari écrit un MP4 fragmenté que TikTok n'arrive pas à lire
+      // (audio muet, démarrage saccadé) : on recolle le conteneur avant
+      // l'enregistrement dans l'historique.
+      let blob = recorded;
+      let outExt = ext;
+      if (recorded.type.includes("mp4")) {
+        const fixed = await remuxForCompat(recorded).catch(() => null);
+        if (fixed) {
+          blob = fixed.blob;
+          outExt = fixed.ext;
+        }
+      }
       const now = Date.now();
       if (userId) {
         await uploadMontage(userId, blob, {
           duration: totalDuration,
           mime: blob.type,
-          ext,
+          ext: outExt,
         });
         await refreshHistory();
+
       } else {
         const entry = {
           id: `${now}`,
@@ -1121,7 +1136,7 @@ function Montage() {
           expiresAt: now + RETENTION_MS,
           duration: totalDuration,
           mime: blob.type,
-          ext,
+          ext: outExt,
           blob,
         };
         await saveLocalMontage(entry).catch(() => {});
@@ -1271,7 +1286,7 @@ function Montage() {
                       onClick={() => void downloadMontage(h)}
                       className="text-primary underline"
                     >
-                      {tr("Télécharger en HD")} ({h.ext.toUpperCase()})
+                      {tr("Télécharger en HD")} · {isIosDevice() ? "720p" : "1080p"} {h.ext.toUpperCase()}
 
                     </button>
 

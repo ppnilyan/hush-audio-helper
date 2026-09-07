@@ -94,3 +94,64 @@ export async function transcodeToH264(
     await ffmpeg.deleteFile(output).catch(() => {});
   }
 }
+
+/**
+ * Rend un enregistrement MediaRecorder lisible par les applis (TikTok, galerie).
+ * Safari/iOS écrit un MP4 fragmenté sans index déplaçable : la piste audio et
+ * les horodatages cassent à l'import. Un simple remux recolle le conteneur
+ * (`-c copy`) ; si l'audio reste illisible, on ré-encode uniquement l'audio.
+ */
+export async function remuxForCompat(
+  blob: Blob,
+  onProgress?: (ratio: number) => void,
+): Promise<{ blob: Blob; ext: string }> {
+  const isMp4 = blob.type.includes("mp4");
+  if (!isMp4) return { blob, ext: "webm" };
+
+  const ffmpeg = await getFfmpeg();
+  const { fetchFile } = await import("@ffmpeg/util");
+  const handler = ({ progress }: { progress: number }) =>
+    onProgress?.(Math.max(0, Math.min(1, progress)));
+  ffmpeg.on("progress", handler);
+
+  const input = `rec-${Date.now()}.mp4`;
+  const attempts: string[][] = [
+    ["-c", "copy"],
+    ["-c:v", "copy", "-c:a", "aac", "-b:a", "160k"],
+  ];
+  try {
+    await ffmpeg.writeFile(input, await fetchFile(blob));
+    for (let i = 0; i < attempts.length; i++) {
+      const output = `fix-${Date.now()}-${i}.mp4`;
+      try {
+        const code = await ffmpeg.exec([
+          "-fflags",
+          "+genpts",
+          "-i",
+          input,
+          ...attempts[i]!,
+          "-movflags",
+          "+faststart",
+          output,
+        ]);
+        if (code !== 0) throw new Error(`code ${code}`);
+        const data = (await ffmpeg.readFile(output)) as Uint8Array;
+        if (!data || data.length === 0) throw new Error("sortie vide");
+        return {
+          blob: new Blob([new Uint8Array(data).buffer as ArrayBuffer], { type: "video/mp4" }),
+          ext: "mp4",
+        };
+      } catch {
+        /* on tente la stratégie suivante */
+      } finally {
+        await ffmpeg.deleteFile(output).catch(() => {});
+      }
+    }
+    return { blob, ext: "mp4" };
+  } catch {
+    return { blob, ext: "mp4" };
+  } finally {
+    ffmpeg.off("progress", handler);
+    await ffmpeg.deleteFile(input).catch(() => {});
+  }
+}
