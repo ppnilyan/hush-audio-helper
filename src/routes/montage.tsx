@@ -1540,6 +1540,22 @@ function Montage() {
                 </p>
               </div>
 
+              {orderedClips.length > 0 && (
+                <div className="flex flex-col items-start gap-2">
+                  <canvas
+                    ref={fxPreviewRef}
+                    width={W}
+                    height={H}
+                    className="block w-40 rounded-xl bg-black sm:w-48"
+                  />
+                  <p className="text-xs text-muted-foreground">
+                    {tr("Aperçu en direct de vos réglages.")}
+                  </p>
+                </div>
+              )}
+
+
+
               <div className="space-y-7">
                 {[0, 1, 2].map((i) => (
                   <Range
