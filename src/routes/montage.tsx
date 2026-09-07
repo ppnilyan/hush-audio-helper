@@ -1131,6 +1131,9 @@ function Montage() {
     } catch (e) {
       setError((e as Error).message || tr("La génération a échoué. Vos 10 crédits ont été remboursés."));
     } finally {
+      // Retour à la taille d'aperçu après l'export HD.
+      canvas.width = W;
+      canvas.height = H;
       // Le serveur vérifie qu'une vidéo est bien arrivée : sinon il rembourse.
       if (jobId) {
         await finishJob({ data: { jobId } }).catch(() => {});
@@ -1140,6 +1143,7 @@ function Montage() {
       setRendering(false);
       setProgress(0);
     }
+
   };
 
   const busy = loading || rendering;
