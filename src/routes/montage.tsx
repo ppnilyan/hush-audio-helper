@@ -358,6 +358,7 @@ function Montage() {
 
 
   const canvasRef = useRef<HTMLCanvasElement>(null);
+  const fxPreviewRef = useRef<HTMLCanvasElement>(null);
   const videosRef = useRef<Map<string, HTMLVideoElement>>(new Map());
   const audioRef = useRef<HTMLAudioElement>(null);
   const fxRef = useRef(fx);
@@ -528,6 +529,39 @@ function Montage() {
     }
     return v;
   }, []);
+
+  /** Aperçu figé de l'étape « Durées et effets » : redessiné à chaque réglage. */
+  useEffect(() => {
+    if (step !== 1) return;
+    const canvas = fxPreviewRef.current;
+    const clip = orderedClips[0];
+    if (!canvas || !clip) return;
+    const ctx = canvas.getContext("2d");
+    if (!ctx) return;
+    const v = getVideo(clip, 9);
+    let alive = true;
+    const draw = () => {
+      if (alive && v.readyState >= 2) drawFrame(ctx, v, fx);
+    };
+    if (v.readyState >= 2) {
+      draw();
+    } else {
+      v.addEventListener("loadeddata", draw);
+      v.addEventListener("seeked", draw);
+      try {
+        v.currentTime = Math.min(0.4, clip.duration / 2);
+      } catch {
+        /* seek indisponible avant les métadonnées */
+      }
+    }
+    return () => {
+      alive = false;
+      v.removeEventListener("loadeddata", draw);
+      v.removeEventListener("seeked", draw);
+    };
+  }, [step, fx, orderedClips, getVideo]);
+
+
 
   const addFromUrl = useCallback(
     async (url: string, name: string, views?: number, sourceUrl?: string) => {
@@ -1505,6 +1539,22 @@ function Montage() {
                   {tr("Réglez l'intro (3 clips les plus vus) puis les effets appliqués à tout le montage.")}
                 </p>
               </div>
+
+              {orderedClips.length > 0 && (
+                <div className="flex flex-col items-start gap-2">
+                  <canvas
+                    ref={fxPreviewRef}
+                    width={W}
+                    height={H}
+                    className="block w-40 rounded-xl bg-black sm:w-48"
+                  />
+                  <p className="text-xs text-muted-foreground">
+                    {tr("Aperçu en direct de vos réglages.")}
+                  </p>
+                </div>
+              )}
+
+
 
               <div className="space-y-7">
                 {[0, 1, 2].map((i) => (
