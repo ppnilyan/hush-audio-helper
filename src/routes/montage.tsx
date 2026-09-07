@@ -788,8 +788,9 @@ function Montage() {
 
       /** Seek a clip and wait for its first frame to be decoded, without playing it. */
       const prepare = async (segIndex: number, slot: number) => {
-        const seg = timeline[segIndex];
+        const seg = timeline[segIndex % timeline.length];
         if (!seg) return null;
+
         const clip = orderedClips[seg.clip];
         if (!clip) return null;
         const v = getVideo(clip, slot);
@@ -830,9 +831,9 @@ function Montage() {
       const lookahead = ios ? 1 : 2;
       const prepared = new Map<number, Promise<HTMLVideoElement | null>>();
       const queuePrepare = (index: number) => {
-        if (index >= timeline.length) return;
         if (!prepared.has(index)) prepared.set(index, prepare(index, index % slots));
       };
+
 
       // Decode the first cuts before starting the voice-over. Short intro
       // segments can then switch instantly even on slower devices.
@@ -853,13 +854,18 @@ function Montage() {
       const voiceOver = () =>
         (audioEl?.ended ?? false) || globalElapsed() >= endsAt() - 0.02;
 
-      for (let i = 0; i < timeline.length; i++) {
-        if (abortRef.current || voiceOver()) break;
-        const seg = timeline[i]!;
+      // Horloge maîtresse = voix off : chaque coupure est bornée sur cette
+      // horloge, donc aucune dérive ne s'accumule au fil du montage.
+      let i = 0;
+      let guard = 0;
+      while (!abortRef.current && !voiceOver() && guard++ < 4000) {
+        const idx = i % timeline.length;
+        const seg = timeline[idx]!;
         for (let k = 0; k <= lookahead; k++) queuePrepare(i + k);
         const v = await prepared.get(i);
         if (!v) {
           elapsed += seg.duration;
+          i++;
           continue;
         }
         // The decoded first frame is painted before playback begins: the cut
@@ -867,27 +873,44 @@ function Montage() {
         // Effet de coupure (hook ou effet mélangé) calculé pendant le rendu :
         // il est donc présent aussi bien en prévisualisation que dans le MP4.
         const effect = effectForSegment(i, hookRef.current);
+        const segStart = elapsed;
+        // Dernière coupure : on l'étire jusqu'à la fin de la voix off.
+        const isLast = i === timeline.length - 1;
+        const segEnd = isLast ? Math.max(segStart + seg.duration, endsAt()) : segStart + seg.duration;
         drawFrame(ctx, v, fxRef.current, frameFxAt(effect, 0), watermark);
         await v.play().catch(() => {});
 
         await new Promise<void>((res) => {
-          const started = performance.now();
           const tick = () => {
             if (abortRef.current || voiceOver()) return res();
-            const local = (performance.now() - started) / 1000;
+            const now = globalElapsed();
+            const local = Math.max(0, now - segStart);
+            // Un clip arrivé à sa fin (ou mis en pause par le navigateur)
+            // repart au début : plus de gel sur une seule image.
+            if (v.ended || (v.duration && v.currentTime >= v.duration - 0.06)) {
+              try {
+                v.currentTime = 0;
+              } catch {
+                /* ignore */
+              }
+              void v.play().catch(() => {});
+            } else if (v.paused) {
+              void v.play().catch(() => {});
+            }
             drawFrame(ctx, v, fxRef.current, frameFxAt(effect, local), watermark);
-            const t = (performance.now() - started) / 1000;
-            setProgress(Math.min(1, (elapsed + t) / Math.max(0.1, totalDuration)));
-            if (t >= seg.duration) return res();
+            setProgress(Math.min(1, now / Math.max(0.1, endsAt())));
+            if (now >= segEnd) return res();
             requestAnimationFrame(tick);
           };
           requestAnimationFrame(tick);
         });
 
-        elapsed += seg.duration;
+        elapsed = Math.max(segEnd, globalElapsed());
         v.pause();
         prepared.delete(i);
+        i++;
       }
+
 
       videosRef.current.forEach((v) => v.pause());
       onDone?.();
@@ -1011,7 +1034,12 @@ function Montage() {
     }
     try {
       const ios = isIosDevice();
-      const stream = canvas.captureStream(ios ? 25 : 30);
+      // Rendu HD 1080×1920 : on agrandit le canevas le temps de l'export
+      // (l'aperçu à l'écran reste à la même taille visuelle).
+      canvas.width = ios ? 720 : 1080;
+      canvas.height = ios ? 1280 : 1920;
+      const stream = canvas.captureStream(ios ? 30 : 60);
+
       const audio = new Audio(voice.url);
       audio.crossOrigin = "anonymous";
       audio.preload = "auto";
@@ -1041,7 +1069,7 @@ function Montage() {
       const { mime, ext } = pickRecordingType();
       const rec = new MediaRecorder(stream, {
         mimeType: mime,
-        videoBitsPerSecond: ios ? 4_000_000 : 6_000_000,
+        videoBitsPerSecond: ios ? 6_000_000 : 12_000_000,
       });
       const chunks: BlobPart[] = [];
       rec.ondataavailable = (e) => e.data.size && chunks.push(e.data);
@@ -1103,6 +1131,9 @@ function Montage() {
     } catch (e) {
       setError((e as Error).message || tr("La génération a échoué. Vos 10 crédits ont été remboursés."));
     } finally {
+      // Retour à la taille d'aperçu après l'export HD.
+      canvas.width = W;
+      canvas.height = H;
       // Le serveur vérifie qu'une vidéo est bien arrivée : sinon il rembourse.
       if (jobId) {
         await finishJob({ data: { jobId } }).catch(() => {});
@@ -1112,6 +1143,7 @@ function Montage() {
       setRendering(false);
       setProgress(0);
     }
+
   };
 
   const busy = loading || rendering;
@@ -1239,7 +1271,8 @@ function Montage() {
                       onClick={() => void downloadMontage(h)}
                       className="text-primary underline"
                     >
-                      {tr("Télécharger le")} {h.ext.toUpperCase()}
+                      {tr("Télécharger en HD")} ({h.ext.toUpperCase()})
+
                     </button>
 
                     <button
