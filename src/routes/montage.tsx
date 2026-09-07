@@ -1034,7 +1034,12 @@ function Montage() {
     }
     try {
       const ios = isIosDevice();
-      const stream = canvas.captureStream(ios ? 25 : 30);
+      // Rendu HD 1080×1920 : on agrandit le canevas le temps de l'export
+      // (l'aperçu à l'écran reste à la même taille visuelle).
+      canvas.width = ios ? 720 : 1080;
+      canvas.height = ios ? 1280 : 1920;
+      const stream = canvas.captureStream(ios ? 30 : 60);
+
       const audio = new Audio(voice.url);
       audio.crossOrigin = "anonymous";
       audio.preload = "auto";
