@@ -1134,7 +1134,7 @@ function Montage() {
           expiresAt: now + RETENTION_MS,
           duration: totalDuration,
           mime: blob.type,
-          ext,
+          ext: outExt,
           blob,
         };
         await saveLocalMontage(entry).catch(() => {});
