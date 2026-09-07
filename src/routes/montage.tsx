@@ -1038,9 +1038,10 @@ function Montage() {
       const ios = isIosDevice();
       // Rendu HD 1080×1920 : on agrandit le canevas le temps de l'export
       // (l'aperçu à l'écran reste à la même taille visuelle).
-      canvas.width = ios ? 720 : 1080;
-      canvas.height = ios ? 1280 : 1920;
-      const stream = canvas.captureStream(ios ? 30 : 60);
+      // Même qualité partout : 1080x1920 à 60 images/s, y compris sur iPhone.
+      canvas.width = 1080;
+      canvas.height = 1920;
+      const stream = canvas.captureStream(60);
 
       const audio = new Audio(voice.url);
       audio.crossOrigin = "anonymous";
@@ -1071,7 +1072,7 @@ function Montage() {
       const { mime, ext } = pickRecordingType();
       const rec = new MediaRecorder(stream, {
         mimeType: mime,
-        videoBitsPerSecond: ios ? 9_000_000 : 14_000_000,
+        videoBitsPerSecond: 14_000_000,
       });
       const chunks: BlobPart[] = [];
       rec.ondataavailable = (e) => e.data.size && chunks.push(e.data);
@@ -1286,7 +1287,7 @@ function Montage() {
                       onClick={() => void downloadMontage(h)}
                       className="text-primary underline"
                     >
-                      {tr("Télécharger en HD")} · {isIosDevice() ? "720p" : "1080p"} {h.ext.toUpperCase()}
+                      {tr("Télécharger en HD")} · 1080p 60 ips {h.ext.toUpperCase()}
 
                     </button>
 
