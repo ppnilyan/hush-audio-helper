@@ -1069,7 +1069,7 @@ function Montage() {
       const { mime, ext } = pickRecordingType();
       const rec = new MediaRecorder(stream, {
         mimeType: mime,
-        videoBitsPerSecond: ios ? 4_000_000 : 6_000_000,
+        videoBitsPerSecond: ios ? 6_000_000 : 12_000_000,
       });
       const chunks: BlobPart[] = [];
       rec.ondataavailable = (e) => e.data.size && chunks.push(e.data);
