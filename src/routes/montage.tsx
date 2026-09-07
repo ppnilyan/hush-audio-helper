@@ -1145,16 +1145,25 @@ function Montage() {
       const recorded = await done;
       // iOS/Safari écrit un MP4 fragmenté que TikTok n'arrive pas à lire
       // (audio muet, démarrage saccadé) : on recolle le conteneur avant
-      // l'enregistrement dans l'historique.
+      // l'enregistrement dans l'historique. Chrome/Edge écrivent déjà un MP4
+      // valide — on n'y touche pas, sinon la finalisation prend des minutes.
       let blob = recorded;
       let outExt = ext;
-      if (recorded.type.includes("mp4")) {
-        const fixed = await remuxForCompat(recorded).catch(() => null);
+      const safari =
+        typeof navigator !== "undefined" &&
+        /^((?!chrome|android|crios|edg).)*safari/i.test(navigator.userAgent);
+      if (recorded.type.includes("mp4") && (ios || safari)) {
+        // Garde-fou : si le remux traîne, on garde l'enregistrement d'origine.
+        const fixed = await Promise.race([
+          remuxForCompat(recorded).catch(() => null),
+          new Promise<null>((res) => setTimeout(() => res(null), 90_000)),
+        ]);
         if (fixed) {
           blob = fixed.blob;
           outExt = fixed.ext;
         }
       }
+
       const now = Date.now();
       if (userId) {
         await uploadMontage(userId, blob, {
