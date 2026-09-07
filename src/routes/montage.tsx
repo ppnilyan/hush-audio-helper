@@ -853,13 +853,18 @@ function Montage() {
       const voiceOver = () =>
         (audioEl?.ended ?? false) || globalElapsed() >= endsAt() - 0.02;
 
-      for (let i = 0; i < timeline.length; i++) {
-        if (abortRef.current || voiceOver()) break;
-        const seg = timeline[i]!;
+      // Horloge maîtresse = voix off : chaque coupure est bornée sur cette
+      // horloge, donc aucune dérive ne s'accumule au fil du montage.
+      let i = 0;
+      let guard = 0;
+      while (!abortRef.current && !voiceOver() && guard++ < 4000) {
+        const idx = i % timeline.length;
+        const seg = timeline[idx]!;
         for (let k = 0; k <= lookahead; k++) queuePrepare(i + k);
         const v = await prepared.get(i);
         if (!v) {
           elapsed += seg.duration;
+          i++;
           continue;
         }
         // The decoded first frame is painted before playback begins: the cut
@@ -867,27 +872,44 @@ function Montage() {
         // Effet de coupure (hook ou effet mélangé) calculé pendant le rendu :
         // il est donc présent aussi bien en prévisualisation que dans le MP4.
         const effect = effectForSegment(i, hookRef.current);
+        const segStart = elapsed;
+        // Dernière coupure : on l'étire jusqu'à la fin de la voix off.
+        const isLast = i === timeline.length - 1;
+        const segEnd = isLast ? Math.max(segStart + seg.duration, endsAt()) : segStart + seg.duration;
         drawFrame(ctx, v, fxRef.current, frameFxAt(effect, 0), watermark);
         await v.play().catch(() => {});
 
         await new Promise<void>((res) => {
-          const started = performance.now();
           const tick = () => {
             if (abortRef.current || voiceOver()) return res();
-            const local = (performance.now() - started) / 1000;
+            const now = globalElapsed();
+            const local = Math.max(0, now - segStart);
+            // Un clip arrivé à sa fin (ou mis en pause par le navigateur)
+            // repart au début : plus de gel sur une seule image.
+            if (v.ended || (v.duration && v.currentTime >= v.duration - 0.06)) {
+              try {
+                v.currentTime = 0;
+              } catch {
+                /* ignore */
+              }
+              void v.play().catch(() => {});
+            } else if (v.paused) {
+              void v.play().catch(() => {});
+            }
             drawFrame(ctx, v, fxRef.current, frameFxAt(effect, local), watermark);
-            const t = (performance.now() - started) / 1000;
-            setProgress(Math.min(1, (elapsed + t) / Math.max(0.1, totalDuration)));
-            if (t >= seg.duration) return res();
+            setProgress(Math.min(1, now / Math.max(0.1, endsAt())));
+            if (now >= segEnd) return res();
             requestAnimationFrame(tick);
           };
           requestAnimationFrame(tick);
         });
 
-        elapsed += seg.duration;
+        elapsed = Math.max(segEnd, globalElapsed());
         v.pause();
         prepared.delete(i);
+        i++;
       }
+
 
       videosRef.current.forEach((v) => v.pause());
       onDone?.();
