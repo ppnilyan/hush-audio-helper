@@ -427,14 +427,11 @@ function Montage() {
 
 
   const refreshHistory = useCallback(async () => {
-    if (userId) {
-      const items = await listCloudMontages(userId).catch(() => []);
-      setHistory(items);
-    } else {
-      const items = await listLocalMontages().catch(() => []);
-      setHistory(items);
-    }
+    const local = await listLocalMontages().catch(() => []);
+    const cloud = userId ? await listCloudMontages(userId).catch(() => []) : [];
+    setHistory([...cloud, ...local].sort((a, b) => b.createdAt - a.createdAt));
   }, [userId]);
+
 
   // Générations remboursées (échec ou onglet fermé pendant l'export).
   const refreshFailed = useCallback(async () => {
