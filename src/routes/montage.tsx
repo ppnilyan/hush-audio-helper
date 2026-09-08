@@ -1287,11 +1287,25 @@ function Montage() {
 
       {tab === "history" ? (
         <section className="panel-glow space-y-4 p-6">
-          <p className="text-sm text-muted-foreground">
-            {userId
-              ? tr("Les vidéos générées restent disponibles 5 heures sur votre compte, depuis n'importe quel appareil.")
-              : tr("Les vidéos générées restent disponibles 5 heures sur cet appareil. Connectez-vous pour lier votre historique à votre compte.")}
-          </p>
+          <div className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-border p-3">
+            <div>
+              <Label htmlFor="save-cloud" className="text-sm font-medium">
+                {tr("Enregistrer sur mon compte (5 h)")}
+              </Label>
+              <p className="mt-1 text-xs text-muted-foreground">
+                {saveToCloud
+                  ? tr("Les vidéos générées restent disponibles 5 heures sur votre compte, depuis n'importe quel appareil.")
+                  : tr("Les vidéos générées restent disponibles 5 heures sur cet appareil.")}
+              </p>
+            </div>
+            <Switch
+              id="save-cloud"
+              checked={saveToCloud}
+              disabled={!userId}
+              onCheckedChange={toggleSaveToCloud}
+            />
+          </div>
+
           {failed.length > 0 && (
             <div className="space-y-2 rounded-xl border border-destructive/40 bg-destructive/10 p-4">
               <p className="text-sm font-medium">
