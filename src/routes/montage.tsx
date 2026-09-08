@@ -239,6 +239,7 @@ function Montage() {
   const [playing, setPlaying] = useState(false);
   const [rendering, setRendering] = useState(false);
   const [progress, setProgress] = useState(0);
+  const [phase, setPhase] = useState<string | null>(null);
   const [history, setHistory] = useState<UIEntry[]>([]);
   const [failed, setFailed] = useState<GenerationJob[]>([]);
   const [dismissing, setDismissing] = useState<string | null>(null);
@@ -1106,7 +1107,7 @@ function Montage() {
       const { mime, ext } = pickRecordingType();
       const rec = new MediaRecorder(stream, {
         mimeType: mime,
-        videoBitsPerSecond: 14_000_000,
+        videoBitsPerSecond: 8_000_000,
       });
       const chunks: BlobPart[] = [];
       rec.ondataavailable = (e) => e.data.size && chunks.push(e.data);
@@ -1165,27 +1166,42 @@ function Montage() {
       }
 
       const now = Date.now();
+      const localEntry = {
+        id: `${now}`,
+        createdAt: now,
+        expiresAt: now + RETENTION_MS,
+        duration: totalDuration,
+        mime: blob.type,
+        ext: outExt,
+        blob,
+      };
       if (userId) {
-        await uploadMontage(userId, blob, {
-          duration: totalDuration,
-          mime: blob.type,
-          ext: outExt,
-        });
-        await refreshHistory();
-
+        setPhase(
+          `${tr("Enregistrement de la vidéo")} (${Math.round(blob.size / 1_048_576)} Mo)…`,
+        );
+        try {
+          await uploadMontage(userId, blob, {
+            duration: totalDuration,
+            mime: blob.type,
+            ext: outExt,
+          });
+          await refreshHistory();
+        } catch (e) {
+          // Secours : la vidéo reste disponible dans ce navigateur, avec la
+          // vraie raison de l'échec affichée à l'utilisateur.
+          await saveLocalMontage(localEntry).catch(() => {});
+          setHistory((h) => [{ ...localEntry, url: URL.createObjectURL(blob) }, ...h]);
+          setError(
+            `${tr("La vidéo n'a pas pu être envoyée sur ton compte, elle reste disponible ici :")} ${
+              (e as Error).message
+            }`,
+          );
+        }
       } else {
-        const entry = {
-          id: `${now}`,
-          createdAt: now,
-          expiresAt: now + RETENTION_MS,
-          duration: totalDuration,
-          mime: blob.type,
-          ext: outExt,
-          blob,
-        };
-        await saveLocalMontage(entry).catch(() => {});
-        setHistory((h) => [{ ...entry, url: URL.createObjectURL(blob) }, ...h]);
+        await saveLocalMontage(localEntry).catch(() => {});
+        setHistory((h) => [{ ...localEntry, url: URL.createObjectURL(blob) }, ...h]);
       }
+      setPhase(null);
       setTab("history");
     } catch (e) {
       setError((e as Error).message || tr("La génération a échoué. Vos 10 crédits ont été remboursés."));
@@ -2091,6 +2107,11 @@ function Montage() {
                     style={{ width: `${progress * 100}%` }}
                   />
                 </div>
+                {phase && (
+                  <p className="mt-2 text-xs text-muted-foreground" aria-live="polite">
+                    {phase}
+                  </p>
+                )}
                 {voice && <audio ref={audioRef} src={voice.url} className="hidden" />}
                 {music && (
                   <audio ref={musicRef} src={music.url} crossOrigin="anonymous" className="hidden" />
