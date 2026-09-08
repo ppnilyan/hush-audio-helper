@@ -241,6 +241,24 @@ function Montage() {
   const [progress, setProgress] = useState(0);
   const [phase, setPhase] = useState<string | null>(null);
   const [history, setHistory] = useState<UIEntry[]>([]);
+  // Où enregistrer la vidéo finie : sur ce navigateur, ou sur le compte (5 h).
+  const [saveToCloud, setSaveToCloud] = useState(false);
+  useEffect(() => {
+    try {
+      setSaveToCloud(localStorage.getItem("montage.saveToCloud") === "1");
+    } catch {
+      /* stockage indisponible */
+    }
+  }, []);
+  const toggleSaveToCloud = (v: boolean) => {
+    setSaveToCloud(v);
+    try {
+      localStorage.setItem("montage.saveToCloud", v ? "1" : "0");
+    } catch {
+      /* stockage indisponible */
+    }
+  };
+
   const [failed, setFailed] = useState<GenerationJob[]>([]);
   const [dismissing, setDismissing] = useState<string | null>(null);
   const [tab, setTab] = useState<"editor" | "history">(search.tab);
