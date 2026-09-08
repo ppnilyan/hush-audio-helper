@@ -1165,27 +1165,42 @@ function Montage() {
       }
 
       const now = Date.now();
+      const localEntry = {
+        id: `${now}`,
+        createdAt: now,
+        expiresAt: now + RETENTION_MS,
+        duration: totalDuration,
+        mime: blob.type,
+        ext: outExt,
+        blob,
+      };
       if (userId) {
-        await uploadMontage(userId, blob, {
-          duration: totalDuration,
-          mime: blob.type,
-          ext: outExt,
-        });
-        await refreshHistory();
-
+        setPhase(
+          `${tr("Enregistrement de la vidéo")} (${Math.round(blob.size / 1_048_576)} Mo)…`,
+        );
+        try {
+          await uploadMontage(userId, blob, {
+            duration: totalDuration,
+            mime: blob.type,
+            ext: outExt,
+          });
+          await refreshHistory();
+        } catch (e) {
+          // Secours : la vidéo reste disponible dans ce navigateur, avec la
+          // vraie raison de l'échec affichée à l'utilisateur.
+          await saveLocalMontage(localEntry).catch(() => {});
+          setHistory((h) => [{ ...localEntry, url: URL.createObjectURL(blob) }, ...h]);
+          setError(
+            `${tr("La vidéo n'a pas pu être envoyée sur ton compte, elle reste disponible ici :")} ${
+              (e as Error).message
+            }`,
+          );
+        }
       } else {
-        const entry = {
-          id: `${now}`,
-          createdAt: now,
-          expiresAt: now + RETENTION_MS,
-          duration: totalDuration,
-          mime: blob.type,
-          ext: outExt,
-          blob,
-        };
-        await saveLocalMontage(entry).catch(() => {});
-        setHistory((h) => [{ ...entry, url: URL.createObjectURL(blob) }, ...h]);
+        await saveLocalMontage(localEntry).catch(() => {});
+        setHistory((h) => [{ ...localEntry, url: URL.createObjectURL(blob) }, ...h]);
       }
+      setPhase(null);
       setTab("history");
     } catch (e) {
       setError((e as Error).message || tr("La génération a échoué. Vos 10 crédits ont été remboursés."));
