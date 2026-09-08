@@ -1190,7 +1190,7 @@ function Montage() {
         ext: outExt,
         blob,
       };
-      if (userId) {
+      if (userId && saveToCloud) {
         setPhase(
           `${tr("Enregistrement de la vidéo")} (${Math.round(blob.size / 1_048_576)} Mo)…`,
         );
