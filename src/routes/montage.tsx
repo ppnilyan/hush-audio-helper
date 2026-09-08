@@ -2107,6 +2107,11 @@ function Montage() {
                     style={{ width: `${progress * 100}%` }}
                   />
                 </div>
+                {phase && (
+                  <p className="mt-2 text-xs text-muted-foreground" aria-live="polite">
+                    {phase}
+                  </p>
+                )}
                 {voice && <audio ref={audioRef} src={voice.url} className="hidden" />}
                 {music && (
                   <audio ref={musicRef} src={music.url} crossOrigin="anonymous" className="hidden" />
