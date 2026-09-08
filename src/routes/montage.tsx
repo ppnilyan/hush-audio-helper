@@ -239,6 +239,7 @@ function Montage() {
   const [playing, setPlaying] = useState(false);
   const [rendering, setRendering] = useState(false);
   const [progress, setProgress] = useState(0);
+  const [phase, setPhase] = useState<string | null>(null);
   const [history, setHistory] = useState<UIEntry[]>([]);
   const [failed, setFailed] = useState<GenerationJob[]>([]);
   const [dismissing, setDismissing] = useState<string | null>(null);
