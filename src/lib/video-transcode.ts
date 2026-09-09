@@ -134,8 +134,13 @@ export async function remuxForCompat(
           "-i",
           input,
           ...attempts[i]!,
+          // Index complet + horodatages réguliers : les lecteurs tiers
+          // (WhatsApp, TikTok) ne gèlent plus au milieu de la vidéo.
+          "-video_track_timescale",
+          "90000",
           "-movflags",
           "+faststart",
+
           output,
         ]);
         if (code !== 0) throw new Error(`code ${code}`);
