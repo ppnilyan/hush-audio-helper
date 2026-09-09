@@ -1159,26 +1159,28 @@ function Montage() {
 
 
       const recorded = await done;
-      // iOS/Safari écrit un MP4 fragmenté que TikTok n'arrive pas à lire
-      // (audio muet, démarrage saccadé) : on recolle le conteneur avant
-      // l'enregistrement dans l'historique. Chrome/Edge écrivent déjà un MP4
-      // valide — on n'y touche pas, sinon la finalisation prend des minutes.
+      // Tous les navigateurs écrivent un MP4 *fragmenté* : lisible chez eux,
+      // mais WhatsApp/TikTok/galerie ne lisent que le premier index et gèlent
+      // sur une image au bout de quelques secondes. On reconstruit donc un MP4
+      // progressif avec index complet avant de l'enregistrer (copie de flux :
+      // rapide, sans perte de qualité).
       let blob = recorded;
       let outExt = ext;
-      const safari =
-        typeof navigator !== "undefined" &&
-        /^((?!chrome|android|crios|edg).)*safari/i.test(navigator.userAgent);
-      if (recorded.type.includes("mp4") && (ios || safari)) {
+      if (recorded.type.includes("mp4")) {
+        setPhase(`${tr("Finalisation de la vidéo")}…`);
         // Garde-fou : si le remux traîne, on garde l'enregistrement d'origine.
         const fixed = await Promise.race([
-          remuxForCompat(recorded).catch(() => null),
-          new Promise<null>((res) => setTimeout(() => res(null), 90_000)),
+          remuxForCompat(recorded, (r) =>
+            setPhase(`${tr("Finalisation de la vidéo")} ${Math.round(r * 100)} %`),
+          ).catch(() => null),
+          new Promise<null>((res) => setTimeout(() => res(null), 180_000)),
         ]);
         if (fixed) {
           blob = fixed.blob;
           outExt = fixed.ext;
         }
       }
+
 
       const now = Date.now();
       const localEntry = {

@@ -96,10 +96,13 @@ export async function transcodeToH264(
 }
 
 /**
- * Rend un enregistrement MediaRecorder lisible par les applis (TikTok, galerie).
- * Safari/iOS écrit un MP4 fragmenté sans index déplaçable : la piste audio et
- * les horodatages cassent à l'import. Un simple remux recolle le conteneur
- * (`-c copy`) ; si l'audio reste illisible, on ré-encode uniquement l'audio.
+ * Rend un enregistrement MediaRecorder lisible par les applis (WhatsApp, TikTok,
+ * galerie). Les navigateurs écrivent un MP4 *fragmenté* : Chrome et Safari
+ * relisent leurs propres fragments sans problème, mais la plupart des lecteurs
+ * tiers ne lisent que le premier index et gèlent sur une image au bout de
+ * quelques secondes. Le remux (`-c copy`) reconstruit un MP4 progressif avec
+ * un index complet et `faststart` ; si l'audio reste illisible, on ré-encode
+ * uniquement l'audio.
  */
 export async function remuxForCompat(
   blob: Blob,
@@ -119,6 +122,7 @@ export async function remuxForCompat(
     ["-c", "copy"],
     ["-c:v", "copy", "-c:a", "aac", "-b:a", "160k"],
   ];
+
   try {
     await ffmpeg.writeFile(input, await fetchFile(blob));
     for (let i = 0; i < attempts.length; i++) {
@@ -130,8 +134,13 @@ export async function remuxForCompat(
           "-i",
           input,
           ...attempts[i]!,
+          // Index complet + horodatages réguliers : les lecteurs tiers
+          // (WhatsApp, TikTok) ne gèlent plus au milieu de la vidéo.
+          "-video_track_timescale",
+          "90000",
           "-movflags",
           "+faststart",
+
           output,
         ]);
         if (code !== 0) throw new Error(`code ${code}`);
