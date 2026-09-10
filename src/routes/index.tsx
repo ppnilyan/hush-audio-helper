@@ -6,7 +6,9 @@ import { Hero } from "@/components/landing/Hero";
 import { LandingFooter } from "@/components/landing/LandingFooter";
 import { LandingNav } from "@/components/landing/LandingNav";
 import { PlansSection } from "@/components/landing/PlansSection";
+import { ShowcaseSection } from "@/components/landing/ShowcaseSection";
 import { SolutionSteps } from "@/components/landing/SolutionSteps";
+
 
 export const Route = createFileRoute("/")({
   head: () => ({
@@ -38,6 +40,7 @@ function Landing() {
       <LandingNav />
       <main>
         <Hero />
+        <ShowcaseSection />
         <FlowDiagram />
         <SolutionSteps />
         <PlansSection />
@@ -47,3 +50,4 @@ function Landing() {
     </div>
   );
 }
+
