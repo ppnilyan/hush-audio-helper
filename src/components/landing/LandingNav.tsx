@@ -12,12 +12,14 @@ import { useSession } from "@/lib/account";
 import { LANGS, LANG_META, usePrefs, useTr } from "@/lib/prefs";
 
 const SECTIONS = [
+  { hash: "showcase", label: "Exemples de vidéos" },
   { hash: "solution", label: "Notre solution" },
   { hash: "resultats", label: "Résultats" },
   { hash: "offres", label: "Nos offres" },
-  { hash: "guide", label: "Guide du montage TikTok", to: "/guide/montage-tiktok" },
+  { hash: "guide", label: "Guide vidéo", to: "/guide/videos" },
   { hash: "faq", label: "FAQ" },
 ] as const;
+
 
 export function LandingNav() {
   const tr = useTr();
@@ -66,13 +68,13 @@ export function LandingNav() {
           )}
         </div>
 
-        {/* Version mobile compacte : les deux entrées essentielles seulement. */}
+        {/* Version mobile compacte : les entrées essentielles seulement. */}
         <div className="ml-1 flex items-center gap-1 md:hidden">
           <Link
-            to="/guide/montage-tiktok"
+            to="/guide/videos"
             className="rounded-md px-2 py-1 text-xs font-medium text-muted-foreground transition-colors hover:text-foreground"
           >
-            {tr("Guide")}
+            {tr("Exemples")}
           </Link>
           <a
             href="#offres"
@@ -81,6 +83,7 @@ export function LandingNav() {
             {tr("Nos offres")}
           </a>
         </div>
+
 
 
         <div className="ml-auto flex items-center gap-2">

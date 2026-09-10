@@ -484,7 +484,22 @@ export const FR_EN: Record<string, string> = {
   "Combien de temps pour récupérer un montage ?": "How long does an edit take?",
   "Environ trois minutes entre le collage des liens et le téléchargement du fichier vertical HD.":
     "About three minutes from pasting the links to downloading the vertical HD file.",
+  "Avant / Après SilenceCut": "Before / After SilenceCut",
+  "Des montages publiés, pas promis": "Edits actually posted, not promised",
+  "Ces vidéos verticales ont été générées automatiquement à partir de liens TikTok. Pas de logiciel, pas d'heures de découpe.":
+    "These vertical videos were generated automatically from TikTok links. No software, no hours of editing.",
+  "Voir tous les exemples": "See all examples",
+  "Chargement des exemples…": "Loading examples…",
+  "Les premiers exemples arrivent très bientôt": "First examples coming very soon",
+  "En attendant, crée ton premier montage avec les 10 crédits offerts à l'inscription.":
+    "In the meantime, create your first edit with the 10 free credits on sign-up.",
+  "Exemples de vidéos": "Video examples",
+  "Voir les exemples": "See examples",
+  "À partir de 17 € / mois": "From €17 / month",
+  "Vois les vidéos générées avant de choisir": "Watch generated videos before choosing",
+  "Exemples": "Examples",
 };
+
 
 
 /** Dictionnaire FR → ES (page publique en priorité). */
@@ -580,7 +595,22 @@ export const FR_ES: Record<string, string> = {
   "Combien de temps pour récupérer un montage ?": "¿Cuánto tarda un montaje?",
   "Environ trois minutes entre le collage des liens et le téléchargement du fichier vertical HD.":
     "Unos tres minutos desde pegar los enlaces hasta descargar el archivo vertical en HD.",
+  "Avant / Après SilenceCut": "Antes / Después de SilenceCut",
+  "Des montages publiés, pas promis": "Montajes publicados, no prometidos",
+  "Ces vidéos verticales ont été générées automatiquement à partir de liens TikTok. Pas de logiciel, pas d'heures de découpe.":
+    "Estos vídeos verticales se generaron automáticamente desde enlaces de TikTok. Sin programas, sin horas de edición.",
+  "Voir tous les exemples": "Ver todos los ejemplos",
+  "Chargement des exemples…": "Cargando ejemplos…",
+  "Les premiers exemples arrivent très bientôt": "Los primeros ejemplos llegan muy pronto",
+  "En attendant, crée ton premier montage avec les 10 crédits offerts à l'inscription.":
+    "Mientras tanto, crea tu primer montaje con los 10 créditos de regalo al registrarte.",
+  "Exemples de vidéos": "Ejemplos de vídeos",
+  "Voir les exemples": "Ver ejemplos",
+  "À partir de 17 € / mois": "Desde 17 € / mes",
+  "Vois les vidéos générées avant de choisir": "Mira los vídeos generados antes de elegir",
+  "Exemples": "Ejemplos",
 };
+
 
 
 /** Dictionnaire FR → DE (page publique en priorité). */
@@ -676,7 +706,22 @@ export const FR_DE: Record<string, string> = {
   "Combien de temps pour récupérer un montage ?": "Wie lange dauert ein Schnitt?",
   "Environ trois minutes entre le collage des liens et le téléchargement du fichier vertical HD.":
     "Etwa drei Minuten vom Einfügen der Links bis zum Download der vertikalen HD-Datei.",
+  "Avant / Après SilenceCut": "Vor / Nach SilenceCut",
+  "Des montages publiés, pas promis": "Veröffentlichte Schnitte, nicht versprochen",
+  "Ces vidéos verticales ont été générées automatiquement à partir de liens TikTok. Pas de logiciel, pas d'heures de découpe.":
+    "Diese vertikalen Videos wurden automatisch aus TikTok-Links erzeugt. Keine Software, keine Stunden des Schneidens.",
+  "Voir tous les exemples": "Alle Beispiele ansehen",
+  "Chargement des exemples…": "Beispiele werden geladen…",
+  "Les premiers exemples arrivent très bientôt": "Die ersten Beispiele kommen sehr bald",
+  "En attendant, crée ton premier montage avec les 10 crédits offerts à l'inscription.":
+    "Erstelle inzwischen deinen ersten Schnitt mit den 10 Gratis-Credits bei der Anmeldung.",
+  "Exemples de vidéos": "Video-Beispiele",
+  "Voir les exemples": "Beispiele ansehen",
+  "À partir de 17 € / mois": "Ab 17 € / Monat",
+  "Vois les vidéos générées avant de choisir": "Sieh dir die generierten Videos vor der Wahl an",
+  "Exemples": "Beispiele",
 };
+
 
 
 const CONTENT: Partial<Record<Lang, Record<string, string>>> = {

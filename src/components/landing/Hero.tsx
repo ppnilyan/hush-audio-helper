@@ -98,14 +98,26 @@ export function Hero() {
               );
             })}
           </div>
-          <Button
-            className="mt-4 w-full rounded-full"
-            onClick={start}
-            disabled={!hasValidLink}
-          >
-            {tr(isSignedIn ? "Passer au montage" : "Commencer gratuitement")}{" "}
-            <ArrowRight className="size-4" />
-          </Button>
+          <div className="mt-4 flex flex-col gap-3 sm:flex-row">
+            <Button
+              className="w-full rounded-full sm:w-auto"
+              onClick={start}
+              disabled={!hasValidLink}
+            >
+              {tr(isSignedIn ? "Passer au montage" : "Commencer gratuitement")}{" "}
+              <ArrowRight className="size-4" />
+            </Button>
+            <Button
+              asChild
+              variant="secondary"
+              className="w-full rounded-full sm:w-auto"
+            >
+              <a href="#showcase">
+                {tr("Voir les exemples")}
+              </a>
+            </Button>
+          </div>
+
           {error && <p className="mt-3 text-sm text-destructive">{error}</p>}
         </div>
 

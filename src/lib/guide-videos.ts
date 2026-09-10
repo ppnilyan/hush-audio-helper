@@ -22,10 +22,21 @@ export async function isAdminAccount(): Promise<boolean> {
 
 /** Toutes les vidéos du guide, avec des liens de lecture temporaires. */
 export async function listGuideVideos(): Promise<GuideVideo[]> {
-  const { data, error } = await supabase
+  return listGuideVideosByCategory();
+}
+
+/** Vidéos d'une catégorie, ou toutes si aucune catégorie n'est précisée. */
+export async function listGuideVideosByCategory(
+  category?: GuideCategory,
+): Promise<GuideVideo[]> {
+  let query = supabase
     .from("guide_videos")
     .select("id, category, title, description, storage_path, created_at")
     .order("created_at", { ascending: false });
+  if (category) {
+    query = query.eq("category", category);
+  }
+  const { data, error } = await query;
   if (error || !data || data.length === 0) return [];
 
   const signed = await supabase.storage
@@ -51,6 +62,7 @@ export async function listGuideVideos(): Promise<GuideVideo[]> {
       createdAt: d.created_at,
     }));
 }
+
 
 /** Dépose une vidéo (réservé à l'administrateur par les règles de sécurité). */
 export async function uploadGuideVideo(input: {

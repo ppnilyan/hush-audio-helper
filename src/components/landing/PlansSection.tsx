@@ -28,14 +28,26 @@ export function PlansSection() {
   return (
     <section id="offres" className="px-4 py-16">
       <div className="mx-auto max-w-6xl">
-        <h2 className="font-display text-center text-3xl font-bold tracking-tight">
+        <p className="text-center text-sm font-medium text-primary">
+          {tr("À partir de 17 € / mois")}
+        </p>
+        <h2 className="font-display mt-2 text-center text-3xl font-bold tracking-tight">
           {tr("Nos offres")}
         </h2>
         <p className="mt-3 text-center text-sm text-muted-foreground">
           {tr("Choisis ton rythme de publication")}
         </p>
 
+        <div className="mt-6 flex justify-center">
+          <Button asChild variant="link" className="text-sm">
+            <a href="#showcase">
+              {tr("Vois les vidéos générées avant de choisir")}
+            </a>
+          </Button>
+        </div>
+
         <div className="mt-10 grid gap-6 md:grid-cols-3">
+
           {PLANS.map((plan) => (
             <div
               key={plan.id}
