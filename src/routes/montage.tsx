@@ -1128,7 +1128,10 @@ function Montage() {
       const exportVideoBitrate = Math.round(
         Math.min(
           100_000_000,
-          Math.max(24_000_000, (targetExportBytes * 8) / Math.max(1, totalDuration) - 320_000),
+          Math.max(
+            24_000_000,
+            (targetExportBytes * 8) / Math.max(1, totalDuration) - 320_000,
+          ),
         ),
       );
       const rec = new MediaRecorder(stream, {
