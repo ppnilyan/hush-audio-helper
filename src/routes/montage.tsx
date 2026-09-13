@@ -1394,7 +1394,9 @@ function Montage() {
                       onClick={() => void downloadMontage(h)}
                       className="text-primary underline"
                     >
-                      {tr("Télécharger en HD")} · 1080p 60 ips {h.ext.toUpperCase()}
+                      {tr("Télécharger en HD")} · {videoSizes[h.id] ?? 1080}p 60 ips{" "}
+                      {h.ext.toUpperCase()}
+
 
                     </button>
 
