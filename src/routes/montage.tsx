@@ -31,7 +31,7 @@ import {
   remainingLabel,
   RETENTION_MS,
 } from "@/lib/montage-history";
-import { remuxForCompat } from "@/lib/video-transcode";
+import { normalizeForCompat, remuxForCompat } from "@/lib/video-transcode";
 
 import {
   useSession,
