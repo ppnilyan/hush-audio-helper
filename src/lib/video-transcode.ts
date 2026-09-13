@@ -114,6 +114,7 @@ export async function transcodeToH264(
  */
 export async function normalizeForCompat(
   blob: Blob,
+  durationSeconds: number,
   onProgress?: (ratio: number) => void,
 ): Promise<{ blob: Blob; ext: string } | null> {
   const ffmpeg = await getFfmpeg();
@@ -125,6 +126,19 @@ export async function normalizeForCompat(
   const isMp4 = blob.type.includes("mp4");
   const input = `raw-${Date.now()}.${isMp4 ? "mp4" : "webm"}`;
   const output = `clean-${Date.now()}.mp4`;
+  // Vise environ 250 Mio au total. Les bornes évitent une compression trop
+  // forte sur les vidéos longues et un débit déraisonnable sur les très courtes.
+  const targetBytes = 250 * 1_048_576;
+  const audioBitrate = 320_000;
+  const targetVideoBitrate = Math.round(
+    Math.min(
+      100_000_000,
+      Math.max(24_000_000, (targetBytes * 8) / Math.max(1, durationSeconds) - audioBitrate),
+    ),
+  );
+  const targetVideoKbps = `${Math.round(targetVideoBitrate / 1_000)}k`;
+  const maxVideoKbps = `${Math.round((targetVideoBitrate * 1.08) / 1_000)}k`;
+  const bufferKbps = `${Math.round((targetVideoBitrate * 2) / 1_000)}k`;
   try {
     await ffmpeg.writeFile(input, await fetchFile(blob));
     const code = await ffmpeg.exec([
@@ -142,13 +156,17 @@ export async function normalizeForCompat(
       "-profile:v",
       "high",
       "-level",
-      "4.2",
+      "5.2",
       "-pix_fmt",
       "yuv420p",
       "-preset",
       "veryfast",
-      "-crf",
-      "20",
+      "-b:v",
+      targetVideoKbps,
+      "-maxrate",
+      maxVideoKbps,
+      "-bufsize",
+      bufferKbps,
       "-r",
       "60",
       "-fps_mode",
@@ -159,7 +177,7 @@ export async function normalizeForCompat(
       "-c:a",
       "aac",
       "-b:a",
-      "192k",
+      "320k",
       "-ar",
       "48000",
       "-ac",
