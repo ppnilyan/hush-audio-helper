@@ -1367,7 +1367,18 @@ function Montage() {
             <div className="grid gap-5 sm:grid-cols-2">
               {history.map((h) => (
                 <div key={h.id} className="space-y-2">
-                  <video src={h.url} controls className="w-full rounded-xl bg-black" />
+                  <video
+                    src={h.url}
+                    controls
+                    className="w-full rounded-xl bg-black"
+                    onLoadedMetadata={(e) => {
+                      const v = e.currentTarget;
+                      if (!v.videoHeight) return;
+                      setVideoSizes((prev) =>
+                        prev[h.id] === v.videoHeight ? prev : { ...prev, [h.id]: v.videoHeight },
+                      );
+                    }}
+                  />
                   <div className="flex items-center justify-between text-xs text-muted-foreground">
                     <span>
                       {new Date(h.createdAt).toLocaleString(locale)} · {formatTime(h.duration)}
