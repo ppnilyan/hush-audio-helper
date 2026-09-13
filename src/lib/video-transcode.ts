@@ -104,6 +104,90 @@ export async function transcodeToH264(
  * un index complet et `faststart` ; si l'audio reste illisible, on ré-encode
  * uniquement l'audio.
  */
+/**
+ * Finalisation « tout propre » : on ré-encode entièrement l'enregistrement en
+ * MP4 H.264 progressif, cadence constante (60 ips) et audio AAC 48 kHz stéréo.
+ * Indispensable sur iPhone : Safari écrit un MP4 fragmenté avec des
+ * horodatages irréguliers (voire des morceaux dans le désordre), que WhatsApp
+ * et TikTok relisent de travers. Le ré-encodage réécrit une piste linéaire du
+ * début à la fin.
+ */
+export async function normalizeForCompat(
+  blob: Blob,
+  onProgress?: (ratio: number) => void,
+): Promise<{ blob: Blob; ext: string } | null> {
+  const ffmpeg = await getFfmpeg();
+  const { fetchFile } = await import("@ffmpeg/util");
+  const handler = ({ progress }: { progress: number }) =>
+    onProgress?.(Math.max(0, Math.min(1, progress)));
+  ffmpeg.on("progress", handler);
+
+  const isMp4 = blob.type.includes("mp4");
+  const input = `raw-${Date.now()}.${isMp4 ? "mp4" : "webm"}`;
+  const output = `clean-${Date.now()}.mp4`;
+  try {
+    await ffmpeg.writeFile(input, await fetchFile(blob));
+    const code = await ffmpeg.exec([
+      "-fflags",
+      "+genpts+igndts",
+      "-i",
+      input,
+      "-map",
+      "0:v:0",
+      "-map",
+      "0:a:0?",
+      // Vidéo : H.264 haute qualité, 1080p conservé, cadence constante.
+      "-c:v",
+      "libx264",
+      "-profile:v",
+      "high",
+      "-level",
+      "4.2",
+      "-pix_fmt",
+      "yuv420p",
+      "-preset",
+      "veryfast",
+      "-crf",
+      "20",
+      "-r",
+      "60",
+      "-fps_mode",
+      "cfr",
+      "-g",
+      "120",
+      // Audio : AAC propre, rééchantillonné, sans trous.
+      "-c:a",
+      "aac",
+      "-b:a",
+      "192k",
+      "-ar",
+      "48000",
+      "-ac",
+      "2",
+      "-af",
+      "aresample=async=1:first_pts=0",
+      "-video_track_timescale",
+      "90000",
+      "-movflags",
+      "+faststart",
+      output,
+    ]);
+    if (code !== 0) throw new Error(`code ${code}`);
+    const data = (await ffmpeg.readFile(output)) as Uint8Array;
+    if (!data || data.length === 0) throw new Error("sortie vide");
+    return {
+      blob: new Blob([new Uint8Array(data).buffer as ArrayBuffer], { type: "video/mp4" }),
+      ext: "mp4",
+    };
+  } catch {
+    return null;
+  } finally {
+    ffmpeg.off("progress", handler);
+    await ffmpeg.deleteFile(input).catch(() => {});
+    await ffmpeg.deleteFile(output).catch(() => {});
+  }
+}
+
 export async function remuxForCompat(
   blob: Blob,
   onProgress?: (ratio: number) => void,
