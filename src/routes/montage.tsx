@@ -241,6 +241,8 @@ function Montage() {
   const [progress, setProgress] = useState(0);
   const [phase, setPhase] = useState<string | null>(null);
   const [history, setHistory] = useState<UIEntry[]>([]);
+  // Hauteur réelle de chaque vidéo, lue à la lecture des métadonnées.
+  const [videoSizes, setVideoSizes] = useState<Record<string, number>>({});
   // Où enregistrer la vidéo finie : sur ce navigateur, ou sur le compte (5 h).
   const [saveToCloud, setSaveToCloud] = useState(false);
   useEffect(() => {
@@ -1122,7 +1124,11 @@ function Montage() {
       const { mime, ext } = pickRecordingType();
       const rec = new MediaRecorder(stream, {
         mimeType: mime,
-        videoBitsPerSecond: 8_000_000,
+        // Débit élevé : sur iPhone Safari applique une compression agressive
+        // par défaut, ce qui donnait un fichier deux fois trop léger pour du
+        // 1080p 60 ips.
+        videoBitsPerSecond: 16_000_000,
+        audioBitsPerSecond: 192_000,
       });
       const chunks: BlobPart[] = [];
       rec.ondataavailable = (e) => e.data.size && chunks.push(e.data);
@@ -1363,7 +1369,18 @@ function Montage() {
             <div className="grid gap-5 sm:grid-cols-2">
               {history.map((h) => (
                 <div key={h.id} className="space-y-2">
-                  <video src={h.url} controls className="w-full rounded-xl bg-black" />
+                  <video
+                    src={h.url}
+                    controls
+                    className="w-full rounded-xl bg-black"
+                    onLoadedMetadata={(e) => {
+                      const v = e.currentTarget;
+                      if (!v.videoHeight) return;
+                      setVideoSizes((prev) =>
+                        prev[h.id] === v.videoHeight ? prev : { ...prev, [h.id]: v.videoHeight },
+                      );
+                    }}
+                  />
                   <div className="flex items-center justify-between text-xs text-muted-foreground">
                     <span>
                       {new Date(h.createdAt).toLocaleString(locale)} · {formatTime(h.duration)}
@@ -1377,7 +1394,9 @@ function Montage() {
                       onClick={() => void downloadMontage(h)}
                       className="text-primary underline"
                     >
-                      {tr("Télécharger en HD")} · 1080p 60 ips {h.ext.toUpperCase()}
+                      {tr("Télécharger en HD")} · {videoSizes[h.id] ?? 1080}p 60 ips{" "}
+                      {h.ext.toUpperCase()}
+
 
                     </button>
 
