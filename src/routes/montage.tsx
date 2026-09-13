@@ -1172,18 +1172,29 @@ function Montage() {
       // rapide, sans perte de qualité).
       let blob = recorded;
       let outExt = ext;
-      if (recorded.type.includes("mp4")) {
-        setPhase(`${tr("Finalisation de la vidéo")}…`);
-        // Garde-fou : si le remux traîne, on garde l'enregistrement d'origine.
-        const fixed = await Promise.race([
-          remuxForCompat(recorded, (r) =>
-            setPhase(`${tr("Finalisation de la vidéo")} ${Math.round(r * 100)} %`),
-          ).catch(() => null),
-          new Promise<null>((res) => setTimeout(() => res(null), 180_000)),
-        ]);
-        if (fixed) {
-          blob = fixed.blob;
-          outExt = fixed.ext;
+      setPhase(`${tr("Finalisation de la vidéo")}…`);
+      const onFixProgress = (r: number) =>
+        setPhase(`${tr("Finalisation de la vidéo")} ${Math.round(r * 100)} %`);
+      // Sur iPhone, Safari écrit un MP4 fragmenté aux horodatages irréguliers :
+      // lisible dans le navigateur, mais TikTok/WhatsApp remettent les plans
+      // dans le désordre ou gèlent. On réécrit donc entièrement la vidéo
+      // (H.264 1080p 60 ips + AAC 48 kHz) au lieu d'une simple copie de flux.
+      const fixed = await Promise.race([
+        (ios
+          ? normalizeForCompat(recorded, onFixProgress)
+          : remuxForCompat(recorded, onFixProgress)
+        ).catch(() => null),
+        new Promise<null>((res) => setTimeout(() => res(null), 600_000)),
+      ]);
+      if (fixed) {
+        blob = fixed.blob;
+        outExt = fixed.ext;
+      } else if (ios && recorded.type.includes("mp4")) {
+        // Dernier filet : au moins reconstruire un index MP4 complet.
+        const remuxed = await remuxForCompat(recorded, onFixProgress).catch(() => null);
+        if (remuxed) {
+          blob = remuxed.blob;
+          outExt = remuxed.ext;
         }
       }
 
