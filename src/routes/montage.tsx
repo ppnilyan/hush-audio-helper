@@ -241,6 +241,8 @@ function Montage() {
   const [progress, setProgress] = useState(0);
   const [phase, setPhase] = useState<string | null>(null);
   const [history, setHistory] = useState<UIEntry[]>([]);
+  // Hauteur réelle de chaque vidéo, lue à la lecture des métadonnées.
+  const [videoSizes, setVideoSizes] = useState<Record<string, number>>({});
   // Où enregistrer la vidéo finie : sur ce navigateur, ou sur le compte (5 h).
   const [saveToCloud, setSaveToCloud] = useState(false);
   useEffect(() => {
