@@ -1122,13 +1122,22 @@ function Montage() {
       dest.stream.getAudioTracks().forEach((t) => stream.addTrack(t));
 
       const { mime, ext } = pickRecordingType();
+      // Débit adapté à la durée pour obtenir un export d'environ 250 Mio,
+      // tout en restant dans une plage réaliste pour du 1080p à 60 ips.
+      const targetExportBytes = 250 * 1_048_576;
+      const exportVideoBitrate = Math.round(
+        Math.min(
+          100_000_000,
+          Math.max(
+            24_000_000,
+            (targetExportBytes * 8) / Math.max(1, totalDuration) - 320_000,
+          ),
+        ),
+      );
       const rec = new MediaRecorder(stream, {
         mimeType: mime,
-        // Débit élevé : sur iPhone Safari applique une compression agressive
-        // par défaut, ce qui donnait un fichier deux fois trop léger pour du
-        // 1080p 60 ips.
-        videoBitsPerSecond: 16_000_000,
-        audioBitsPerSecond: 192_000,
+        videoBitsPerSecond: exportVideoBitrate,
+        audioBitsPerSecond: 320_000,
       });
       const chunks: BlobPart[] = [];
       rec.ondataavailable = (e) => e.data.size && chunks.push(e.data);
@@ -1181,7 +1190,7 @@ function Montage() {
       // (H.264 1080p 60 ips + AAC 48 kHz) au lieu d'une simple copie de flux.
       const fixed = await Promise.race([
         (ios
-          ? normalizeForCompat(recorded, onFixProgress)
+          ? normalizeForCompat(recorded, totalDuration, onFixProgress)
           : remuxForCompat(recorded, onFixProgress)
         ).catch(() => null),
         new Promise<null>((res) => setTimeout(() => res(null), 600_000)),
