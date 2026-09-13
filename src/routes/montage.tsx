@@ -1122,7 +1122,11 @@ function Montage() {
       const { mime, ext } = pickRecordingType();
       const rec = new MediaRecorder(stream, {
         mimeType: mime,
-        videoBitsPerSecond: 8_000_000,
+        // Débit élevé : sur iPhone Safari applique une compression agressive
+        // par défaut, ce qui donnait un fichier deux fois trop léger pour du
+        // 1080p 60 ips.
+        videoBitsPerSecond: 16_000_000,
+        audioBitsPerSecond: 192_000,
       });
       const chunks: BlobPart[] = [];
       rec.ondataavailable = (e) => e.data.size && chunks.push(e.data);
