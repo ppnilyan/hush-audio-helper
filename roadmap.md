@@ -7,3 +7,4 @@
   - [x] Crédits/abonnements activés uniquement après vérification serveur (capture + webhook)
   - [x] Retirer Stripe du parcours utilisateur, garder le design actuel
   - [x] Ajouter le secret PAYPAL_WEBHOOK_ID + webhook PayPal vers /api/public/paypal/webhook
+- [x] Finaliser chaque montage en un MP4 continu 1080p 60 ips avec son AAC

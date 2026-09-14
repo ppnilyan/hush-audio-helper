@@ -96,27 +96,15 @@ export async function transcodeToH264(
 }
 
 /**
- * Rend un enregistrement MediaRecorder lisible par les applis (WhatsApp, TikTok,
- * galerie). Les navigateurs écrivent un MP4 *fragmenté* : Chrome et Safari
- * relisent leurs propres fragments sans problème, mais la plupart des lecteurs
- * tiers ne lisent que le premier index et gèlent sur une image au bout de
- * quelques secondes. Le remux (`-c copy`) reconstruit un MP4 progressif avec
- * un index complet et `faststart` ; si l'audio reste illisible, on ré-encode
- * uniquement l'audio.
- */
-/**
- * Finalisation « tout propre » : on ré-encode entièrement l'enregistrement en
- * MP4 H.264 progressif, cadence constante (60 ips) et audio AAC 48 kHz stéréo.
- * Indispensable sur iPhone : Safari écrit un MP4 fragmenté avec des
- * horodatages irréguliers (voire des morceaux dans le désordre), que WhatsApp
- * et TikTok relisent de travers. Le ré-encodage réécrit une piste linéaire du
- * début à la fin.
+ * Réécrit intégralement le montage en une seule piste MP4 linéaire. Le CRF
+ * privilégie la qualité sans imposer de taille : le poids dépend uniquement
+ * de la durée et de la complexité réelle des images.
  */
 export async function normalizeForCompat(
   blob: Blob,
   durationSeconds: number,
   onProgress?: (ratio: number) => void,
-): Promise<{ blob: Blob; ext: string } | null> {
+): Promise<{ blob: Blob; ext: "mp4" }> {
   const ffmpeg = await getFfmpeg();
   const { fetchFile } = await import("@ffmpeg/util");
   const handler = ({ progress }: { progress: number }) =>
@@ -126,31 +114,21 @@ export async function normalizeForCompat(
   const isMp4 = blob.type.includes("mp4");
   const input = `raw-${Date.now()}.${isMp4 ? "mp4" : "webm"}`;
   const output = `clean-${Date.now()}.mp4`;
-  // Vise environ 250 Mio au total. Les bornes évitent une compression trop
-  // forte sur les vidéos longues et un débit déraisonnable sur les très courtes.
-  const targetBytes = 250 * 1_048_576;
-  const audioBitrate = 320_000;
-  const targetVideoBitrate = Math.round(
-    Math.min(
-      100_000_000,
-      Math.max(24_000_000, (targetBytes * 8) / Math.max(1, durationSeconds) - audioBitrate),
-    ),
-  );
-  const targetVideoKbps = `${Math.round(targetVideoBitrate / 1_000)}k`;
-  const maxVideoKbps = `${Math.round((targetVideoBitrate * 1.08) / 1_000)}k`;
-  const bufferKbps = `${Math.round((targetVideoBitrate * 2) / 1_000)}k`;
   try {
     await ffmpeg.writeFile(input, await fetchFile(blob));
     const code = await ffmpeg.exec([
       "-fflags",
-      "+genpts+igndts",
+      "+genpts+discardcorrupt",
       "-i",
       input,
       "-map",
       "0:v:0",
       "-map",
       "0:a:0?",
-      // Vidéo : H.264 haute qualité, 1080p conservé, cadence constante.
+      // Une image de sortie pour chaque instant de la cadence 60 ips. Cela
+      // élimine les horodatages irréguliers créés par MediaRecorder.
+      "-vf",
+      "fps=60:round=near,setpts=N/(60*TB),scale=1080:1920:flags=lanczos,setsar=1",
       "-c:v",
       "libx264",
       "-profile:v",
@@ -160,19 +138,19 @@ export async function normalizeForCompat(
       "-pix_fmt",
       "yuv420p",
       "-preset",
-      "veryfast",
-      "-b:v",
-      targetVideoKbps,
-      "-maxrate",
-      maxVideoKbps,
-      "-bufsize",
-      bufferKbps,
+      "fast",
+      "-crf",
+      "12",
       "-r",
       "60",
       "-fps_mode",
       "cfr",
       "-g",
       "120",
+      "-keyint_min",
+      "60",
+      "-sc_threshold",
+      "0",
       // Audio : AAC propre, rééchantillonné, sans trous.
       "-c:a",
       "aac",
@@ -183,7 +161,11 @@ export async function normalizeForCompat(
       "-ac",
       "2",
       "-af",
-      "aresample=async=1:first_pts=0",
+      "asetpts=N/SR/TB,aresample=async=1:first_pts=0,apad",
+      "-t",
+      Math.max(0.1, durationSeconds).toFixed(3),
+      "-avoid_negative_ts",
+      "make_zero",
       "-video_track_timescale",
       "90000",
       "-movflags",
@@ -197,12 +179,46 @@ export async function normalizeForCompat(
       blob: new Blob([new Uint8Array(data).buffer as ArrayBuffer], { type: "video/mp4" }),
       ext: "mp4",
     };
-  } catch {
-    return null;
+  } catch (error) {
+    throw new Error(
+      `La finalisation MP4 a échoué : ${error instanceof Error ? error.message : "erreur inconnue"}`,
+    );
   } finally {
     ffmpeg.off("progress", handler);
     await ffmpeg.deleteFile(input).catch(() => {});
     await ffmpeg.deleteFile(output).catch(() => {});
+  }
+}
+
+/** Refuse un fichier incomplet avant qu'il soit ajouté à l'historique. */
+export async function verifyFinalVideo(blob: Blob, expectedDuration: number): Promise<void> {
+  const url = URL.createObjectURL(blob);
+  try {
+    const video = document.createElement("video");
+    video.preload = "metadata";
+    video.src = url;
+    await new Promise<void>((resolve, reject) => {
+      const timer = window.setTimeout(
+        () => reject(new Error("lecture du fichier final impossible")),
+        15_000,
+      );
+      video.onloadedmetadata = () => {
+        window.clearTimeout(timer);
+        resolve();
+      };
+      video.onerror = () => {
+        window.clearTimeout(timer);
+        reject(new Error("fichier MP4 final illisible"));
+      };
+    });
+    if (video.videoWidth !== 1080 || video.videoHeight !== 1920) {
+      throw new Error(`résolution finale incorrecte (${video.videoWidth}×${video.videoHeight})`);
+    }
+    if (!Number.isFinite(video.duration) || Math.abs(video.duration - expectedDuration) > 0.75) {
+      throw new Error("durée finale incomplète");
+    }
+  } finally {
+    URL.revokeObjectURL(url);
   }
 }
 
