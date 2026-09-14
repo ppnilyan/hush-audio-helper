@@ -31,7 +31,7 @@ import {
   remainingLabel,
   RETENTION_MS,
 } from "@/lib/montage-history";
-import { normalizeForCompat, remuxForCompat } from "@/lib/video-transcode";
+import { normalizeForCompat, verifyFinalVideo } from "@/lib/video-transcode";
 
 import {
   useSession,
@@ -1087,7 +1087,6 @@ function Montage() {
       return;
     }
     try {
-      const ios = isIosDevice();
       // Rendu HD 1080×1920 : on agrandit le canevas le temps de l'export
       // (l'aperçu à l'écran reste à la même taille visuelle).
       // Même qualité partout : 1080x1920 à 60 images/s, y compris sur iPhone.
@@ -1122,21 +1121,11 @@ function Montage() {
       dest.stream.getAudioTracks().forEach((t) => stream.addTrack(t));
 
       const { mime, ext } = pickRecordingType();
-      // Débit adapté à la durée pour obtenir un export d'environ 250 Mio,
-      // tout en restant dans une plage réaliste pour du 1080p à 60 ips.
-      const targetExportBytes = 250 * 1_048_576;
-      const exportVideoBitrate = Math.round(
-        Math.min(
-          100_000_000,
-          Math.max(
-            24_000_000,
-            (targetExportBytes * 8) / Math.max(1, totalDuration) - 320_000,
-          ),
-        ),
-      );
       const rec = new MediaRecorder(stream, {
         mimeType: mime,
-        videoBitsPerSecond: exportVideoBitrate,
+        // Source intermédiaire volontairement très riche. Le fichier final est
+        // ensuite entièrement réécrit selon sa qualité, jamais selon son poids.
+        videoBitsPerSecond: 100_000_000,
         audioBitsPerSecond: 320_000,
       });
       const chunks: BlobPart[] = [];
@@ -1145,10 +1134,9 @@ function Montage() {
         rec.onstop = () => res(new Blob(chunks, { type: ext === "mp4" ? "video/mp4" : "video/webm" }));
       });
 
-      // iOS produit des fragments MP4 mal recollés quand on découpe en morceaux :
-      // on enregistre d'un seul bloc pour garder la voix et les coupes en place.
-      if (ios) rec.start();
-      else rec.start(200);
+      // Un seul enregistrement continu, sans fragments de 200 ms susceptibles
+      // de conserver des horodatages incohérents entre deux cuts.
+      rec.start();
       let stopMusic = () => {};
       await runTimeline(
         undefined,
@@ -1174,38 +1162,16 @@ function Montage() {
 
 
       const recorded = await done;
-      // Tous les navigateurs écrivent un MP4 *fragmenté* : lisible chez eux,
-      // mais WhatsApp/TikTok/galerie ne lisent que le premier index et gèlent
-      // sur une image au bout de quelques secondes. On reconstruit donc un MP4
-      // progressif avec index complet avant de l'enregistrer (copie de flux :
-      // rapide, sans perte de qualité).
-      let blob = recorded;
-      let outExt = ext;
       setPhase(`${tr("Finalisation de la vidéo")}…`);
       const onFixProgress = (r: number) =>
         setPhase(`${tr("Finalisation de la vidéo")} ${Math.round(r * 100)} %`);
-      // Sur iPhone, Safari écrit un MP4 fragmenté aux horodatages irréguliers :
-      // lisible dans le navigateur, mais TikTok/WhatsApp remettent les plans
-      // dans le désordre ou gèlent. On réécrit donc entièrement la vidéo
-      // (H.264 1080p 60 ips + AAC 48 kHz) au lieu d'une simple copie de flux.
-      const fixed = await Promise.race([
-        (ios
-          ? normalizeForCompat(recorded, totalDuration, onFixProgress)
-          : remuxForCompat(recorded, onFixProgress)
-        ).catch(() => null),
-        new Promise<null>((res) => setTimeout(() => res(null), 600_000)),
-      ]);
-      if (fixed) {
-        blob = fixed.blob;
-        outExt = fixed.ext;
-      } else if (ios && recorded.type.includes("mp4")) {
-        // Dernier filet : au moins reconstruire un index MP4 complet.
-        const remuxed = await remuxForCompat(recorded, onFixProgress).catch(() => null);
-        if (remuxed) {
-          blob = remuxed.blob;
-          outExt = remuxed.ext;
-        }
-      }
+      // Même traitement sur ordinateur et iPhone : réencodage complet, jamais
+      // de fichier brut ni de simple remux dans l'historique.
+      const fixed = await normalizeForCompat(recorded, totalDuration, onFixProgress);
+      const blob = fixed.blob;
+      const outExt = fixed.ext;
+      setPhase(tr("Vérification de la vidéo finale…"));
+      await verifyFinalVideo(blob, totalDuration);
 
 
       const now = Date.now();
