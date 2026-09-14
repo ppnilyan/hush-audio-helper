@@ -128,7 +128,7 @@ export async function normalizeForCompat(
       // Une image de sortie pour chaque instant de la cadence 60 ips. Cela
       // élimine les horodatages irréguliers créés par MediaRecorder.
       "-vf",
-      "fps=60:round=near,scale=1080:1920:flags=lanczos,setsar=1",
+      "fps=60:round=near,setpts=N/(60*TB),scale=1080:1920:flags=lanczos,setsar=1",
       "-c:v",
       "libx264",
       "-profile:v",
@@ -161,7 +161,7 @@ export async function normalizeForCompat(
       "-ac",
       "2",
       "-af",
-      "aresample=async=1:first_pts=0,apad",
+      "asetpts=N/SR/TB,aresample=async=1:first_pts=0,apad",
       "-t",
       Math.max(0.1, durationSeconds).toFixed(3),
       "-avoid_negative_ts",
@@ -198,7 +198,10 @@ export async function verifyFinalVideo(blob: Blob, expectedDuration: number): Pr
     video.preload = "metadata";
     video.src = url;
     await new Promise<void>((resolve, reject) => {
-      const timer = window.setTimeout(() => reject(new Error("lecture du fichier final impossible")), 15_000);
+      const timer = window.setTimeout(
+        () => reject(new Error("lecture du fichier final impossible")),
+        15_000,
+      );
       video.onloadedmetadata = () => {
         window.clearTimeout(timer);
         resolve();
