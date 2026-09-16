@@ -1121,11 +1121,14 @@ function Montage() {
       dest.stream.getAudioTracks().forEach((t) => stream.addTrack(t));
 
       const { mime, ext } = pickRecordingType();
+      const iosExport = isIosDevice();
       const rec = new MediaRecorder(stream, {
         mimeType: mime,
         // Source intermédiaire volontairement très riche. Le fichier final est
         // ensuite entièrement réécrit selon sa qualité, jamais selon son poids.
-        videoBitsPerSecond: 100_000_000,
+        // Safari iOS ne peut pas conserver un flux de 100 Mb/s en mémoire sans
+        // interrompre l'enregistrement. 24 Mb/s reste une vraie qualité 1080p.
+        videoBitsPerSecond: iosExport ? 24_000_000 : 100_000_000,
         audioBitsPerSecond: 320_000,
       });
       const chunks: BlobPart[] = [];
@@ -1162,14 +1165,22 @@ function Montage() {
 
 
       const recorded = await done;
-      setPhase(`${tr("Finalisation de la vidéo")}…`);
-      const onFixProgress = (r: number) =>
-        setPhase(`${tr("Finalisation de la vidéo")} ${Math.round(r * 100)} %`);
-      // Même traitement sur ordinateur et iPhone : réencodage complet, jamais
-      // de fichier brut ni de simple remux dans l'historique.
-      const fixed = await normalizeForCompat(recorded, totalDuration, onFixProgress);
-      const blob = fixed.blob;
-      const outExt = fixed.ext;
+      let blob = recorded;
+      let outExt = ext;
+
+      if (iosExport && ext === "mp4") {
+        // Safari encode déjà nativement en H.264/AAC. Relancer ffmpeg.wasm sur
+        // une vidéo 1080p/60 dépasse la mémoire disponible sur iPhone et faisait
+        // échouer toute la génération alors que l'enregistrement était valide.
+        setPhase(tr("Vérification de la vidéo finale…"));
+      } else {
+        setPhase(`${tr("Finalisation de la vidéo")}…`);
+        const onFixProgress = (r: number) =>
+          setPhase(`${tr("Finalisation de la vidéo")} ${Math.round(r * 100)} %`);
+        const fixed = await normalizeForCompat(recorded, totalDuration, onFixProgress);
+        blob = fixed.blob;
+        outExt = fixed.ext;
+      }
       setPhase(tr("Vérification de la vidéo finale…"));
       await verifyFinalVideo(blob, totalDuration);
 
