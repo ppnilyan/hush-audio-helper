@@ -24,7 +24,9 @@ const CORE_SOURCES: CoreSource[] = [
 let ffmpegPromise: Promise<import("@ffmpeg/ffmpeg").FFmpeg> | null = null;
 
 function isSameOrigin(url: string) {
-  return url.startsWith("/") || (typeof location !== "undefined" && url.startsWith(location.origin));
+  return (
+    url.startsWith("/") || (typeof location !== "undefined" && url.startsWith(location.origin))
+  );
 }
 
 async function loadFrom(source: CoreSource) {
