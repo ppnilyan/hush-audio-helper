@@ -2,14 +2,32 @@
  * Conversion vidéo dans le navigateur (ffmpeg.wasm) vers du MP4 H.264/AAC,
  * le seul format lisible partout, y compris sur iPhone.
  */
-const CORE_BASES = [
-  "https://unpkg.com/@ffmpeg/core@0.12.10/dist/umd",
-  "https://cdn.jsdelivr.net/npm/@ffmpeg/core@0.12.10/dist/umd",
+import coreJsAsset from "@/assets/ffmpeg/ffmpeg-core.js.asset.json";
+import coreWasmAsset from "@/assets/ffmpeg/ffmpeg-core.wasm.asset.json";
+
+type CoreSource = { core: string; wasm: string };
+
+/** Copie hébergée par l'application (même origine, la plus fiable sur iPhone),
+ *  puis replis publics si jamais elle est indisponible. */
+const CORE_SOURCES: CoreSource[] = [
+  { core: coreJsAsset.url, wasm: coreWasmAsset.url },
+  {
+    core: "https://unpkg.com/@ffmpeg/core@0.12.10/dist/umd/ffmpeg-core.js",
+    wasm: "https://unpkg.com/@ffmpeg/core@0.12.10/dist/umd/ffmpeg-core.wasm",
+  },
+  {
+    core: "https://cdn.jsdelivr.net/npm/@ffmpeg/core@0.12.10/dist/umd/ffmpeg-core.js",
+    wasm: "https://cdn.jsdelivr.net/npm/@ffmpeg/core@0.12.10/dist/umd/ffmpeg-core.wasm",
+  },
 ];
 
 let ffmpegPromise: Promise<import("@ffmpeg/ffmpeg").FFmpeg> | null = null;
 
-async function loadFrom(base: string) {
+function isSameOrigin(url: string) {
+  return url.startsWith("/") || (typeof location !== "undefined" && url.startsWith(location.origin));
+}
+
+async function loadFrom(source: CoreSource) {
   const [{ FFmpeg }, { toBlobURL }] = await Promise.all([
     import("@ffmpeg/ffmpeg"),
     import("@ffmpeg/util"),
@@ -17,8 +35,12 @@ async function loadFrom(base: string) {
   const ffmpeg = new FFmpeg();
   ffmpeg.on("log", ({ message }) => console.debug("[ffmpeg]", message));
   await ffmpeg.load({
-    coreURL: await toBlobURL(`${base}/ffmpeg-core.js`, "text/javascript"),
-    wasmURL: await toBlobURL(`${base}/ffmpeg-core.wasm`, "application/wasm"),
+    coreURL: await toBlobURL(source.core, "text/javascript"),
+    // Sur une même origine on laisse le moteur télécharger le wasm lui-même :
+    // cela évite de garder 32 Mo en mémoire, ce qui faisait échouer l'iPhone.
+    wasmURL: isSameOrigin(source.wasm)
+      ? source.wasm
+      : await toBlobURL(source.wasm, "application/wasm"),
   });
   return ffmpeg;
 }
@@ -27,11 +49,14 @@ async function getFfmpeg() {
   if (!ffmpegPromise) {
     ffmpegPromise = (async () => {
       let lastError: unknown = null;
-      for (const base of CORE_BASES) {
-        try {
-          return await loadFrom(base);
-        } catch (e) {
-          lastError = e;
+      for (const source of CORE_SOURCES) {
+        for (let attempt = 0; attempt < 2; attempt++) {
+          try {
+            return await loadFrom(source);
+          } catch (e) {
+            lastError = e;
+            await new Promise((r) => setTimeout(r, 600));
+          }
         }
       }
       throw new Error(
