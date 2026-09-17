@@ -420,9 +420,13 @@ function Montage() {
   useEffect(() => {
     fxRef.current = fx;
   }, [fx]);
+  // Un seul clip : aucun effet de coupure (hook ou effets mélangés), le plan reste net.
+  const singleClip = clips.length < 2;
   useEffect(() => {
-    hookRef.current = hook;
-  }, [hook]);
+    hookRef.current = singleClip
+      ? { ...hook, hookEnabled: false, mixedEnabled: false }
+      : hook;
+  }, [hook, singleClip]);
   useEffect(() => {
     const unsub = subscribeVoiceover(setVoice);
     const unsubMusic = subscribeMusic(setMusicState);
