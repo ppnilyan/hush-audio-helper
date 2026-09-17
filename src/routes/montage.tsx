@@ -407,6 +407,12 @@ function Montage() {
   const fxPreviewRef = useRef<HTMLCanvasElement>(null);
   const videosRef = useRef<Map<string, HTMLVideoElement>>(new Map());
   const audioRef = useRef<HTMLAudioElement>(null);
+  // Amplification de la voix en prévisualisation (un seul contexte par élément audio).
+  const voiceAmpRef = useRef<{
+    el: HTMLAudioElement;
+    ctx: AudioContext;
+    gain: GainNode;
+  } | null>(null);
   const fxRef = useRef(fx);
   const hookRef = useRef(hook);
   const abortRef = useRef(false);
