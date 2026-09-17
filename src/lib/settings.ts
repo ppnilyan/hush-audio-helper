@@ -62,6 +62,7 @@ export function normalizeSettings(raw: unknown): MontageSettings {
     hook: normalizeHook(src.hook),
     musicGainDb: Math.min(0, Math.max(-40, num(src.musicGainDb, DEFAULT_MUSIC_GAIN_DB))),
     musicChoice: src.musicChoice === "builtin" ? "builtin" : "none",
+    voiceGainPercent: clamp(num(src.voiceGainPercent, 100), 100, 300),
   };
 }
 
