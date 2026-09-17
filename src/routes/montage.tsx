@@ -70,6 +70,7 @@ import { Lock } from "lucide-react";
 import { toast } from "sonner";
 
 import { supabase } from "@/integrations/supabase/client";
+import { isAdminAccount } from "@/lib/guide-videos";
 import {
   getVoiceover,
   setVoiceover,
@@ -275,6 +276,22 @@ function Montage() {
   const dismissJob = useServerFn(dismissFailedGeneration);
   const noCredits = billing.signedIn && !billing.loading && billing.totalCredits < CREDITS_PER_VIDEO;
 
+  /** Compte administrateur : montage possible avec un seul clip, vitesse étendue, volume de voix. */
+  const [isAdmin, setIsAdmin] = useState(false);
+  useEffect(() => {
+    if (!userId) {
+      setIsAdmin(false);
+      return;
+    }
+    let alive = true;
+    void isAdminAccount().then((v) => alive && setIsAdmin(v));
+    return () => {
+      alive = false;
+    };
+  }, [userId]);
+  const minClips = isAdmin ? 1 : MIN_CLIPS;
+
+
   /** Étapes visibles : « Durées & effets » n'apparaît qu'en mode avancé. */
   const visibleSteps = useMemo(
     () => (advanced ? [0, 1, 2, 3, 4, 5] : [0, 2, 3, 4, 5]),
@@ -341,6 +358,14 @@ function Montage() {
     (db: number) => setSettings((s) => ({ ...s, musicGainDb: db })),
     [],
   );
+
+  /** Volume de la voix importée : 100 % = fichier d'origine, jusqu'à 300 %. */
+  const voiceGainPercent = settings.voiceGainPercent;
+  const setVoiceGainPercent = useCallback(
+    (p: number) => setSettings((s) => ({ ...s, voiceGainPercent: p })),
+    [],
+  );
+  const voiceGain = Math.min(3, Math.max(1, voiceGainPercent / 100));
   /** Sélection de la musique : piste incluse, fichier importé ou aucune. */
   const chooseMusic = useCallback((track: MusicTrack | null) => {
     setMusic(track);
@@ -382,6 +407,12 @@ function Montage() {
   const fxPreviewRef = useRef<HTMLCanvasElement>(null);
   const videosRef = useRef<Map<string, HTMLVideoElement>>(new Map());
   const audioRef = useRef<HTMLAudioElement>(null);
+  // Amplification de la voix en prévisualisation (un seul contexte par élément audio).
+  const voiceAmpRef = useRef<{
+    el: HTMLAudioElement;
+    ctx: AudioContext;
+    gain: GainNode;
+  } | null>(null);
   const fxRef = useRef(fx);
   const hookRef = useRef(hook);
   const abortRef = useRef(false);
@@ -395,9 +426,13 @@ function Montage() {
   useEffect(() => {
     fxRef.current = fx;
   }, [fx]);
+  // Un seul clip : aucun effet de coupure (hook ou effets mélangés), le plan reste net.
+  const singleClip = clips.length < 2;
   useEffect(() => {
-    hookRef.current = hook;
-  }, [hook]);
+    hookRef.current = singleClip
+      ? { ...hook, hookEnabled: false, mixedEnabled: false }
+      : hook;
+  }, [hook, singleClip]);
   useEffect(() => {
     const unsub = subscribeVoiceover(setVoice);
     const unsubMusic = subscribeMusic(setMusicState);
@@ -523,15 +558,22 @@ function Montage() {
   const measuring = !!voice && measured === null;
   // Les 3 clips les plus vus ouvrent le montage (coupes rapides de l'intro).
   const orderedClips = useMemo(() => orderByViews(clips), [clips]);
+  /** Vitesse de lecture appliquée aux clips (1 = normale, 0,5 = deux fois plus long). */
+  const rate = Math.min(4, Math.max(0.25, fx.speed));
+  // La timeline est calculée en secondes de source : à vitesse 0,5, 30 s de clip
+  // couvrent 60 s de voix off.
   const timeline = useMemo(
-    () => buildTimeline(orderedClips, totalDuration, intros),
-    [orderedClips, totalDuration, intros],
+    () => buildTimeline(orderedClips, totalDuration * rate, intros),
+    [orderedClips, totalDuration, intros, rate],
   );
 
   const timelineDuration = useMemo(
-    () => timeline.reduce((a, s) => a + s.duration, 0),
-    [timeline],
+    () => timeline.reduce((a, s) => a + s.duration, 0) / rate,
+    [timeline, rate],
   );
+
+  /** Durée réelle d'un clip une fois la vitesse appliquée. */
+  const scaledClipDuration = (orderedClips[0]?.duration ?? 0) / rate;
 
   const getVideo = useCallback((clip: ClipInfo, slot = 0) => {
     const key = `${clip.id}#${slot}`;
@@ -918,7 +960,7 @@ function Montage() {
         for (let k = 0; k <= lookahead; k++) queuePrepare(i + k);
         const v = await prepared.get(i);
         if (!v) {
-          elapsed += seg.duration;
+          elapsed += seg.duration / rate;
           i++;
           continue;
         }
@@ -930,7 +972,9 @@ function Montage() {
         const segStart = elapsed;
         // Dernière coupure : on l'étire jusqu'à la fin de la voix off.
         const isLast = i === timeline.length - 1;
-        const segEnd = isLast ? Math.max(segStart + seg.duration, endsAt()) : segStart + seg.duration;
+        // Durée réelle de la coupure : la vitesse allonge (ou raccourcit) le plan.
+        const segReal = seg.duration / rate;
+        const segEnd = isLast ? Math.max(segStart + segReal, endsAt()) : segStart + segReal;
         drawFrame(ctx, v, fxRef.current, frameFxAt(effect, 0), watermark);
         await v.play().catch(() => {});
 
@@ -1045,6 +1089,26 @@ function Montage() {
       },
       async () => {
         if (audioRef.current) {
+          // Amplification de la voix : au-delà de 100 %, on passe par un gain audio.
+          if (voiceGain > 1) {
+            try {
+              let node = voiceAmpRef.current;
+              if (!node || node.el !== audioRef.current) {
+                const ctx = new AudioContext();
+                const gain = ctx.createGain();
+                ctx.createMediaElementSource(audioRef.current).connect(gain);
+                gain.connect(ctx.destination);
+                node = { el: audioRef.current, ctx, gain };
+                voiceAmpRef.current = node;
+              }
+              if (node.ctx.state !== "running") await node.ctx.resume().catch(() => {});
+              node.gain.gain.value = voiceGain;
+            } catch {
+              /* amplification indisponible : volume d'origine */
+            }
+          } else if (voiceAmpRef.current) {
+            voiceAmpRef.current.gain.gain.value = 1;
+          }
           audioRef.current.currentTime = 0;
           await audioRef.current.play();
         }
@@ -1104,7 +1168,11 @@ function Montage() {
       if (actx.state !== "running") await actx.resume().catch(() => {});
       const src = actx.createMediaElementSource(audio);
       const dest = actx.createMediaStreamDestination();
-      src.connect(dest);
+      // Volume de la voix importée (100 % = fichier d'origine, jusqu'à 300 %).
+      const voiceGainNode = actx.createGain();
+      voiceGainNode.gain.value = voiceGain;
+      src.connect(voiceGainNode);
+      voiceGainNode.connect(dest);
 
       // Musique de fond mixée sous la voix via un GainNode (dB → gain linéaire).
       let musicEl: HTMLAudioElement | null = null;
@@ -1267,7 +1335,7 @@ function Montage() {
   const busy = loading || rendering;
   // L'étape musique est facultative ; les clips et la voix off restent requis.
   const canNext =
-    step === 0 ? clips.length >= MIN_CLIPS : step === 3 ? !!voice && !measuring : !isLastStep;
+    step === 0 ? clips.length >= minClips : step === 3 ? !!voice && !measuring : !isLastStep;
 
 
   return (
@@ -1616,9 +1684,14 @@ function Montage() {
                 {clips.length === 0 && (
                   <li className="text-sm text-muted-foreground">{tr("Aucun clip pour l'instant.")}</li>
                 )}
-                {clips.length > 0 && clips.length < MIN_CLIPS && (
+                {clips.length > 0 && clips.length < minClips && (
                   <li className="text-sm text-primary">
                     {tr("Ajoutez au moins 2 clips pour continuer.")}
+                  </li>
+                )}
+                {isAdmin && clips.length === 1 && (
+                  <li className="text-sm text-muted-foreground">
+                    {tr("Un seul clip : montage sans effet de coupure ni hook.")}
                   </li>
                 )}
               </ul>
@@ -1680,8 +1753,17 @@ function Montage() {
                 </div>
                 <Range label={tr("Zoom / recadrage")} value={fx.zoom} min={90} max={120} step={1} unit="%"
                   onChange={(v) => setFx({ ...fx, zoom: v })} />
-                <Range label={tr("Vitesse de lecture")} value={fx.speed} min={0.5} max={2} step={0.05} unit="×"
+                <Range label={tr("Vitesse de lecture")} value={fx.speed} min={isAdmin ? 0.25 : 0.5} max={isAdmin ? 4 : 2} step={0.05} unit="×"
                   onChange={(v) => setFx({ ...fx, speed: v })} />
+                {orderedClips.length > 0 && (
+                  <p className="-mt-4 text-xs text-muted-foreground">
+                    {tr("À cette vitesse, un clip de")} {formatTime(orderedClips[0]!.duration)}{" "}
+                    {tr("dure")}{" "}
+                    <strong className="text-foreground">{formatTime(scaledClipDuration)}</strong>
+                    {" · "}
+                    {tr("montage calculé")} : {formatTime(timelineDuration)}
+                  </p>
+                )}
                 <Range label={tr("Luminosité")} value={fx.brightness} min={50} max={150} step={1} unit="%"
                   onChange={(v) => setFx({ ...fx, brightness: v })} />
                 <Range label={tr("Contraste")} value={fx.contrast} min={50} max={150} step={1} unit="%"
@@ -2022,6 +2104,22 @@ function Montage() {
                     </strong>
                   </p>
                   {audioInfo && <p className="text-primary">{audioInfo}</p>}
+                  {isAdmin && (
+                    <div className="space-y-2 pt-2">
+                      <Range
+                        label={tr("Volume de la voix importée")}
+                        value={voiceGainPercent}
+                        min={100}
+                        max={300}
+                        step={5}
+                        unit=" %"
+                        onChange={setVoiceGainPercent}
+                      />
+                      <p className="text-xs text-muted-foreground">
+                        {tr("100 % = volume du fichier d'origine.")}
+                      </p>
+                    </div>
+                  )}
                   <audio controls src={voice.url} className="w-full" />
                 </div>
               )}

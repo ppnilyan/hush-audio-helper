@@ -22,6 +22,8 @@ export type MontageSettings = {
   musicGainDb: number;
   /** Piste retenue par défaut (un fichier importé reste local à la session). */
   musicChoice: MusicChoice;
+  /** Volume de la voix off importée, en % (100 = volume d'origine). */
+  voiceGainPercent: number;
 };
 
 export const defaultSettings: MontageSettings = {
@@ -30,6 +32,7 @@ export const defaultSettings: MontageSettings = {
   hook: defaultHook,
   musicGainDb: DEFAULT_MUSIC_GAIN_DB,
   musicChoice: "none",
+  voiceGainPercent: 100,
 };
 
 const num = (v: unknown, fallback: number) =>
@@ -59,6 +62,7 @@ export function normalizeSettings(raw: unknown): MontageSettings {
     hook: normalizeHook(src.hook),
     musicGainDb: Math.min(0, Math.max(-40, num(src.musicGainDb, DEFAULT_MUSIC_GAIN_DB))),
     musicChoice: src.musicChoice === "builtin" ? "builtin" : "none",
+    voiceGainPercent: clamp(num(src.voiceGainPercent, 100), 100, 300),
   };
 }
 
