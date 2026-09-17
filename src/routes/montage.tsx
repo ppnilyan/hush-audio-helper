@@ -2104,6 +2104,22 @@ function Montage() {
                     </strong>
                   </p>
                   {audioInfo && <p className="text-primary">{audioInfo}</p>}
+                  {isAdmin && (
+                    <div className="space-y-2 pt-2">
+                      <Range
+                        label={tr("Volume de la voix importée")}
+                        value={voiceGainPercent}
+                        min={100}
+                        max={300}
+                        step={5}
+                        unit=" %"
+                        onChange={setVoiceGainPercent}
+                      />
+                      <p className="text-xs text-muted-foreground">
+                        {tr("100 % = volume du fichier d'origine.")}
+                      </p>
+                    </div>
+                  )}
                   <audio controls src={voice.url} className="w-full" />
                 </div>
               )}
