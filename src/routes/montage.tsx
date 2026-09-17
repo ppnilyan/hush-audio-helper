@@ -358,6 +358,14 @@ function Montage() {
     (db: number) => setSettings((s) => ({ ...s, musicGainDb: db })),
     [],
   );
+
+  /** Volume de la voix importée : 100 % = fichier d'origine, jusqu'à 300 %. */
+  const voiceGainPercent = settings.voiceGainPercent;
+  const setVoiceGainPercent = useCallback(
+    (p: number) => setSettings((s) => ({ ...s, voiceGainPercent: p })),
+    [],
+  );
+  const voiceGain = Math.min(3, Math.max(1, voiceGainPercent / 100));
   /** Sélection de la musique : piste incluse, fichier importé ou aucune. */
   const chooseMusic = useCallback((track: MusicTrack | null) => {
     setMusic(track);
