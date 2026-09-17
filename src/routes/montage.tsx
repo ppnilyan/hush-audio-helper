@@ -1684,9 +1684,14 @@ function Montage() {
                 {clips.length === 0 && (
                   <li className="text-sm text-muted-foreground">{tr("Aucun clip pour l'instant.")}</li>
                 )}
-                {clips.length > 0 && clips.length < MIN_CLIPS && (
+                {clips.length > 0 && clips.length < minClips && (
                   <li className="text-sm text-primary">
                     {tr("Ajoutez au moins 2 clips pour continuer.")}
+                  </li>
+                )}
+                {isAdmin && clips.length === 1 && (
+                  <li className="text-sm text-muted-foreground">
+                    {tr("Un seul clip : montage sans effet de coupure ni hook.")}
                   </li>
                 )}
               </ul>
