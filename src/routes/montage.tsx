@@ -1753,8 +1753,17 @@ function Montage() {
                 </div>
                 <Range label={tr("Zoom / recadrage")} value={fx.zoom} min={90} max={120} step={1} unit="%"
                   onChange={(v) => setFx({ ...fx, zoom: v })} />
-                <Range label={tr("Vitesse de lecture")} value={fx.speed} min={0.5} max={2} step={0.05} unit="×"
+                <Range label={tr("Vitesse de lecture")} value={fx.speed} min={isAdmin ? 0.25 : 0.5} max={isAdmin ? 4 : 2} step={0.05} unit="×"
                   onChange={(v) => setFx({ ...fx, speed: v })} />
+                {orderedClips.length > 0 && (
+                  <p className="-mt-4 text-xs text-muted-foreground">
+                    {tr("À cette vitesse, un clip de")} {formatTime(orderedClips[0]!.duration)}{" "}
+                    {tr("dure")}{" "}
+                    <strong className="text-foreground">{formatTime(scaledClipDuration)}</strong>
+                    {" · "}
+                    {tr("montage calculé")} : {formatTime(timelineDuration)}
+                  </p>
+                )}
                 <Range label={tr("Luminosité")} value={fx.brightness} min={50} max={150} step={1} unit="%"
                   onChange={(v) => setFx({ ...fx, brightness: v })} />
                 <Range label={tr("Contraste")} value={fx.contrast} min={50} max={150} step={1} unit="%"
