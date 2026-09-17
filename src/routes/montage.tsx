@@ -1142,7 +1142,11 @@ function Montage() {
       if (actx.state !== "running") await actx.resume().catch(() => {});
       const src = actx.createMediaElementSource(audio);
       const dest = actx.createMediaStreamDestination();
-      src.connect(dest);
+      // Volume de la voix importée (100 % = fichier d'origine, jusqu'à 300 %).
+      const voiceGainNode = actx.createGain();
+      voiceGainNode.gain.value = voiceGain;
+      src.connect(voiceGainNode);
+      voiceGainNode.connect(dest);
 
       // Musique de fond mixée sous la voix via un GainNode (dB → gain linéaire).
       let musicEl: HTMLAudioElement | null = null;
