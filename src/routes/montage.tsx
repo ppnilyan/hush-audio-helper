@@ -1335,7 +1335,7 @@ function Montage() {
   const busy = loading || rendering;
   // L'étape musique est facultative ; les clips et la voix off restent requis.
   const canNext =
-    step === 0 ? clips.length >= MIN_CLIPS : step === 3 ? !!voice && !measuring : !isLastStep;
+    step === 0 ? clips.length >= minClips : step === 3 ? !!voice && !measuring : !isLastStep;
 
 
   return (
