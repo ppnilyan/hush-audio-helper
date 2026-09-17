@@ -275,6 +275,22 @@ function Montage() {
   const dismissJob = useServerFn(dismissFailedGeneration);
   const noCredits = billing.signedIn && !billing.loading && billing.totalCredits < CREDITS_PER_VIDEO;
 
+  /** Compte administrateur : montage possible avec un seul clip, vitesse étendue, volume de voix. */
+  const [isAdmin, setIsAdmin] = useState(false);
+  useEffect(() => {
+    if (!userId) {
+      setIsAdmin(false);
+      return;
+    }
+    let alive = true;
+    void isAdminAccount().then((v) => alive && setIsAdmin(v));
+    return () => {
+      alive = false;
+    };
+  }, [userId]);
+  const minClips = isAdmin ? 1 : MIN_CLIPS;
+
+
   /** Étapes visibles : « Durées & effets » n'apparaît qu'en mode avancé. */
   const visibleSteps = useMemo(
     () => (advanced ? [0, 1, 2, 3, 4, 5] : [0, 2, 3, 4, 5]),
