@@ -552,15 +552,22 @@ function Montage() {
   const measuring = !!voice && measured === null;
   // Les 3 clips les plus vus ouvrent le montage (coupes rapides de l'intro).
   const orderedClips = useMemo(() => orderByViews(clips), [clips]);
+  /** Vitesse de lecture appliquée aux clips (1 = normale, 0,5 = deux fois plus long). */
+  const rate = Math.min(4, Math.max(0.25, fx.speed));
+  // La timeline est calculée en secondes de source : à vitesse 0,5, 30 s de clip
+  // couvrent 60 s de voix off.
   const timeline = useMemo(
-    () => buildTimeline(orderedClips, totalDuration, intros),
-    [orderedClips, totalDuration, intros],
+    () => buildTimeline(orderedClips, totalDuration * rate, intros),
+    [orderedClips, totalDuration, intros, rate],
   );
 
   const timelineDuration = useMemo(
-    () => timeline.reduce((a, s) => a + s.duration, 0),
-    [timeline],
+    () => timeline.reduce((a, s) => a + s.duration, 0) / rate,
+    [timeline, rate],
   );
+
+  /** Durée réelle d'un clip une fois la vitesse appliquée. */
+  const scaledClipDuration = (orderedClips[0]?.duration ?? 0) / rate;
 
   const getVideo = useCallback((clip: ClipInfo, slot = 0) => {
     const key = `${clip.id}#${slot}`;
