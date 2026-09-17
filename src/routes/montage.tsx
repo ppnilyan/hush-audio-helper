@@ -954,7 +954,7 @@ function Montage() {
         for (let k = 0; k <= lookahead; k++) queuePrepare(i + k);
         const v = await prepared.get(i);
         if (!v) {
-          elapsed += seg.duration;
+          elapsed += seg.duration / rate;
           i++;
           continue;
         }
