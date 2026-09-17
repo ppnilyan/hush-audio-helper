@@ -1083,6 +1083,26 @@ function Montage() {
       },
       async () => {
         if (audioRef.current) {
+          // Amplification de la voix : au-delà de 100 %, on passe par un gain audio.
+          if (voiceGain > 1) {
+            try {
+              let node = voiceAmpRef.current;
+              if (!node || node.el !== audioRef.current) {
+                const ctx = new AudioContext();
+                const gain = ctx.createGain();
+                ctx.createMediaElementSource(audioRef.current).connect(gain);
+                gain.connect(ctx.destination);
+                node = { el: audioRef.current, ctx, gain };
+                voiceAmpRef.current = node;
+              }
+              if (node.ctx.state !== "running") await node.ctx.resume().catch(() => {});
+              node.gain.gain.value = voiceGain;
+            } catch {
+              /* amplification indisponible : volume d'origine */
+            }
+          } else if (voiceAmpRef.current) {
+            voiceAmpRef.current.gain.gain.value = 1;
+          }
           audioRef.current.currentTime = 0;
           await audioRef.current.play();
         }
