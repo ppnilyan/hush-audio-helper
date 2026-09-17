@@ -966,7 +966,9 @@ function Montage() {
         const segStart = elapsed;
         // Dernière coupure : on l'étire jusqu'à la fin de la voix off.
         const isLast = i === timeline.length - 1;
-        const segEnd = isLast ? Math.max(segStart + seg.duration, endsAt()) : segStart + seg.duration;
+        // Durée réelle de la coupure : la vitesse allonge (ou raccourcit) le plan.
+        const segReal = seg.duration / rate;
+        const segEnd = isLast ? Math.max(segStart + segReal, endsAt()) : segStart + segReal;
         drawFrame(ctx, v, fxRef.current, frameFxAt(effect, 0), watermark);
         await v.play().catch(() => {});
 
