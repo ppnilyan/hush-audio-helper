@@ -273,7 +273,8 @@ export function TimelineEditor({
       return;
     }
     if (Math.abs(event.clientX - drag.x) < 5) {
-      const start = segments.slice(0, drag.index).reduce((sum, segment) => sum + segment.duration, 0) / rate;
+      const start =
+        segments.slice(0, drag.index).reduce((sum, segment) => sum + segment.duration, 0) / rate;
       seek(start + (segments[drag.index]?.duration ?? 0) / rate / 2);
       return;
     }
