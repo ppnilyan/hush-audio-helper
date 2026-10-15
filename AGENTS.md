@@ -8,3 +8,6 @@
 > Commits you push to the connected branch sync back to Lovable and show up in
 > the editor, so keep the branch in a working state.
 <!-- LOVABLE:END -->
+
+- Keep timeline editing in `TimelineEditor` and pure source-second operations in `timeline-editor.ts`; the montage route owns the edited segments so preview and export share exactly the same cuts.
+- Key manual timeline edits by source clips, voice duration, speed and intro durations; changing those inputs rebuilds the automatic timeline instead of applying stale clip indices.
