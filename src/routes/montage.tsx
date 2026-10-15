@@ -5,6 +5,8 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Slider } from "@/components/ui/slider";
 import { Switch } from "@/components/ui/switch";
+import { TimelineEditor } from "@/components/TimelineEditor";
+import { fitTimeline } from "@/lib/timeline-editor";
 import { resolveTikTok } from "@/lib/tiktok.functions";
 import {
   buildTimeline,
@@ -20,6 +22,7 @@ import {
   type EasingName,
   type HookSettings,
   type MixedEffectName,
+  type Segment,
   isIosDevice,
 } from "@/lib/montage";
 import { detectSilences, encodeWav, formatTime, trimToTarget } from "@/lib/audio-silence";
@@ -107,17 +110,17 @@ export const Route = createFileRoute("/montage")({
   }),
   head: () => ({
     meta: [
-      { title: "Montage 9:16 — clips TikTok, voix off et musique" },
+      { title: "SilenceCut — Montage TikTok et alignement voix / visuel" },
       {
         name: "description",
         content:
-          "Parcours guidé : ajoutez vos clips, réglez durées et effets, ajoutez un hook zoom dynamique, importez la voix off, ajoutez une musique de fond, prévisualisez puis générez un montage vertical.",
+          "Créez un montage TikTok avec SilenceCut : découpez et déplacez vos clips sur une timeline, alignez les images avec la voix off puis exportez votre vidéo.",
       },
-      { property: "og:title", content: "Montage 9:16 — clips TikTok, voix off et musique" },
+      { property: "og:title", content: "SilenceCut — Montage TikTok et alignement voix / visuel" },
       {
         property: "og:description",
         content:
-          "Clips → durées et effets → hook & effets → voix off → musique de fond → prévisualisation → génération, étape par étape.",
+          "Découpez, réorganisez et alignez vos clips avec la voix off avant de générer votre montage TikTok avec SilenceCut.",
       },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary_large_image" },
@@ -135,6 +138,7 @@ const STEPS = [
   "Hook & Effets",
   "Voix off",
   "Musique de fond",
+  "Alignement voix & visuel",
   "Prévisualisation",
 ] as const;
 
@@ -294,7 +298,7 @@ function Montage() {
 
   /** Étapes visibles : « Durées & effets » n'apparaît qu'en mode avancé. */
   const visibleSteps = useMemo(
-    () => (advanced ? [0, 1, 2, 3, 4, 5] : [0, 2, 3, 4, 5]),
+    () => (advanced ? [0, 1, 2, 3, 4, 5, 6] : [0, 2, 3, 4, 5, 6]),
     [advanced],
   );
   const stepPos = Math.max(0, visibleSteps.indexOf(step));
@@ -562,9 +566,15 @@ function Montage() {
   const rate = Math.min(4, Math.max(0.25, fx.speed));
   // La timeline est calculée en secondes de source : à vitesse 0,5, 30 s de clip
   // couvrent 60 s de voix off.
-  const timeline = useMemo(
+  const automaticTimeline = useMemo(
     () => buildTimeline(orderedClips, totalDuration * rate, intros),
     [orderedClips, totalDuration, intros, rate],
+  );
+  const timelineKey = JSON.stringify([orderedClips.map((clip) => [clip.id, clip.duration]), totalDuration, rate, intros]);
+  const [timelineEdit, setTimelineEdit] = useState<{ key: string; segments: Segment[] } | null>(null);
+  const timeline = useMemo(
+    () => fitTimeline(timelineEdit?.key === timelineKey ? timelineEdit.segments : automaticTimeline, orderedClips, totalDuration * rate),
+    [timelineEdit, timelineKey, automaticTimeline, orderedClips, totalDuration, rate],
   );
 
   const timelineDuration = useMemo(
@@ -1003,7 +1013,7 @@ function Montage() {
           requestAnimationFrame(tick);
         });
 
-        elapsed = Math.max(segEnd, globalElapsed());
+        elapsed = segEnd;
         v.pause();
         prepared.delete(i);
         i++;
@@ -2239,8 +2249,24 @@ function Montage() {
             </section>
           )}
 
-          {/* Étape 5 — Prévisualisation */}
-          {step === 5 && (
+          {step === 5 && voice && !measuring && (
+            <TimelineEditor
+              key={timelineKey}
+              clips={orderedClips}
+              segments={timeline}
+              voiceUrl={voice.url}
+              duration={totalDuration}
+              rate={rate}
+              fx={fx}
+              hook={singleClip ? { ...hook, hookEnabled: false, mixedEnabled: false } : hook}
+              voiceGain={voiceGain}
+              onChange={(segments) => setTimelineEdit({ key: timelineKey, segments })}
+              onReset={() => setTimelineEdit(null)}
+            />
+          )}
+
+          {/* Étape 6 — Prévisualisation */}
+          {step === 6 && (
             <section className="panel-glow grid gap-8 p-6 sm:p-8 lg:grid-cols-[360px_minmax(0,1fr)]">
               <div>
                 <div className="relative overflow-hidden rounded-2xl">
