@@ -1,6 +1,6 @@
 # SilenceCut
 
-fqis un site où euh, on peut supprimer les blancs dans nos audios. Donc on met une voix Eleven Labs par exemple. Ça capte là où il y a les blancs euh, dans la voix, donc il y a les moments sans paroles. On peut choisir sur une intervalle les blancs qu'il faut supprimer de 0.1s à zéro cinq secondes. Euh, et puis ça commence à supprimer les blancs dans l'ordre de la vidéo. Donc ça supprime le premier blanc, ça regarde le temps de la vidéo. Ça supprime le deuxième blanc, ça regarde le temps de la vidéo. Il faut que ça supprime tous les blancs possibles , jusqu'à ce que la voix Eleven Labs fasse une minute et  deux secondes. Une minute et deux secondes. Donc ça va supprimer tous les blancs petit à petit jusqu'à ce que la voix fasse une minute et deux secondes.
+SITE DE CREATION DE VIDEO TIKTOK ORIGINAL AVEC AUTOMATISATION 
 
 This project was built with [Lovable](https://lovable.dev).
 
